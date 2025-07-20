@@ -1,0 +1,7 @@
+[project]
+name = "magboltz-gui"
+version = "0.1.0"
+description = "Magboltz GUI"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
