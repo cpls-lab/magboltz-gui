@@ -1,15 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-
-@dataclass
-class Gas:
-    id: int
-    name: str
-    year: Optional[int] = None
-    note: Optional[str] = None
-    rating: Optional[int] = None
-
 @dataclass
 class InputGas:
 

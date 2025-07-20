@@ -2,12 +2,14 @@ from pathlib import Path
 from typing import Optional, List
 
 from PyQt6 import uic
-from PyQt6.QtCore import QModelIndex
-from PyQt6.QtWidgets import QMainWindow, QFileDialog, QMessageBox
+from PyQt6.QtCore import QModelIndex, Qt
+from PyQt6.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QTableWidgetItem, QHeaderView
 
-from magboltz_gui.input_cards import InputCards, Gas, InputGas
+from magboltz_gui.database import GasDatabase
+from magboltz_gui.input_cards import InputCards, InputGas
 from magboltz_gui import parser
-from magboltz_gui.main_model import GasListModel, GasFracSpinBoxDelegate, GasNameDelegate
+from magboltz_gui.delegates import PercentDelegate, GasNameDelegate
+
 
 class MagboltzGUI(QMainWindow):
 
@@ -30,12 +32,17 @@ class MagboltzGUI(QMainWindow):
         self.btnGasAdd.setDefaultAction(self.actionGasAdd)
         self.btnGasRemove.setDefaultAction(self.actionGasRemove)
 
+        # Make "Gas name" stretch to fill available space
+        header = self.gasListTable.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # Gas ID shrinks to content
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Gas name fills extra space
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)  # Gas fraction shrinks to content
 
-        self.allGases : List[Gas] = [
-            Gas(1, 'CF4', year=2015, rating=5),
-            Gas(2, 'ARGON', year=2014, rating=5),
-            Gas(3, 'HELIUM 4', year=2014, rating=5),
-        ]
+        header.setMinimumSectionSize(50)
+
+        self.database = GasDatabase()
+        self.database.load("magboltz_gui/database.csv")
+
 
     def new(self):
         self._currentCards = InputCards()
@@ -142,28 +149,84 @@ class MagboltzGUI(QMainWindow):
         self.spinMagneticField.valueChanged.connect(self.onMagneticFieldChanged)
         self.spinAngle.valueChanged.connect(self.onAngleChanged)
 
-        self.gasListModel = GasListModel(self._currentCards.gases, ['Gas name', 'Fraction'], self.allGases)
-        self.gasListTableView.setModel(self.gasListModel)
+        gas_name_delegate = GasNameDelegate(self, self.gasListTable)
+        self.gasListTable.setItemDelegateForColumn(1, gas_name_delegate)
 
-        # Set delegates
-        self.gasListTableView.setItemDelegateForColumn(0, GasNameDelegate())
-        self.gasListTableView.setItemDelegateForColumn(1, GasFracSpinBoxDelegate())
+        delegate = PercentDelegate(self.gasListTable)
+        self.gasListTable.setItemDelegateForColumn(2, delegate)
+
+        self.refresh()
 
         self.btnGasAdd.triggered.connect(self.onBtnGasAdd)
         self.btnGasRemove.triggered.connect(self.onBtnGasRemove)
+        self.btnGasNormalize.triggered.connect(self.onBtnGasNormalize)
+
+
+    def refresh(self):
+        self.gasListTable.clear()
+
+        self.gasListTable.setHorizontalHeaderLabels(["Gas ID", "Gas name", "Gas fraction"])
+
+        self.gasListTable.verticalHeader().setVisible(False)
+        self.gasListTable.setShowGrid(False)
+
+        i = 0
+        for gas in self._currentCards.gases:
+            gas_id_widget = QTableWidgetItem(str(gas.gas_id))
+            gas_id_widget.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+
+            try:
+                gas_name = self.database.get(gas.gas_id).pretty_name
+            except KeyError:
+                gas_name = '(select gas)'
+            gas_name_widget = QTableWidgetItem(gas_name)
+
+            gas_frac_widget = QTableWidgetItem(f"{gas.gas_frac} %")
+            gas_frac_widget.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+
+            self.gasListTable.setItem(i, 0, gas_id_widget)
+            self.gasListTable.setItem(i, 1, gas_name_widget)
+            self.gasListTable.setItem(i, 2, gas_frac_widget)
+            i += 1
+
 
 
 
     def onBtnGasAdd(self):
-        row = len(self._currentCards.gases)
-        self.gasListModel.beginInsertRows(QModelIndex(), row, row)
+        row_index = self.gasListTable.rowCount()
+        self.gasListTable.insertRow(row_index)
         self._currentCards.gases.append(InputGas(80, 0.))
-        self.gasListModel.endInsertRows()
+        self.refresh()
 
     def onBtnGasRemove(self):
-        row = len(self._currentCards.gases) - 1
-        #self._currentCards.gases.append(InputGas(80, 0.))
-        self.gasListModel.endInsertRows()
+        row = self.gasListTable.currentRow()
+
+        if row >= 0:
+            self._currentCards.gases.remove(row)
+            self.refresh()
+        else:
+            self.show_error('Select a row to remove')
+
+    def onBtnGasNormalize(self):
+        fraction_sum = 0.
+        for gas in self._currentCards.gases:
+            fraction_sum += gas.gas_frac
+
+        if fraction_sum > 0.:
+
+            for gas in self._currentCards.gases:
+                gas.gas_frac *= 100. / fraction_sum
+
+            self.refresh()
+        else:
+
+            QMessageBox.warning(
+                self,  # Parent
+                "Warning",  # Title
+                "Please set the gas fractions."  # Message
+            )
+
+
 
     def onRealInteractionsChanged(self, value: int) -> None:
         self._currentCards.number_of_real_collisions = value

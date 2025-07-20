@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1194</width>
+    <width>583</width>
     <height>1200</height>
    </rect>
   </property>
@@ -14,9 +14,6 @@
    <string>Magboltz GUI</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QTabWidget" name="mainTab">
@@ -29,7 +26,7 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
-         <widget class="QGroupBox" name="GroupSimParameters">
+         <widget class="QGroupBox" name="groupSimParameters">
           <property name="title">
            <string>SImulation parameters</string>
           </property>
@@ -121,7 +118,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QGroupBox" name="groupBox_3">
+         <widget class="QGroupBox" name="groupGasList">
           <property name="title">
            <string>Conditions</string>
           </property>
@@ -311,7 +308,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QGroupBox" name="groupBox_2">
+         <widget class="QGroupBox" name="groupConditions">
           <property name="title">
            <string>Gas components</string>
           </property>
@@ -325,7 +322,8 @@
                  <string>...</string>
                 </property>
                 <property name="icon">
-                 <iconset theme="list-add"/>
+                 <iconset theme="list-add">
+                  <normaloff>.</normaloff>.</iconset>
                 </property>
                </widget>
               </item>
@@ -335,7 +333,21 @@
                  <string>...</string>
                 </property>
                 <property name="icon">
-                 <iconset theme="list-remove"/>
+                 <iconset theme="list-remove">
+                  <normaloff>.</normaloff>.</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QToolButton" name="btnGasNormalize">
+                <property name="toolTip">
+                 <string>Normalize gas fractions</string>
+                </property>
+                <property name="text">
+                 <string>...</string>
+                </property>
+                <property name="icon">
+                 <iconset theme="accessories-calculator"/>
                 </property>
                </widget>
               </item>
@@ -378,7 +390,32 @@
             </widget>
            </item>
            <item>
-            <widget class="QTableView" name="gasListTableView"/>
+            <widget class="QTableWidget" name="gasListTable">
+             <property name="columnCount">
+              <number>3</number>
+             </property>
+             <column>
+              <property name="text">
+               <string>Gas ID</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Gas name</string>
+              </property>
+              <property name="textAlignment">
+               <set>AlignLeading|AlignVCenter</set>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Gas fraction</string>
+              </property>
+              <property name="textAlignment">
+               <set>AlignLeading|AlignVCenter</set>
+              </property>
+             </column>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -431,7 +468,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1194</width>
+     <width>583</width>
      <height>23</height>
     </rect>
    </property>
@@ -468,7 +505,7 @@
    <addaction name="menu_Edit"/>
    <addaction name="menu_Help"/>
   </widget>
-  <widget class="QToolBar" name="toolBar">
+  <widget class="QToolBar" name="mainToolBar">
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
@@ -562,7 +599,8 @@
   </action>
   <action name="actionGasAdd">
    <property name="icon">
-    <iconset theme="list-add"/>
+    <iconset theme="list-add">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Add</string>
@@ -570,10 +608,22 @@
   </action>
   <action name="actionGasRemove">
    <property name="icon">
-    <iconset theme="list-remove"/>
+    <iconset theme="list-remove">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Remove</string>
+   </property>
+  </action>
+  <action name="actionactionNormalize">
+   <property name="icon">
+    <iconset theme="accessories-calculator"/>
+   </property>
+   <property name="text">
+    <string>actionNormalize</string>
+   </property>
+   <property name="toolTip">
+    <string>Normalize gas fractions</string>
    </property>
   </action>
  </widget>
