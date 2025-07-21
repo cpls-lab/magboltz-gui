@@ -15,6 +15,11 @@ class PercentSpinBox(QDoubleSpinBox):
 
 
 class PercentDelegate(QStyledItemDelegate):
+
+    def __init__(self, main_window: "MagbxoltzGUI", parent=None):
+        super().__init__(parent)
+        self._main_window = main_window
+
     def createEditor(self, parent, option, index):
         editor = QDoubleSpinBox(parent)
         editor.setSuffix(" %")
@@ -34,8 +39,11 @@ class PercentDelegate(QStyledItemDelegate):
         value = editor.value()
         model.setData(index, f"{value:.1f} %", Qt.ItemDataRole.EditRole)
 
+        self._main_window._currentCards.gases[index.row()].gas_frac = value
+        self._main_window.refresh()
+
 class GasNameDelegate(QStyledItemDelegate):
- 
+
     def __init__(self, main_window: "MagbxoltzGUI", parent=None):
         super().__init__(parent)
         self._main_window = main_window
@@ -63,4 +71,5 @@ class GasNameDelegate(QStyledItemDelegate):
 
                 self._main_window._currentCards.gases[index.row()].gas_id = selected_gas_id
                 self._main_window.refresh()
-        return True
+            return True
+        return False

@@ -35,7 +35,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="label_4">
+       <widget class="QLabel" name="label_year">
         <property name="text">
          <string>(year)</string>
         </property>
@@ -62,7 +62,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="label_6">
+       <widget class="QLabel" name="label_rating">
         <property name="text">
          <string>(rating)</string>
         </property>
@@ -75,9 +75,9 @@
     <widget class="QWidget" name="widget_3" native="true">
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
-       <widget class="QLabel" name="label_2">
+       <widget class="QLabel" name="label_note">
         <property name="text">
-         <string>(description)</string>
+         <string>(note)</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>

@@ -11,7 +11,7 @@ class SearchWidget(QDialog):
         super().__init__(parent)
         self.database = database
 
-        uic.loadUi("magboltz_gui/ui/search.ui", self)
+        uic.loadUi("magboltz_gui/resources/ui/search.ui", self)
 
         self._selected_gas_id : int = 0
 
@@ -19,16 +19,32 @@ class SearchWidget(QDialog):
         self.dialogButtons.rejected.connect(self.reject)
 
         self.searchResultTable.cellDoubleClicked.connect(self.onAccept)
+        self.searchResultTable.itemSelectionChanged.connect(self.onSelectedRowChanged)
         self.searchBarText.textChanged.connect(self.refresh)
 
         self.refresh(self.searchBarText.text())
+        self.onSelectedRowChanged()
+
+    def onSelectedRowChanged(self):
+
+        row = self.searchResultTable.currentRow()
+        if row != -1:
+            gas_id = int(self.searchResultTable.item(row, 0).text())
+            gas = self.database.get(gas_id)
+            self.label_year.setText(str(gas.year) if gas.year is not None else '-')
+            self.label_rating.setText(f"{'★' * gas.rating}{'☆' * (5 - gas.rating)}" if gas.rating is not None else "-")
+            self.label_note.setText(gas.note if gas.note is not None else "")
+        else:
+            self.label_year.setText("")
+            self.label_rating.setText("")
+            self.label_note.setText("")
 
     def onAccept(self):
 
         row = self.searchResultTable.currentRow()
 
         if row != -1:
-            id_item = self.searchResultTable.item(row, 0)  # Get the item in column 0 (ID column)
+            id_item = self.searchResultTable.item(row, 0)
             if id_item:
                 self._selected_gas_id = int(id_item.text())
                 self.accept()
@@ -57,6 +73,7 @@ class SearchWidget(QDialog):
 
         self.searchResultTable.verticalHeader().setVisible(False)
         self.searchResultTable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.searchResultTable.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.searchResultTable.setShowGrid(False)
 
         gas_filtered = []

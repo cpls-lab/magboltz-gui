@@ -1,21 +1,24 @@
+from os import POSIX_SPAWN_CLOSE
 from pathlib import Path
 from typing import Optional, List
 
 from PyQt6 import uic
-from PyQt6.QtCore import QModelIndex, Qt
-from PyQt6.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QTableWidgetItem, QHeaderView
+from PyQt6.QtCore import QModelIndex, Qt, QProcess
+from PyQt6.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QTableWidgetItem, QHeaderView, QTableWidget, \
+    QApplication
 
 from magboltz_gui.database import GasDatabase
 from magboltz_gui.input_cards import InputCards, InputGas
 from magboltz_gui import parser
 from magboltz_gui.delegates import PercentDelegate, GasNameDelegate
+from magboltz_gui.process import ProcessManager
 
 
 class MagboltzGUI(QMainWindow):
 
     def __init__(self: 'MagboltzGUI') -> None:
         super().__init__()
-        uic.loadUi("magboltz_gui/ui/main.ui", self)
+        uic.loadUi("magboltz_gui/resources/ui/main.ui", self)
 
         self.centralWidget().setVisible(False)
 
@@ -28,9 +31,15 @@ class MagboltzGUI(QMainWindow):
         self.actionSave.triggered.connect(self.save)
         self.actionSaveAs.triggered.connect(self.saveAs)
         self.actionClose.triggered.connect(self.close)
+        self.actionRun.triggered.connect(self.run)
+
 
         self.btnGasAdd.setDefaultAction(self.actionGasAdd)
         self.btnGasRemove.setDefaultAction(self.actionGasRemove)
+
+        self.btnCopyToClipbord.clicked.connect(self.copyToClipboard)
+
+        self.mainTab.setCurrentWidget(self.tabConfiguration)
 
         # Make "Gas name" stretch to fill available space
         header = self.gasListTable.horizontalHeader()
@@ -41,7 +50,11 @@ class MagboltzGUI(QMainWindow):
         header.setMinimumSectionSize(50)
 
         self.database = GasDatabase()
-        self.database.load("magboltz_gui/database.csv")
+        self.database.load("magboltz_gui/resources/database.csv")
+
+        self.magboltzPath = Path("/home/mrenda/research/plasma/magboltz/magboltz")
+
+        self.processes: List[ProcessManager] = []
 
 
     def new(self):
@@ -60,6 +73,7 @@ class MagboltzGUI(QMainWindow):
             self._currentCards = parser.load(Path(file_name))
             self._currentFile = Path(file_name)
             self._currentModified = False
+            self.updateCmdLine()
             self.connect()
 
     def saveAs(self) -> None:
@@ -74,6 +88,7 @@ class MagboltzGUI(QMainWindow):
             parser.save(self._currentCards, Path(file_name))
             self._currentFile = Path(file_name)
             self._currentModified = False
+            self.updateCmdLine()
 
 
     def save(self) -> None:
@@ -86,6 +101,7 @@ class MagboltzGUI(QMainWindow):
         else:
             parser.save(self._currentCards, self._currentFile)
             self._currentModified = False
+            self.updateCmdLine()
 
     def close(self):
         if self._currentCards is not None:
@@ -102,11 +118,44 @@ class MagboltzGUI(QMainWindow):
             self._currentFile = None
             self._currentModified = False
 
+            self.updateCmdLine()
             self.disconnect()
 
+    def copyToClipboard(self) -> None:
+        QApplication.clipboard().setText(self.commandLine.text())
+
+    def run(self):
+
+        if self._currentCards is None:
+            self.show_error("To run the magboltz process, you must to open the input file")
+            return
+
+        if self._currentFile is None:
+            self.show_error("To run the magboltz process, you must to save the file")
+            return
+
+        if self._currentModified is False:
+            self.save()
+
+        self.mainTab.setCurrentWidget(self.tabExecution)
+
+        process = ProcessManager(self)
+        self.processes.append(process)
+        process.run()
+
+
+    def updateCmdLine(self):
+
+        if self._currentFile is not None:
+            self.commandLine.setText(f"{self.magboltzPath or 'magboltz'} < {self._currentFile}")
+        else:
+            self.commandLine.setText("")
+
+
+
     def show_error(self, message: str) -> None:
-        msg_box = QMessageBox.critical(self, "Error", message, QMessageBox.StandardButton.Ok)
-        msg_box.setMinimumSize(400, 200)
+        QMessageBox.critical(self, "Error", message, QMessageBox.StandardButton.Ok)
+
 
     def show_save_question(self) -> Optional[bool]:
         reply = QMessageBox.question(
@@ -133,6 +182,8 @@ class MagboltzGUI(QMainWindow):
         self.centralWidget().setVisible(True)
 
         self.spinRealInteractions.setValue(self._currentCards.number_of_real_collisions)
+        self.checkPenning.setChecked(self._currentCards.enable_penning)
+        self.checkThermal.setChecked(self._currentCards.enable_thermal)
         self.spinFinalEnergy.setValue(self._currentCards.final_energy)
         self.checkFinalEnergyAuto.setChecked(self._currentCards.final_energy == 0.)
         self.spinGasTemperature.setValue(self._currentCards.gas_temperature)
@@ -142,6 +193,8 @@ class MagboltzGUI(QMainWindow):
         self.spinAngle.setValue(self._currentCards.angle)
 
         self.spinRealInteractions.valueChanged.connect(self.onRealInteractionsChanged)
+        self.checkPenning.stateChanged.connect(self.onPenningChanged)
+        self.checkThermal.stateChanged.connect(self.onThermalChanged)
         self.spinFinalEnergy.valueChanged.connect(self.onFinalEnergyChanged)
         self.spinGasTemperature.valueChanged.connect(self.onGasTemperatureChanged)
         self.spinGasPressure.valueChanged.connect(self.onGasPressureChanged)
@@ -152,7 +205,7 @@ class MagboltzGUI(QMainWindow):
         gas_name_delegate = GasNameDelegate(self, self.gasListTable)
         self.gasListTable.setItemDelegateForColumn(1, gas_name_delegate)
 
-        delegate = PercentDelegate(self.gasListTable)
+        delegate = PercentDelegate(self, self.gasListTable)
         self.gasListTable.setItemDelegateForColumn(2, delegate)
 
         self.refresh()
@@ -164,16 +217,20 @@ class MagboltzGUI(QMainWindow):
 
     def refresh(self):
         self.gasListTable.clear()
+        self.gasListTable.setRowCount(0)
 
         self.gasListTable.setHorizontalHeaderLabels(["Gas ID", "Gas name", "Gas fraction"])
 
         self.gasListTable.verticalHeader().setVisible(False)
+        self.gasListTable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.gasListTable.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.gasListTable.setShowGrid(False)
 
         i = 0
         for gas in self._currentCards.gases:
             gas_id_widget = QTableWidgetItem(str(gas.gas_id))
             gas_id_widget.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            gas_id_widget.setFlags(gas_id_widget.flags() & ~Qt.ItemFlag.ItemIsEditable)
 
             try:
                 gas_name = self.database.get(gas.gas_id).pretty_name
@@ -184,6 +241,7 @@ class MagboltzGUI(QMainWindow):
             gas_frac_widget = QTableWidgetItem(f"{gas.gas_frac} %")
             gas_frac_widget.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
+            self.gasListTable.insertRow(i)
             self.gasListTable.setItem(i, 0, gas_id_widget)
             self.gasListTable.setItem(i, 1, gas_name_widget)
             self.gasListTable.setItem(i, 2, gas_frac_widget)
@@ -202,7 +260,7 @@ class MagboltzGUI(QMainWindow):
         row = self.gasListTable.currentRow()
 
         if row >= 0:
-            self._currentCards.gases.remove(row)
+            self._currentCards.gases.pop(row)
             self.refresh()
         else:
             self.show_error('Select a row to remove')
@@ -230,6 +288,12 @@ class MagboltzGUI(QMainWindow):
 
     def onRealInteractionsChanged(self, value: int) -> None:
         self._currentCards.number_of_real_collisions = value
+
+    def onPenningChanged(self, value: bool) -> None:
+        self._currentCards.enable_penning = value
+
+    def onThermalChanged(self, value: bool) -> None:
+        self._currentCards.enable_thermal = value
 
     def onFinalEnergyChanged(self, value: float) -> None:
         self._currentCards.final_energy = value
@@ -263,4 +327,4 @@ class MagboltzGUI(QMainWindow):
 
         self.btnGasAdd.triggered.disconnect(self.onBtnGasAdd)
 
-        self.gasListTableView.setModel(None)
+        self.gasListTable.clear()

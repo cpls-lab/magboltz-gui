@@ -1,6 +1,7 @@
 import os
 
 from PyQt6 import uic
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PyQt6.QtCore import Qt
 from typing import Any, Optional
@@ -10,12 +11,8 @@ from magboltz_gui.main_window import MagboltzGUI
 
 
 def main() -> None:
-    from PyQt6 import QtWidgets
-    QtWidgets.QApplication.setStyle("Fusion")
-
-    os.environ.pop('QT_QPA_PLATFORMTHEME', None)
-
     app: QApplication = QApplication(sys.argv)
+    app.setWindowIcon(QIcon("magboltz_gui/resources/icon.png"))
     window: MagboltzGUI = MagboltzGUI()
     window.setWindowFlag(Qt.WindowType.Window)
     window.show()

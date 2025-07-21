@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>583</width>
-    <height>1200</height>
+    <width>811</width>
+    <height>782</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="mainTab">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tabConfiguration">
        <attribute name="title">
@@ -31,6 +31,23 @@
            <string>SImulation parameters</string>
           </property>
           <layout class="QGridLayout" name="gridLayout">
+           <item row="0" column="2">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>× 10⁷</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QCheckBox" name="checkPenning">
+             <property name="toolTip">
+              <string>IPEN: include Penning effect</string>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
            <item row="0" column="4">
             <spacer name="horizontalSpacer">
              <property name="orientation">
@@ -48,49 +65,6 @@
             <widget class="QLabel" name="label_4">
              <property name="text">
               <string>eV</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="2">
-            <widget class="QLabel" name="label_3">
-             <property name="text">
-              <string>× 10⁷</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QSpinBox" name="spinRealInteractions">
-             <property name="minimumSize">
-              <size>
-               <width>100</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="toolTip">
-              <string> NMAX: Number of real collisions, use a value between 2 and 5 for inelastic gas to obtain 1% accuracy, use a value above 10 for better than 0.5 % accuracy and a value of at least 10 for pure elastic gases like Argon</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label">
-             <property name="minimumSize">
-              <size>
-               <width>200</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="toolTip">
-              <string/>
-             </property>
-             <property name="text">
-              <string>Real interactions</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QDoubleSpinBox" name="spinFinalEnergy">
-             <property name="toolTip">
-              <string>EFINAL: upper limit of the electron energy in electron Volts, if EFINAL = 0.0, program automatically calculates upper integration energy limit</string>
              </property>
             </widget>
            </item>
@@ -114,6 +88,66 @@
              </property>
             </widget>
            </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="spinRealInteractions">
+             <property name="minimumSize">
+              <size>
+               <width>100</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string> NMAX: Number of real collisions, use a value between 2 and 5 for inelastic gas to obtain 1% accuracy, use a value above 10 for better than 0.5 % accuracy and a value of at least 10 for pure elastic gases like Argon</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QDoubleSpinBox" name="spinFinalEnergy">
+             <property name="toolTip">
+              <string>EFINAL: upper limit of the electron energy in electron Volts, if EFINAL = 0.0, program automatically calculates upper integration energy limit</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label">
+             <property name="minimumSize">
+              <size>
+               <width>200</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string/>
+             </property>
+             <property name="text">
+              <string>Real interactions</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_16">
+             <property name="text">
+              <string>Enable Penning</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="label_17">
+             <property name="text">
+              <string>Enable thermal motion</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QCheckBox" name="checkThermal">
+             <property name="toolTip">
+              <string>ITHRM: gas motion taken to be at input temperature</string>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>
@@ -123,51 +157,19 @@
            <string>Conditions</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_2">
+           <item row="0" column="2">
+            <widget class="QLabel" name="label_12">
+             <property name="text">
+              <string>℃</string>
+             </property>
+            </widget>
+           </item>
            <item row="2" column="2">
             <widget class="QLabel" name="label_6">
              <property name="text">
               <string>V/cm</string>
              </property>
             </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_7">
-             <property name="minimumSize">
-              <size>
-               <width>200</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>Magnetic field</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QDoubleSpinBox" name="spinMagneticField">
-             <property name="toolTip">
-              <string>BMAG: magnitude of the magnetic field in kilogauss</string>
-             </property>
-             <property name="decimals">
-              <number>3</number>
-             </property>
-             <property name="maximum">
-              <double>10.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="4">
-            <spacer name="horizontalSpacer_3">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
            </item>
            <item row="0" column="1">
             <widget class="QDoubleSpinBox" name="spinGasTemperature">
@@ -188,15 +190,54 @@
              </property>
             </widget>
            </item>
-           <item row="4" column="1">
-            <widget class="QDoubleSpinBox" name="spinAngle">
+           <item row="1" column="1">
+            <widget class="QDoubleSpinBox" name="spinGasPressure">
              <property name="toolTip">
-              <string>BTHETA: angle between the electric and magnetic fields in degrees</string>
+              <string>TORR: pressure of gas in Torr</string>
+             </property>
+             <property name="decimals">
+              <number>0</number>
              </property>
              <property name="maximum">
-              <double>359.990000000000009</double>
+              <double>10000.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>10.000000000000000</double>
              </property>
             </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QDoubleSpinBox" name="spinMagneticField">
+             <property name="toolTip">
+              <string>BMAG: magnitude of the magnetic field in kilogauss</string>
+             </property>
+             <property name="decimals">
+              <number>3</number>
+             </property>
+             <property name="maximum">
+              <double>10.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="2">
+            <widget class="QLabel" name="label_8">
+             <property name="text">
+              <string>kG</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="4">
+            <spacer name="horizontalSpacer_3">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
            </item>
            <item row="4" column="0">
             <widget class="QLabel" name="label_9">
@@ -208,6 +249,19 @@
              </property>
              <property name="text">
               <string>Angle</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_7">
+             <property name="minimumSize">
+              <size>
+               <width>200</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Magnetic field</string>
              </property>
             </widget>
            </item>
@@ -224,10 +278,20 @@
              </property>
             </widget>
            </item>
-           <item row="3" column="2">
-            <widget class="QLabel" name="label_8">
+           <item row="4" column="1">
+            <widget class="QDoubleSpinBox" name="spinAngle">
+             <property name="toolTip">
+              <string>BTHETA: angle between the electric and magnetic fields in degrees</string>
+             </property>
+             <property name="maximum">
+              <double>359.990000000000009</double>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QLabel" name="label_14">
              <property name="text">
-              <string>kG</string>
+              <string>Torr</string>
              </property>
             </widget>
            </item>
@@ -244,17 +308,10 @@
              </property>
             </widget>
            </item>
-           <item row="4" column="2">
-            <widget class="QLabel" name="label_10">
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_13">
              <property name="text">
-              <string>°</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="2">
-            <widget class="QLabel" name="label_12">
-             <property name="text">
-              <string>℃</string>
+              <string>Gas pressure</string>
              </property>
             </widget>
            </item>
@@ -274,33 +331,10 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="1">
-            <widget class="QDoubleSpinBox" name="spinGasPressure">
-             <property name="toolTip">
-              <string>TORR: pressure of gas in Torr</string>
-             </property>
-             <property name="decimals">
-              <number>0</number>
-             </property>
-             <property name="maximum">
-              <double>10000.000000000000000</double>
-             </property>
-             <property name="singleStep">
-              <double>10.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_13">
+           <item row="4" column="2">
+            <widget class="QLabel" name="label_10">
              <property name="text">
-              <string>Gas pressure</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="2">
-            <widget class="QLabel" name="label_14">
-             <property name="text">
-              <string>Torr</string>
+              <string>°</string>
              </property>
             </widget>
            </item>
@@ -323,7 +357,7 @@
                 </property>
                 <property name="icon">
                  <iconset theme="list-add">
-                  <normaloff>.</normaloff>.</iconset>
+                  <normaloff>../../ui</normaloff>../../ui</iconset>
                 </property>
                </widget>
               </item>
@@ -334,7 +368,7 @@
                 </property>
                 <property name="icon">
                  <iconset theme="list-remove">
-                  <normaloff>.</normaloff>.</iconset>
+                  <normaloff>../../ui</normaloff>../../ui</iconset>
                 </property>
                </widget>
               </item>
@@ -371,7 +405,7 @@
                 </property>
                 <property name="icon">
                  <iconset theme="go-down">
-                  <normaloff>.</normaloff>.</iconset>
+                  <normaloff>../../ui</normaloff>../../ui</iconset>
                 </property>
                </widget>
               </item>
@@ -382,7 +416,7 @@
                 </property>
                 <property name="icon">
                  <iconset theme="go-up">
-                  <normaloff>.</normaloff>.</iconset>
+                  <normaloff>../../ui</normaloff>../../ui</iconset>
                 </property>
                </widget>
               </item>
@@ -438,16 +472,23 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="lineEdit"/>
+            <widget class="QLineEdit" name="commandLine">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+             <property name="placeholderText">
+              <string>(save the current file)</string>
+             </property>
+            </widget>
            </item>
            <item>
-            <widget class="QToolButton" name="toolButton_5">
+            <widget class="QToolButton" name="btnCopyToClipbord">
              <property name="text">
               <string>...</string>
              </property>
              <property name="icon">
               <iconset theme="edit-copy">
-               <normaloff>.</normaloff>.</iconset>
+               <normaloff>../../ui</normaloff>../../ui</iconset>
              </property>
             </widget>
            </item>
@@ -455,7 +496,16 @@
          </widget>
         </item>
         <item>
-         <widget class="QTextEdit" name="textEdit"/>
+         <widget class="QTextEdit" name="consoleOutput">
+          <property name="font">
+           <font>
+            <family>Monospace</family>
+           </font>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -468,7 +518,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>583</width>
+     <width>811</width>
      <height>23</height>
     </rect>
    </property>
@@ -501,8 +551,15 @@
      <bool>false</bool>
     </property>
    </widget>
+   <widget class="QMenu" name="menuRun">
+    <property name="title">
+     <string>Run</string>
+    </property>
+    <addaction name="actionRun"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
+   <addaction name="menuRun"/>
    <addaction name="menu_Help"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
@@ -528,7 +585,7 @@
   <action name="actionNew">
    <property name="icon">
     <iconset theme="document-new">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../ui</normaloff>../../ui</iconset>
    </property>
    <property name="text">
     <string>&amp;New</string>
@@ -537,7 +594,7 @@
   <action name="actionOpen">
    <property name="icon">
     <iconset theme="document-open">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../ui</normaloff>../../ui</iconset>
    </property>
    <property name="text">
     <string>&amp;Open</string>
@@ -546,7 +603,7 @@
   <action name="actionQuit">
    <property name="icon">
     <iconset theme="application-exit">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../ui</normaloff>../../ui</iconset>
    </property>
    <property name="text">
     <string>&amp;Exit</string>
@@ -555,7 +612,7 @@
   <action name="actionSave">
    <property name="icon">
     <iconset theme="document-save">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../ui</normaloff>../../ui</iconset>
    </property>
    <property name="text">
     <string>&amp;Save</string>
@@ -564,7 +621,7 @@
   <action name="actionClose">
    <property name="icon">
     <iconset theme="edit-delete">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../ui</normaloff>../../ui</iconset>
    </property>
    <property name="text">
     <string>Close</string>
@@ -573,7 +630,7 @@
   <action name="actionSaveAs">
    <property name="icon">
     <iconset theme="document-save-as">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../ui</normaloff>../../ui</iconset>
    </property>
    <property name="text">
     <string>Save As</string>
@@ -582,7 +639,7 @@
   <action name="actionRevert">
    <property name="icon">
     <iconset theme="document-revert">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../ui</normaloff>../../ui</iconset>
    </property>
    <property name="text">
     <string>Revert</string>
@@ -591,7 +648,7 @@
   <action name="actionRun">
    <property name="icon">
     <iconset theme="system-run">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../ui</normaloff>../../ui</iconset>
    </property>
    <property name="text">
     <string>Run</string>
@@ -600,7 +657,7 @@
   <action name="actionGasAdd">
    <property name="icon">
     <iconset theme="list-add">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../ui</normaloff>../../ui</iconset>
    </property>
    <property name="text">
     <string>Add</string>
@@ -609,7 +666,7 @@
   <action name="actionGasRemove">
    <property name="icon">
     <iconset theme="list-remove">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../ui</normaloff>../../ui</iconset>
    </property>
    <property name="text">
     <string>Remove</string>
