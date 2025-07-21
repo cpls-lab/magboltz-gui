@@ -1,3 +1,5 @@
+from importlib.resources import files
+
 from PyQt6 import uic
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QDialog, QTableWidgetItem, QHeaderView, QTableWidget, QMessageBox
@@ -11,7 +13,7 @@ class SearchWidget(QDialog):
         super().__init__(parent)
         self.database = database
 
-        uic.loadUi("magboltz_gui/resources/ui/search.ui", self)
+        uic.loadUi(files("magboltz_gui.ui").joinpath("search.ui"), self)
 
         self._selected_gas_id : int = 0
 

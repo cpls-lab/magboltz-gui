@@ -8,7 +8,10 @@
    version="1.1"
    id="svg5"
    inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
-   sodipodi:docname="logo.svg"
+   sodipodi:docname="icon.svg"
+   inkscape:export-filename="icon.png"
+   inkscape:export-xdpi="72.000008"
+   inkscape:export-ydpi="72.000008"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -25,7 +28,7 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="0.914906"
-     inkscape:cx="32.243749"
+     inkscape:cx="-50.824893"
      inkscape:cy="346.48368"
      inkscape:window-width="3840"
      inkscape:window-height="2023"
@@ -58,7 +61,7 @@
          id="tspan1779"
          style="stroke-width:0.264583"
          x="71.458618"
-         y="89.361397"></tspan></text>
+         y="89.361397" /></text>
     <text
        xml:space="preserve"
        style="font-size:50.8px;fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:1"

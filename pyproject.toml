@@ -1,10 +1,26 @@
 [project]
 name = "magboltz-gui"
 version = "0.1.0"
-description = "Magboltz GUI"
+description = "Magboltz GUI - a GUI for Magboltz"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "pyqt6>=6.9.1",
     "pyqt6-utils>=0.5.0",
 ]
+authors = [
+  { name = "Michele Renda", email = "michele.renda@cern.ch" },
+  { name = "Dan Andrei Ciubotaru", email = "dan.andrei.ciubotaru@cern.ch" }
+]
+
+[tool.setuptools.package-data]
+magboltz_gui = ["ui/*.ui", "data/*.csv", "icons/*.svg", "icons/*.png"]
+
+[project.scripts]
+magboltz-gui = "magboltz_gui.main:main"
+
+[project.urls]
+Homepage = "https://gitlab.com/micrenda/magboltz-gui"
+Documentation = "https://gitlab.com/micrenda/magboltz-gui"
+Source = "https://gitlab.com/micrenda/magboltz-gui"
+Tracker = "https://gitlab.com/micrenda/magboltz-gui/issues"

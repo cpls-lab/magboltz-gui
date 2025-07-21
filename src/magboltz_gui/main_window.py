@@ -1,3 +1,4 @@
+from importlib.resources import files
 from os import POSIX_SPAWN_CLOSE
 from pathlib import Path
 from typing import Optional, List
@@ -18,7 +19,7 @@ class MagboltzGUI(QMainWindow):
 
     def __init__(self: 'MagboltzGUI') -> None:
         super().__init__()
-        uic.loadUi("magboltz_gui/resources/ui/main.ui", self)
+        uic.loadUi(files("magboltz_gui.ui").joinpath("main.ui"), self)
 
         self.centralWidget().setVisible(False)
 
@@ -50,10 +51,9 @@ class MagboltzGUI(QMainWindow):
         header.setMinimumSectionSize(50)
 
         self.database = GasDatabase()
-        self.database.load("magboltz_gui/resources/database.csv")
+        self.database.load(files("magboltz_gui.data").joinpath("database.csv"))
 
-        self.magboltzPath = Path("/home/mrenda/research/plasma/magboltz/magboltz")
-
+        self.magboltzPath : Optional[Path] = None
         self.processes: List[ProcessManager] = []
 
 

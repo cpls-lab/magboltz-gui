@@ -23,7 +23,7 @@ class ProcessManager:
         self.main_window.consoleOutput.clear()
         self.main_window.consoleOutput.append("Starting process...\n")
         # Example: 'ping' on Linux or Windows
-        self.process.start(str(self.main_window.magboltzPath) or "magboltz")
+        self.process.start(str(self.main_window.magboltzPath) if self.main_window.magboltzPath is not None else "magboltz")
 
         with self.main_window._currentFile.open('r') as f:
             for line in f.readlines():
