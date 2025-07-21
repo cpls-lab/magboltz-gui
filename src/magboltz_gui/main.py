@@ -8,7 +8,7 @@ from PyQt6.QtCore import Qt
 from typing import Any, Optional
 import sys
 
-from src.magboltz_gui.main_window import MagboltzGUI
+from magboltz_gui.main_window import MagboltzGUI
 
 def main() -> None:
     app: QApplication = QApplication(sys.argv)
