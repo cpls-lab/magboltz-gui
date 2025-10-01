@@ -34,7 +34,7 @@
            <item row="0" column="2">
             <widget class="QLabel" name="label_3">
              <property name="text">
-              <string>× 10⁷</string>
+              <string>× 10⁷</string>
              </property>
             </widget>
            </item>
@@ -99,12 +99,18 @@
              <property name="toolTip">
               <string> NMAX: Number of real collisions, use a value between 2 and 5 for inelastic gas to obtain 1% accuracy, use a value above 10 for better than 0.5 % accuracy and a value of at least 10 for pure elastic gases like Argon</string>
              </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignVCenter</set>
+             </property>
             </widget>
            </item>
            <item row="1" column="1">
             <widget class="QDoubleSpinBox" name="spinFinalEnergy">
              <property name="toolTip">
               <string>EFINAL: upper limit of the electron energy in electron Volts, if EFINAL = 0.0, program automatically calculates upper integration energy limit</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignVCenter</set>
              </property>
             </widget>
            </item>
@@ -188,6 +194,9 @@
              <property name="maximum">
               <double>500.000000000000000</double>
              </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignVCenter</set>
+             </property>
             </widget>
            </item>
            <item row="1" column="1">
@@ -204,6 +213,9 @@
              <property name="singleStep">
               <double>10.000000000000000</double>
              </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignVCenter</set>
+             </property>
             </widget>
            </item>
            <item row="3" column="1">
@@ -216,6 +228,9 @@
              </property>
              <property name="maximum">
               <double>10.000000000000000</double>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignVCenter</set>
              </property>
             </widget>
            </item>
@@ -286,6 +301,9 @@
              <property name="maximum">
               <double>359.990000000000009</double>
              </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignVCenter</set>
+             </property>
             </widget>
            </item>
            <item row="1" column="2">
@@ -328,6 +346,9 @@
              </property>
              <property name="singleStep">
               <double>100.000000000000000</double>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignVCenter</set>
              </property>
             </widget>
            </item>
