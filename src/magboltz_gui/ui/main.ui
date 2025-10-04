@@ -46,6 +46,12 @@
              <property name="text">
               <string/>
              </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>25</height>
+              </size>
+             </property>
             </widget>
            </item>
            <item row="0" column="4">
@@ -133,7 +139,7 @@
            <item row="2" column="0">
             <widget class="QLabel" name="label_16">
              <property name="text">
-              <string>Enable Penning</string>
+              <string>Enable Penning effect</string>
              </property>
             </widget>
            </item>
@@ -151,6 +157,12 @@
              </property>
              <property name="text">
               <string/>
+             </property>
+              <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>25</height>
+              </size>
              </property>
             </widget>
            </item>

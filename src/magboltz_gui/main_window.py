@@ -1,3 +1,4 @@
+import platform
 from importlib.resources import files
 from os import POSIX_SPAWN_CLOSE
 from pathlib import Path
@@ -5,6 +6,7 @@ from typing import Optional, List
 
 from PyQt6 import uic
 from PyQt6.QtCore import QModelIndex, Qt, QProcess
+from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QTableWidgetItem, QHeaderView, QTableWidget, \
     QApplication
 
@@ -20,6 +22,10 @@ class MagboltzGUI(QMainWindow):
     def __init__(self: 'MagboltzGUI') -> None:
         super().__init__()
         uic.loadUi(files("magboltz_gui.ui").joinpath("main.ui"), self)
+
+        system = platform.system()
+        if system == "Darwin":
+            self.initDarwinActionIcons()
 
         self.centralWidget().setVisible(False)
 
@@ -42,6 +48,7 @@ class MagboltzGUI(QMainWindow):
 
         self.mainTab.setCurrentWidget(self.tabConfiguration)
 
+
         # Make "Gas name" stretch to fill available space
         header = self.gasListTable.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # Gas ID shrinks to content
@@ -55,6 +62,48 @@ class MagboltzGUI(QMainWindow):
 
         self.magboltzPath : Optional[Path] = None
         self.processes: List[ProcessManager] = []
+
+
+    def initDarwinActionIcons(self):
+        # This method set the icons for MacOS
+
+        action_list : List[QAction] = [
+            self.actionNew	,
+            self.actionOpen	          ,
+            self.actionSave           ,
+            self.actionSaveAs         ,
+            self.actionRevert         ,
+            self.actionClose          ,
+            self.actionQuit	          ,
+            self.actionRun	          ,
+            self.actionGasAdd	      ,
+            self.actionGasRemove	  ,
+            self.actionactionNormalize,
+        ]
+
+        icns_map = {
+            "document-new": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/NewDocumentIcon.icns",
+            "document-open": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericDocumentIcon.icns",
+            "document-save": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/SaveDocumentIcon.icns",
+            "document-save-as": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/SaveAsTemplateIcon.icns",
+            "document-revert": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/UndoIcon.icns",
+            "edit-delete": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/TrashIcon.icns",
+            "application-exit": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AlertStopIcon.icns",
+            "system-run": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/ExecutableBinaryIcon.icns",
+            "list-add": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AddIcon.icns",
+            "list-remove": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/RemoveIcon.icns",
+            "accessories-calculator": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/CalculatorIcon.icns",
+        }
+
+        for action in action_list:
+
+            name = action.icon().name()
+            icon = icns_map.get(name, None)
+
+            if icon is not None:
+                if Path(icon).is_file():
+                    QIcon(icon)
+
 
 
     def new(self):
@@ -102,6 +151,7 @@ class MagboltzGUI(QMainWindow):
             parser.save(self._currentCards, self._currentFile)
             self._currentModified = False
             self.updateCmdLine()
+
 
     def close(self):
         if self._currentCards is not None:
@@ -151,6 +201,12 @@ class MagboltzGUI(QMainWindow):
         else:
             self.commandLine.setText("")
 
+    def onFinalEnergyAutoChanged(self, state: int) -> None:
+        print("aaa")
+        if state == Qt.CheckState.Checked.value:
+            self.spinFinalEnergy.setValue(0.)
+        else:
+            self.spinFinalEnergy.setValue(50.)
 
 
     def show_error(self, message: str) -> None:
@@ -195,6 +251,7 @@ class MagboltzGUI(QMainWindow):
         self.spinRealInteractions.valueChanged.connect(self.onRealInteractionsChanged)
         self.checkPenning.stateChanged.connect(self.onPenningChanged)
         self.checkThermal.stateChanged.connect(self.onThermalChanged)
+        self.checkFinalEnergyAuto.stateChanged.connect(self.onFinalEnergyAutoChanged)
         self.spinFinalEnergy.valueChanged.connect(self.onFinalEnergyChanged)
         self.spinGasTemperature.valueChanged.connect(self.onGasTemperatureChanged)
         self.spinGasPressure.valueChanged.connect(self.onGasPressureChanged)
@@ -294,8 +351,9 @@ class MagboltzGUI(QMainWindow):
 
     def onThermalChanged(self, value: bool) -> None:
         self._currentCards.enable_thermal = value
-
+        
     def onFinalEnergyChanged(self, value: float) -> None:
+        self.checkFinalEnergyAuto.setChecked(value == 0.)
         self._currentCards.final_energy = value
 
     def onGasTemperatureChanged(self, value: float) -> None:
@@ -318,6 +376,9 @@ class MagboltzGUI(QMainWindow):
         self.centralWidget().setVisible(False)
 
         self.spinRealInteractions.valueChanged.disconnect(self.onRealInteractionsChanged)
+        self.checkPenning.stateChanged.disconnect(self.onPenningChanged)
+        self.checkThermal.stateChanged.disconnect(self.onThermalChanged)
+        self.checkFinalEnergyAuto.stateChanged.disconnect(self.onFinalEnergyAutoChanged)
         self.spinFinalEnergy.valueChanged.disconnect(self.onFinalEnergyChanged)
         self.spinGasTemperature.valueChanged.disconnect(self.onGasTemperatureChanged)
         self.spinGasPressure.valueChanged.disconnect(self.onGasPressureChanged)
@@ -326,5 +387,9 @@ class MagboltzGUI(QMainWindow):
         self.spinAngle.valueChanged.disconnect(self.onAngleChanged)
 
         self.btnGasAdd.triggered.disconnect(self.onBtnGasAdd)
+        self.btnGasRemove.triggered.disconnect(self.onBtnGasRemove)
+        self.btnGasNormalize.triggered.disconnect(self.onBtnGasNormalize)
+        
+
 
         self.gasListTable.clear()
