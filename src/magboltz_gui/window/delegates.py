@@ -1,7 +1,7 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QDoubleSpinBox, QStyledItemDelegate
 
-from magboltz_gui.search_widget import SearchWidget
+from magboltz_gui.window.search_window import SearchWindow
 
 
 class PercentSpinBox(QDoubleSpinBox):
@@ -61,7 +61,7 @@ class GasNameDelegate(QStyledItemDelegate):
     def editorEvent(self, event, model, option, index):
         if event.type() == event.Type.MouseButtonDblClick:
             # Create and show the SearchWidget as a modal dialog
-            search_dialog = SearchWidget(self._main_window.database)
+            search_dialog = SearchWindow(self._main_window.database)
             if search_dialog.exec():  # exec() returns QDialog.Accepted if OK pressed
 
                 selected_gas_id = search_dialog.getSelectedGasId()

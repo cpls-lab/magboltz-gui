@@ -1,5 +1,5 @@
 from csv import DictReader
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
 
@@ -18,13 +18,11 @@ class GasItem:
     def pretty_name(self) -> str:
         return f"{self.name} ({self.formula})" if self.formula else self.name
 
-
+@dataclass
 class GasDatabase:
+    content: List[GasItem] = field(default_factory=list)
 
-    def __init__(self):
-        self.content: List[GasItem] = []
-
-    def load(self, filepath: str):
+    def load(self, filepath: str) -> None:
         with open(filepath, newline='', encoding='utf-8') as csvfile:
             reader = DictReader(csvfile)
             for row in reader:
@@ -34,7 +32,7 @@ class GasDatabase:
                     formula=row["formula"].strip() if row["formula"] else None,
                     year=int(row["year"]) if row["year"] else None,
                     note=row["note"].strip() if row["note"] else None,
-                    rating=int(row.get("rating")) if row["rating"] else None
+                    rating=int(row.get("rating", "")) if row["rating"] else None
                 )
                 self.content.append(gas)
 

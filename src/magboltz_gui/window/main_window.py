@@ -1,27 +1,28 @@
 import platform
 from importlib.resources import files
-from os import POSIX_SPAWN_CLOSE
 from pathlib import Path
 from typing import Optional, List
 
 from PyQt6 import uic
-from PyQt6.QtCore import QModelIndex, Qt, QProcess
+from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QTableWidgetItem, QHeaderView, QTableWidget, \
     QApplication
 
-from magboltz_gui.database import GasDatabase
-from magboltz_gui.input_cards import InputCards, InputGas
-from magboltz_gui import parser
-from magboltz_gui.delegates import PercentDelegate, GasNameDelegate
-from magboltz_gui.process import ProcessManager
+from magboltz_gui.data.database import GasDatabase
+from magboltz_gui.data.input_cards import InputCards, InputGas
+from magboltz_gui.generated.ui_main import Ui_MainWindow
+from magboltz_gui.util import parser
+from magboltz_gui.window.delegates import PercentDelegate, GasNameDelegate
+from magboltz_gui.util.process import ProcessManager
 
 
-class MagboltzGUI(QMainWindow):
+class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
     def __init__(self: 'MagboltzGUI') -> None:
         super().__init__()
-        uic.loadUi(files("magboltz_gui.ui").joinpath("main.ui"), self)
+        self.setupUi(self)
+        #uic.loadUi(files("magboltz_gui.ui").joinpath("main.ui"), self) <- Not needed anymore because we use pyuic6
 
         system = platform.system()
         if system == "Darwin":
@@ -39,15 +40,22 @@ class MagboltzGUI(QMainWindow):
         self.actionSaveAs.triggered.connect(self.saveAs)
         self.actionClose.triggered.connect(self.close)
         self.actionRun.triggered.connect(self.run)
-
+        self.actionGasAdd.triggered.connect(self.gasAdd)
+        self.actionGasRemove.triggered.connect(self.gasRemove)
+        self.actionGasNormalize.triggered.connect(self.gasNormalize)
+        self.actionCmdCopyToClipboard.triggered.connect(self.cmdCopyToClipboard)
+        self.actionResultSave.triggered.connect(self.saveResult)
+        self.actionResultExport.triggered.connect(self.openExportWindow)
 
         self.btnGasAdd.setDefaultAction(self.actionGasAdd)
         self.btnGasRemove.setDefaultAction(self.actionGasRemove)
+        self.btnGasNormalize.setDefaultAction(self.actionGasNormalize)
 
-        self.btnCopyToClipbord.clicked.connect(self.copyToClipboard)
+        self.btnCmdCopyToClipbord.setDefaultAction(self.actionCmdCopyToClipboard)
+        self.btnResultSave.setDefaultAction(self.actionResultSave)
+        self.btnResultExport.setDefaultAction(self.actionResultExport)
 
         self.mainTab.setCurrentWidget(self.tabConfiguration)
-
 
         # Make "Gas name" stretch to fill available space
         header = self.gasListTable.horizontalHeader()
@@ -58,7 +66,7 @@ class MagboltzGUI(QMainWindow):
         header.setMinimumSectionSize(50)
 
         self.database = GasDatabase()
-        self.database.load(files("magboltz_gui.data").joinpath("database.csv"))
+        self.database.load(files("magboltz_gui.database").joinpath("database.csv"))
 
         self.magboltzPath : Optional[Path] = None
         self.processes: List[ProcessManager] = []
@@ -78,7 +86,9 @@ class MagboltzGUI(QMainWindow):
             self.actionRun	          ,
             self.actionGasAdd	      ,
             self.actionGasRemove	  ,
-            self.actionactionNormalize,
+            self.actionNormalize,
+            self.actionCopyToClipboard,
+            self.actionExport,
         ]
 
         icns_map = {
@@ -111,6 +121,7 @@ class MagboltzGUI(QMainWindow):
         self._currentCards = InputCards()
         self._currentFile = None
         self._currentModified = False
+        self._currentResultFile = None
         self.connect()
 
 
@@ -127,8 +138,7 @@ class MagboltzGUI(QMainWindow):
 
     def saveAs(self) -> None:
 
-        if self._currentCards is None:
-            self.show_error("File was not open")
+        if not self.checkInputOpen():
             return
 
         file_name, _ = QFileDialog.getSaveFileName(self, "Save File", str(self._currentFile) if self._currentFile else "input.txt", "All Files (*);;Text Files (*.txt)")
@@ -141,8 +151,7 @@ class MagboltzGUI(QMainWindow):
 
 
     def save(self) -> None:
-        if self._currentCards is None:
-            self.show_error("File was not open")
+        if not self.checkInputOpen():
             return
 
         if self._currentFile is None:
@@ -168,11 +177,51 @@ class MagboltzGUI(QMainWindow):
             self._currentFile = None
             self._currentModified = False
 
+            _currentResultFile = None
+
             self.updateCmdLine()
             self.disconnect()
 
-    def copyToClipboard(self) -> None:
+    def cmdCopyToClipboard(self) -> None:
         QApplication.clipboard().setText(self.commandLine.text())
+
+    def checkInputOpen(self) -> bool:
+        if self._currentCards is None:
+            self.show_error( "Error", "File was not open")
+            return False
+        return True
+
+    def saveResult(self) -> None:
+
+        if not self.checkInputOpen():
+            return
+
+        if not self.consoleOutput.toPlainText().strip():
+            self.show_info( "File Saved", f"First run Magboltz to save the results")
+
+            return
+
+        currentResultFile, _ = QFileDialog.getSaveFileName(self, "Save Result", str(self._currentResultFile) if self._currentResultFile else "output.txt", "All Files (*);;Text Files (*.txt)")
+
+        if currentResultFile:
+
+
+            text = self.consoleOutput.toPlainText()
+
+            try:
+                with open(currentResultFile, 'w', encoding='utf-8') as file:
+                    file.write(text)
+            except Exception as e:
+                self.show_error( "Error", f"Could not save result: {e}")
+
+            else:
+                self.show_info( "Success", f"File saved successfully:\n{currentResultFile}")
+                self._currentResultFile = Path(currentResultFile)
+
+
+    def openExportWindow(self) -> None:
+        print("Test Test")
+
 
     def run(self):
 
@@ -209,9 +258,37 @@ class MagboltzGUI(QMainWindow):
             self.spinFinalEnergy.setValue(50.)
 
 
-    def show_error(self, message: str) -> None:
-        QMessageBox.critical(self, "Error", message, QMessageBox.StandardButton.Ok)
+    def show_error(self, title: str,  message: str, buttons : QMessageBox.StandardButton = QMessageBox.StandardButton.Ok, default: QMessageBox.StandardButton | None = None):
+        self.show_message(QMessageBox.Icon.Critical, title, message, buttons, default)
+        
+    def show_info(self, title: str,  message: str, buttons : QMessageBox.StandardButton = QMessageBox.StandardButton.Ok, default: QMessageBox.StandardButton | None = None):
+        self.show_message(QMessageBox.Icon.Information, title, message, buttons, default)
+        
+    def show_message(self, icon : QMessageBox.Icon, title: str,  message: str, buttons : QMessageBox.StandardButton = QMessageBox.StandardButton.Ok, default: QMessageBox.StandardButton | None = None) -> None:
 
+        msg = QMessageBox(self)
+        msg.setIcon(icon)
+        msg.setWindowTitle(title)
+        msg.setText(message)
+
+        # Buttons
+        msg.setStandardButtons(buttons)
+        if default is not None:
+            msg.setDefaultButton(default)
+
+        # Resize automatically based on content
+        msg.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        msg.adjustSize()
+
+        # Center relative to parent window
+        parent_geom = self.geometry()
+        msg_geom = msg.frameGeometry()
+
+        x = parent_geom.center().x() - msg_geom.width() // 2
+        y = parent_geom.center().y() - msg_geom.height() // 2
+        msg.move(x, y)
+
+        msg.exec()
 
     def show_save_question(self) -> Optional[bool]:
         reply = QMessageBox.question(
@@ -267,9 +344,10 @@ class MagboltzGUI(QMainWindow):
 
         self.refresh()
 
-        self.btnGasAdd.triggered.connect(self.onBtnGasAdd)
-        self.btnGasRemove.triggered.connect(self.onBtnGasRemove)
-        self.btnGasNormalize.triggered.connect(self.onBtnGasNormalize)
+        # self.btnGasAdd.triggered.connect(self.onBtnGasAdd)
+        # self.btnGasRemove.triggered.connect(self.onBtnGasRemove)
+        # self.btnGasNormalize.triggered.connect(self.onBtnGasNormalize)
+        # self.btnExport.triggered.connect(self.onBtnExport)
 
 
     def refresh(self):
@@ -307,22 +385,22 @@ class MagboltzGUI(QMainWindow):
 
 
 
-    def onBtnGasAdd(self):
+    def gasAdd(self):
         row_index = self.gasListTable.rowCount()
         self.gasListTable.insertRow(row_index)
         self._currentCards.gases.append(InputGas(80, 0.))
         self.refresh()
 
-    def onBtnGasRemove(self):
+    def gasRemove(self):
         row = self.gasListTable.currentRow()
 
         if row >= 0:
             self._currentCards.gases.pop(row)
             self.refresh()
         else:
-            self.show_error('Select a row to remove')
+            self.show_message('Select a row to remove')
 
-    def onBtnGasNormalize(self):
+    def gasNormalize(self):
         fraction_sum = 0.
         for gas in self._currentCards.gases:
             fraction_sum += gas.gas_frac
@@ -371,7 +449,7 @@ class MagboltzGUI(QMainWindow):
     def onAngleChanged(self, value: float) -> None:
         self._currentCards.angle = value
 
-    def disconnect(self):
+    def disconnect(self) -> None:
 
         self.centralWidget().setVisible(False)
 
@@ -386,9 +464,10 @@ class MagboltzGUI(QMainWindow):
         self.spinMagneticField.valueChanged.disconnect(self.onMagneticFieldChanged)
         self.spinAngle.valueChanged.disconnect(self.onAngleChanged)
 
-        self.btnGasAdd.triggered.disconnect(self.onBtnGasAdd)
-        self.btnGasRemove.triggered.disconnect(self.onBtnGasRemove)
-        self.btnGasNormalize.triggered.disconnect(self.onBtnGasNormalize)
+        # self.btnGasAdd.triggered.disconnect(self.onBtnGasAdd)
+        # self.btnGasRemove.triggered.disconnect(self.onBtnGasRemove)
+        # self.btnGasNormalize.triggered.disconnect(self.onBtnGasNormalize)
+        # self.btnExport.triggered.disconnect(self.onBtnExport)
         
 
 

@@ -2,18 +2,19 @@ from importlib.resources import files
 
 from PyQt6 import uic
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QWidget, QDialog, QTableWidgetItem, QHeaderView, QTableWidget, QMessageBox
+from PyQt6.QtWidgets import QDialog, QTableWidgetItem, QHeaderView, QTableWidget, QMessageBox
 
-from magboltz_gui.database import GasDatabase
+from magboltz_gui.data.database import GasDatabase
+from magboltz_gui.generated.ui_search import Ui_SearchGasForm
 
-
-class SearchWidget(QDialog):
+class SearchWindow(QDialog, Ui_SearchGasForm):
 
     def __init__(self, database : GasDatabase, parent=None):
         super().__init__(parent)
         self.database = database
 
-        uic.loadUi(files("magboltz_gui.ui").joinpath("search.ui"), self)
+        self.setupUi(self)
+        # uic.loadUi(files("magboltz_gui.ui").joinpath("search.ui"), self) <- Not needed anymore because we use pyuic6
 
         self._selected_gas_id : int = 0
 

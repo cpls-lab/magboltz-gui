@@ -7,5 +7,8 @@ wheels/
 *.egg-info
 .idea
 
+# Generated files
+src/magboltz_gui/generated/
+
 # Virtual environments
 .venv

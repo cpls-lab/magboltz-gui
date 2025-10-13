@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from magboltz_gui.input_cards import InputCards, InputGas
+from magboltz_gui.data.input_cards import InputCards, InputGas
 
 
 def load(filename: Path) -> InputCards:

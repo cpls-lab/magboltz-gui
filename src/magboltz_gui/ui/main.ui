@@ -40,17 +40,17 @@
            </item>
            <item row="2" column="1">
             <widget class="QCheckBox" name="checkPenning">
-             <property name="toolTip">
-              <string>IPEN: include Penning effect</string>
-             </property>
-             <property name="text">
-              <string/>
-             </property>
              <property name="minimumSize">
               <size>
                <width>0</width>
                <height>25</height>
               </size>
+             </property>
+             <property name="toolTip">
+              <string>IPEN: include Penning effect</string>
+             </property>
+             <property name="text">
+              <string/>
              </property>
             </widget>
            </item>
@@ -106,7 +106,7 @@
               <string> NMAX: Number of real collisions, use a value between 2 and 5 for inelastic gas to obtain 1% accuracy, use a value above 10 for better than 0.5 % accuracy and a value of at least 10 for pure elastic gases like Argon</string>
              </property>
              <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignVCenter</set>
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
             </widget>
            </item>
@@ -116,7 +116,7 @@
               <string>EFINAL: upper limit of the electron energy in electron Volts, if EFINAL = 0.0, program automatically calculates upper integration energy limit</string>
              </property>
              <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignVCenter</set>
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
             </widget>
            </item>
@@ -152,17 +152,17 @@
            </item>
            <item row="4" column="1">
             <widget class="QCheckBox" name="checkThermal">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>25</height>
+              </size>
+             </property>
              <property name="toolTip">
               <string>ITHRM: gas motion taken to be at input temperature</string>
              </property>
              <property name="text">
               <string/>
-             </property>
-              <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>25</height>
-              </size>
              </property>
             </widget>
            </item>
@@ -200,14 +200,14 @@
              <property name="toolTip">
               <string>TEMP: temperature of gas in centigrade</string>
              </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
              <property name="decimals">
               <number>1</number>
              </property>
              <property name="maximum">
               <double>500.000000000000000</double>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignVCenter</set>
              </property>
             </widget>
            </item>
@@ -215,6 +215,9 @@
             <widget class="QDoubleSpinBox" name="spinGasPressure">
              <property name="toolTip">
               <string>TORR: pressure of gas in Torr</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
              <property name="decimals">
               <number>0</number>
@@ -225,9 +228,6 @@
              <property name="singleStep">
               <double>10.000000000000000</double>
              </property>
-             <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignVCenter</set>
-             </property>
             </widget>
            </item>
            <item row="3" column="1">
@@ -235,14 +235,14 @@
              <property name="toolTip">
               <string>BMAG: magnitude of the magnetic field in kilogauss</string>
              </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
              <property name="decimals">
               <number>3</number>
              </property>
              <property name="maximum">
               <double>10.000000000000000</double>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignVCenter</set>
              </property>
             </widget>
            </item>
@@ -310,11 +310,11 @@
              <property name="toolTip">
               <string>BTHETA: angle between the electric and magnetic fields in degrees</string>
              </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
              <property name="maximum">
               <double>359.990000000000009</double>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignVCenter</set>
              </property>
             </widget>
            </item>
@@ -350,6 +350,9 @@
              <property name="toolTip">
               <string>EFIELD: electric field in Volt/cm</string>
              </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
              <property name="decimals">
               <number>0</number>
              </property>
@@ -358,9 +361,6 @@
              </property>
              <property name="singleStep">
               <double>100.000000000000000</double>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignVCenter</set>
              </property>
             </widget>
            </item>
@@ -414,7 +414,8 @@
                  <string>...</string>
                 </property>
                 <property name="icon">
-                 <iconset theme="accessories-calculator"/>
+                 <iconset theme="accessories-calculator">
+                  <normaloff>.</normaloff>.</iconset>
                 </property>
                </widget>
               </item>
@@ -515,13 +516,33 @@
             </widget>
            </item>
            <item>
-            <widget class="QToolButton" name="btnCopyToClipbord">
+            <widget class="QToolButton" name="btnCmdCopyToClipbord">
              <property name="text">
               <string>...</string>
              </property>
              <property name="icon">
               <iconset theme="edit-copy">
                <normaloff>../../ui</normaloff>../../ui</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="btnResultSave">
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset theme="document-save-as"/>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="btnResultExport">
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset theme="x-office-spreadsheet"/>
              </property>
             </widget>
            </item>
@@ -589,6 +610,9 @@
      <string>Run</string>
     </property>
     <addaction name="actionRun"/>
+    <addaction name="separator"/>
+    <addaction name="actionResultSave"/>
+    <addaction name="actionResultExport"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
@@ -705,15 +729,43 @@
     <string>Remove</string>
    </property>
   </action>
-  <action name="actionactionNormalize">
+  <action name="actionGasNormalize">
    <property name="icon">
-    <iconset theme="accessories-calculator"/>
+    <iconset theme="accessories-calculator">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>actionNormalize</string>
+    <string>Normalize</string>
    </property>
    <property name="toolTip">
-    <string>Normalize gas fractions</string>
+    <string>Normalize</string>
+   </property>
+  </action>
+  <action name="actionResultExport">
+   <property name="icon">
+    <iconset theme="x-office-spreadsheet"/>
+   </property>
+   <property name="text">
+    <string>Export</string>
+   </property>
+  </action>
+  <action name="actionCmdCopyToClipboard">
+   <property name="icon">
+    <iconset theme="edit-copy"/>
+   </property>
+   <property name="text">
+    <string>Cooy to clipboard</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="actionResultSave">
+   <property name="icon">
+    <iconset theme="document-save-as"/>
+   </property>
+   <property name="text">
+    <string>Save</string>
    </property>
   </action>
  </widget>

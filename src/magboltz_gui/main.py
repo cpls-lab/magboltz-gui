@@ -1,14 +1,12 @@
-import os
 from importlib.resources import files
 
-from PyQt6 import uic
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog
+from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt
-from typing import Any, Optional
 import sys
 
-from magboltz_gui.main_window import MagboltzGUI
+from magboltz_gui.util.platform import ensure_qt_runtime_or_explain
+from magboltz_gui.window.main_window import MagboltzGUI
 
 def main() -> None:
     app: QApplication = QApplication(sys.argv)
@@ -19,4 +17,8 @@ def main() -> None:
     sys.exit(app.exec())
 
 if __name__ == "__main__":
+
+    # Checking if we have QT available
+    ensure_qt_runtime_or_explain()
+
     main()
