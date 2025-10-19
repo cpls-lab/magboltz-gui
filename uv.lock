@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.11"
 
 [[package]]
@@ -288,6 +288,7 @@ version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "matplotlib" },
+    { name = "pyqt6" },
 ]
 
 [package.optional-dependencies]
@@ -308,6 +309,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "matplotlib", specifier = ">=3.10.7" },
+    { name = "pyqt6", specifier = ">=6.9.1" },
     { name = "pyqt6", marker = "extra == 'qt-pypi'", specifier = ">=6.9.1" },
     { name = "pyqt6-qt6", marker = "extra == 'qt-pypi'", specifier = ">=6.9.1" },
     { name = "pyqt6-utils", marker = "extra == 'qt-pypi'", specifier = ">=0.5.0" },
