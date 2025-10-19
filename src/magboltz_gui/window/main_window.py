@@ -4,7 +4,6 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Optional, List
 
-from PyQt6 import uic
 from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtWidgets import (

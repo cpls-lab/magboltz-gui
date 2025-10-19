@@ -108,7 +108,7 @@ def _platform_plugins_ok() -> Tuple[bool, Optional[str]]:
 
 def ensure_qt_runtime_or_explain() -> None:
     # Prefer Wayland if present, let Qt fall back automatically.
-    os.environ.setdefault("QT_QPA_PLATFORM", "wayland")
+    #os.environ.setdefault("QT_QPA_PLATFORM", "wayland")
 
     # 1) PyQt6 available?
     try:
