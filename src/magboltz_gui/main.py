@@ -2,6 +2,7 @@ import signal
 from importlib.resources import files
 
 import sys
+from typing import Any
 
 from PyQt6.QtCore import QTimer
 
@@ -37,7 +38,7 @@ def main() -> None:
     sys.exit(app.exec())
 
 
-def _sigint_handler(*_):
+def _sigint_handler(*_ : Any) -> None:
     from PyQt6.QtWidgets import QApplication
     QApplication.quit()
     sys.exit(130)
