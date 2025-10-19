@@ -29,14 +29,12 @@ class ProcessManager:
             self.main_window.show_error("Error", "You have to open an input file first")
             return
 
+        cmd = str(self.main_window.magboltzPath) if self.main_window.magboltzPath is not None else "magboltz"
+        self.process.start(cmd)
         self.main_window.consoleOutput.clear()
-        self.main_window.consoleOutput.append("Starting process...")
-        self.main_window.consoleOutput.append(str(self.main_window._currentInputFile))
+        self.main_window.consoleOutput.append(f"<span style='color:blue;'>{cmd} &lt; {self.main_window._currentInputFile}</span>")
         self.main_window.consoleOutput.append(f"")
-        # Example: 'ping' on Linux or Windows
-        self.process.start(
-            str(self.main_window.magboltzPath) if self.main_window.magboltzPath is not None else "magboltz"
-        )
+        self.main_window.consoleOutput.append("Starting process...")
 
         with self.main_window._currentInputFile.open("r") as f:
             for line in f.readlines():

@@ -429,12 +429,13 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         if fraction_sum > 0.0:
 
             for gas in self._currentCards.gases:
-                gas.gas_frac *= 100.0 / fraction_sum
+                gas.gas_frac *= round(100.0 / fraction_sum, 1)
 
             self.refresh()
         else:
-
-            QMessageBox.warning(self, "Warning", "Please set the gas fractions.")  # Parent  # Title  # Message
+            # Split evenly
+            for gas in self._currentCards.gases:
+                gas.gas_frac = round(100.0 / len(self._currentCards.gases), 1)
 
     def onRealInteractionsChanged(self, value: int) -> None:
 
