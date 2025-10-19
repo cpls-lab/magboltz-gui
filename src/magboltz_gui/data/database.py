@@ -18,6 +18,10 @@ class GasItem:
     def pretty_name(self) -> str:
         return f"{self.name} ({self.formula})" if self.formula else self.name
 
+    @property
+    def short_name(self) -> str:
+        return self.formula if self.formula else self.name
+
 
 @dataclass
 class GasDatabase:

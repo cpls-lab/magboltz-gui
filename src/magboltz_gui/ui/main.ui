@@ -501,7 +501,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QWidget" name="widget_7" native="true"/>
+            <widget class="QWidget" name="pieContainer" native="true"/>
            </item>
           </layout>
          </widget>

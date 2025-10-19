@@ -13,8 +13,10 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem,
     QHeaderView,
     QTableWidget,
-    QApplication,
+    QApplication, QVBoxLayout,
 )
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+from matplotlib.figure import Figure
 
 from magboltz_gui.data.database import GasDatabase
 from magboltz_gui.data.input_cards import InputCards, InputGas
@@ -66,6 +68,8 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self.mainTab.setCurrentWidget(self.tabConfiguration)
 
+        self.createPieChart()
+
         # Make "Gas name" stretch to fill available space
         header = self.gasListTable.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # Gas ID shrinks to content
@@ -79,6 +83,24 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self.magboltzPath: Optional[Path] = None
         self.processes: List[ProcessManager] = []
+
+    def createPieChart(self) -> None:
+        fig = Figure(figsize=(3, 3))
+        canvas = FigureCanvasQTAgg(fig)
+
+        # 2. Create an Axes and draw something (pie chart)
+        ax = fig.add_subplot(111)
+        ax.pie([], labels=[], autopct="%1.1f%%")
+
+        # 3. Add the canvas to the QWidget container
+        layout = QVBoxLayout(self.pieContainer)
+        #layout.setContentsMargins(0, 0, 0, 0)  # remove spacing
+        layout.addWidget(canvas)
+
+        self._gas_fig = fig
+        self._gas_ax = ax
+        self._gas_canvas = canvas
+
 
     def initDarwinActionIcons(self) -> None:
         # This method set the icons for macOS
@@ -359,6 +381,8 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.spinMagneticField.valueChanged.connect(self.onMagneticFieldChanged)
         self.spinAngle.valueChanged.connect(self.onAngleChanged)
 
+        self.gasListTable.cellChanged.connect(self.refresh_pie)
+
         gas_name_delegate = GasNameDelegate(self, self.gasListTable)
         self.gasListTable.setItemDelegateForColumn(1, gas_name_delegate)
 
@@ -372,6 +396,31 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         # self.btnGasNormalize.triggered.connect(self.onBtnGasNormalize)
         # self.btnExport.triggered.connect(self.onBtnExport)
 
+    def refresh_pie(self):
+
+        self._gas_ax.clear()
+
+        gas_fracs = []
+        gas_labels = []
+
+        for gas in self._currentCards.gases:
+            try:
+                gas_name = self.database.get(gas.gas_id).short_name
+            except KeyError:
+                gas_name = "?"
+
+            gas_fracs.append(gas.gas_frac)
+            gas_labels.append(gas_name)
+
+        if sum(gas_fracs) > 0:
+            self._gas_ax.pie(gas_fracs, labels=gas_labels, autopct="%1.1f%%")
+        else:
+            self._gas_ax.pie([], labels=[], autopct="%1.1f%%",
+                             wedgeprops={"edgecolor": "black", "linewidth": 1},)
+        self._gas_ax.set_aspect("equal")
+        self._gas_canvas.draw()
+
+
     def refresh(self) -> None:
 
         self.gasListTable.clear()
@@ -384,6 +433,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.gasListTable.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.gasListTable.setShowGrid(False)
 
+
         i = 0
         for gas in self._currentCards.gases:
             gas_id_widget = QTableWidgetItem(str(gas.gas_id))
@@ -394,6 +444,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
                 gas_name = self.database.get(gas.gas_id).pretty_name
             except KeyError:
                 gas_name = "(select gas)"
+
             gas_name_widget = QTableWidgetItem(gas_name)
 
             gas_frac_widget = QTableWidgetItem(f"{gas.gas_frac} %")
@@ -404,6 +455,8 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self.gasListTable.setItem(i, 1, gas_name_widget)
             self.gasListTable.setItem(i, 2, gas_frac_widget)
             i += 1
+
+        self.refresh_pie()
 
     def gasAdd(self) -> None:
 
