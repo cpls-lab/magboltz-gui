@@ -1,6 +1,9 @@
+import signal
 from importlib.resources import files
 
 import sys
+
+from PyQt6.QtCore import QTimer
 
 from magboltz_gui.util.platform import ensure_qt_runtime_or_explain
 
@@ -20,11 +23,24 @@ def main() -> None:
     # IMPORTANT for Wayland/GNOME: this sets the app-id from a desktop file name
     app.setDesktopFileName(str(files("magboltz_gui.icons").joinpath("magboltz-gui.desktop")))
     app.setWindowIcon(QIcon(str(files("magboltz_gui.icons").joinpath("icon-192x192.png"))))
+
+    signal.signal(signal.SIGINT, _sigint_handler)
+
+    _keep_alive = QTimer()
+    _keep_alive.timeout.connect(lambda: None)
+    _keep_alive.start(200)
+
+
     window: MagboltzGUI = MagboltzGUI()
     window.setWindowFlag(Qt.WindowType.Window)
     window.show()
     sys.exit(app.exec())
 
+
+def _sigint_handler(*_):
+    from PyQt6.QtWidgets import QApplication
+    QApplication.quit()
+    sys.exit(130)
 
 if __name__ == "__main__":
 

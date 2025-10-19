@@ -30,7 +30,9 @@ class ProcessManager:
             return
 
         self.main_window.consoleOutput.clear()
-        self.main_window.consoleOutput.append("Starting process...\n")
+        self.main_window.consoleOutput.append("Starting process...")
+        self.main_window.consoleOutput.append(str(self.main_window._currentInputFile))
+        self.main_window.consoleOutput.append(f"")
         # Example: 'ping' on Linux or Windows
         self.process.start(
             str(self.main_window.magboltzPath) if self.main_window.magboltzPath is not None else "magboltz"
@@ -51,5 +53,6 @@ class ProcessManager:
         self.main_window.consoleOutput.append(f"<span style='color:red;'>{text}</span>")
 
     def process_finished(self) -> None:
-        self.main_window.consoleOutput.append("\nProcess finished.")
+        self.main_window.consoleOutput.append("")
+        self.main_window.consoleOutput.append("Process finished.")
         self.main_window.processes.remove(self)

@@ -12,3 +12,7 @@ src/magboltz_gui/generated/
 
 # Virtual environments
 .venv
+
+# Common input and output files
+input.txt
+output.txt
