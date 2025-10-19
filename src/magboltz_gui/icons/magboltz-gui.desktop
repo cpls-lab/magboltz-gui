@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Magboltz GUI
+Exec=python -m magboltz_gui.main
+Icon=magboltz-gui
+Categories=Science;Utility;
+StartupWMClass=magboltz-gui

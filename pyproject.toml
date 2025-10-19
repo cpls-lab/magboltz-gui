@@ -4,16 +4,6 @@ version = "0.1.1"
 description = "Magboltz GUI - a GUI for Magboltz"
 readme = "README.md"
 requires-python = ">=3.11"
-#dependencies = [
-#    "pyqt6>=6.9.1",
-#    "pyqt6-utils>=0.5.0",
-##]
-
-#dependencies = [
-#    "PyQt6>=6.9.1",
-#    "PyQt6-Qt6>=6.9.1",        # Qt libraries bundled
-#    "pyqt6-utils>=0.5.0",
-#]
 
 authors = [
   { name = "Michele Renda", email = "michele.renda@cern.ch" },

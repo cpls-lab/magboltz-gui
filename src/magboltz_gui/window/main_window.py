@@ -83,7 +83,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
     def initDarwinActionIcons(self) -> None:
         # This method set the icons for macOS
 
-        action_list: List[QAction] = [
+        actions: List[QAction] = [
             self.actionNew,
             self.actionOpen,
             self.actionSave,
@@ -100,27 +100,26 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         ]
 
         icns_map = {
-            "document-new": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/NewDocumentIcon.icns",
-            "document-open": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericDocumentIcon.icns",
-            "document-save": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/SaveDocumentIcon.icns",
-            "document-save-as": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/SaveAsTemplateIcon.icns",
-            "document-revert": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/UndoIcon.icns",
-            "edit-delete": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/TrashIcon.icns",
-            "application-exit": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AlertStopIcon.icns",
-            "system-run": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/ExecutableBinaryIcon.icns",
-            "list-add": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AddIcon.icns",
-            "list-remove": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/RemoveIcon.icns",
-            "accessories-calculator": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/CalculatorIcon.icns",
+            self.actionNew : "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/NewDocumentIcon.icns",
+            self.actionOpen: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericDocumentIcon.icns",
+            self.actionSave: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/SaveDocumentIcon.icns",
+            self.actionSaveAs: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/SaveAsTemplateIcon.icns",
+            self.actionRevert: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/UndoIcon.icns",
+            self.actionClose: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/TrashIcon.icns",
+            self.actionQuit: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AlertStopIcon.icns",
+            self.actionRun: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/ExecutableBinaryIcon.icns",
+            self.actionGasAdd: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AddIcon.icns",
+            self.actionGasRemove: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/RemoveIcon.icns",
+            self.actionGasNormalize: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/CalculatorIcon.icns",
+            self.actionCmdCopyToClipboard: "",
+            self.actionResultExport: "", # find an incon similary to Excel
         }
 
-        for action in action_list:
-
-            name = action.icon().name()
-            icon = icns_map.get(name, None)
-
+        for action in actions:
+            icon = icns_map.get(action, None)
             if icon is not None:
                 if Path(icon).is_file():
-                    QIcon(icon)
+                    action.setIcon(QIcon(icon))
 
     def fileNew(self) -> None:
         self._currentCards = InputCards()

@@ -42,32 +42,51 @@ def _print_install_help_for_missing_pyqt6() -> None:
         if d in {"debian", "ubuntu"}:
             print("Install system packages:", file=sys.stderr)
             print("  sudo apt install python3-pyqt6", file=sys.stderr)
+            print("  ", file=sys.stderr)
+            print("and be sure to recreate the .venv directory using:", file=sys.stderr)
+            print("  uv venv --system-site-packages", file=sys.stderr)
         elif d == "fedora":
             print("Install system packages:", file=sys.stderr)
             print("  sudo dnf install python3-qt6", file=sys.stderr)
+            print("  ", file=sys.stderr)
+            print("and be sure to recreate the .venv directory using:", file=sys.stderr)
+            print("  uv venv --system-site-packages", file=sys.stderr)
         elif d == "arch":
             print("Install system packages:", file=sys.stderr)
             print("  sudo pacman -S python-pyqt6", file=sys.stderr)
+            print("  ", file=sys.stderr)
+            print("and be sure to recreate the .venv directory using:", file=sys.stderr)
+            print("  uv venv --system-site-packages", file=sys.stderr)
         elif d == "opensuse":
             print("Install system packages (adjust python version if needed):", file=sys.stderr)
             print("  sudo zypper install python311-qt6", file=sys.stderr)
+            print("  ", file=sys.stderr)
+            print("and be sure to recreate the .venv directory using:", file=sys.stderr)
+            print("  uv venv --system-site-packages", file=sys.stderr)
         else:
             print("Install your distro’s PyQt6 package.", file=sys.stderr)
             print("Examples:", file=sys.stderr)
             print("  Debian/Ubuntu: sudo apt install python3-pyqt6", file=sys.stderr)
             print("  Fedora:        sudo dnf install python3-qt6", file=sys.stderr)
-        print("\nAlternative (portable wheels):", file=sys.stderr)
-        print("  pip install PyQt6 PyQt6-Qt6 PyQt6-Qt6-Data\n", file=sys.stderr)
+            print("  ", file=sys.stderr)
+            print("and be sure to recreate the .venv directory using:", file=sys.stderr)
+            print("  uv venv --system-site-packages", file=sys.stderr)
     elif system == "Darwin":  # macOS
         print("\nPyQt6 is not available on macOS.", file=sys.stderr)
         print("  python3 -m pip install PyQt6 PyQt6-Qt6 PyQt6-Qt6-Data", file=sys.stderr)
         print("Install using Homebrew Qt6:", file=sys.stderr)
         print("  brew install qt@6", file=sys.stderr)
+        print("  ", file=sys.stderr)
+        print("and be sure to recreate the .venv directory using:", file=sys.stderr)
+        print("  uv venv --system-site-packages", file=sys.stderr)
         print("", file=sys.stderr)
 
     else:  # Windows / other
         print("\nPyQt6 is not available.\nInstall via PyPI:", file=sys.stderr)
-        print("  py -m pip install PyQt6 PyQt6-Qt6 PyQt6-Qt6-Data\n", file=sys.stderr)
+        print("  py -m pip install  a\n", file=sys.stderr)
+        print("", file=sys.stderr)
+        print("  and be sure to recreate the .venv directory using:", file=sys.stderr)
+        print("  uv venv --system-site-packages", file=sys.stderr)
 
 
 def _platform_plugins_ok() -> Tuple[bool, Optional[str]]:
@@ -109,39 +128,4 @@ def ensure_qt_runtime_or_explain() -> None:
     except Exception as e:
         _print_install_help_for_missing_pyqt6()
         print(f"Details: {e}\n", file=sys.stderr)
-        sys.exit(1)
-
-    # 2) Platform plugins present?
-    ok, hint = _platform_plugins_ok()
-    if not ok:
-        system = platform.system()
-        print("\nQt runtime is present, but platform plugins are missing.\n", file=sys.stderr)
-        if system == "Linux":
-            d = _detect_linux_distro()
-            if d in {"debian", "ubuntu"}:
-                print("Install platform plugins (Wayland/XCB):", file=sys.stderr)
-                print("  sudo apt install qt6-wayland libxkbcommon-x11-0 libxcb-cursor0", file=sys.stderr)
-                print("Optional for native theming/icons:", file=sys.stderr)
-                print("  sudo apt install qt6-gtk-platformtheme qt6-image-formats-plugins libqt6svg6", file=sys.stderr)
-            elif d == "fedora":
-                print("Install platform plugins:", file=sys.stderr)
-                print("  sudo dnf install qt6-qtwayland", file=sys.stderr)
-            elif d == "arch":
-                print("Install platform plugins:", file=sys.stderr)
-                print("  sudo pacman -S qt6-wayland", file=sys.stderr)
-            elif d == "opensuse":
-                print("Install platform plugins:", file=sys.stderr)
-                print("  sudo zypper install libqt6-qtwayland", file=sys.stderr)
-            else:
-                print("Install your distro’s Qt6 Wayland/XCB platform plugins.", file=sys.stderr)
-            if os.environ.get("XDG_SESSION_TYPE", "").lower() == "x11":
-                print("\nYou appear to be on an X11 session; you can also force XCB:", file=sys.stderr)
-                print("  QT_QPA_PLATFORM=xcb python3 -m magboltz_gui.main", file=sys.stderr)
-        elif system == "Darwin":
-            print("On macOS, use the PyPI wheels which bundle plugins:", file=sys.stderr)
-            print("  python3 -m pip install PyQt6 PyQt6-Qt6 PyQt6-Qt6-Data", file=sys.stderr)
-            print("Or install Qt via Homebrew and use PyQt6 bindings:", file=sys.stderr)
-            print("  brew install qt@6 && python3 -m pip install PyQt6", file=sys.stderr)
-        if hint:
-            print(f"\nDetails: {hint}\n", file=sys.stderr)
         sys.exit(1)

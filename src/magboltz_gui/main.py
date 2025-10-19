@@ -15,7 +15,10 @@ def main() -> None:
     from magboltz_gui.window.main_window import MagboltzGUI
 
     app: QApplication = QApplication(sys.argv)
-
+    app.setApplicationName("Magboltz GUI")
+    app.setOrganizationName("CERN")
+    # IMPORTANT for Wayland/GNOME: this sets the app-id from a desktop file name
+    app.setDesktopFileName(str(files("magboltz_gui.icons").joinpath("magboltz-gui.desktop")))
     app.setWindowIcon(QIcon(str(files("magboltz_gui.icons").joinpath("icon-192x192.png"))))
     window: MagboltzGUI = MagboltzGUI()
     window.setWindowFlag(Qt.WindowType.Window)
