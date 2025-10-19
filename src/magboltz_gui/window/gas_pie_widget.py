@@ -12,18 +12,20 @@ class GasPieWidget(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self._figure = Figure(figsize=(4, 4))
-        self._canvas = FigureCanvas(self._figure) #type:ignore
+        self._canvas = FigureCanvas(self._figure)  # type:ignore
         self._ax = self._figure.add_subplot(111)
         self._ax.set_aspect("equal")  # keep it round
 
-        toolbar = NavigationToolbar2QT(self._canvas, self) #type:ignore
+        toolbar = NavigationToolbar2QT(self._canvas, self)  # type:ignore
 
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(toolbar)
         layout.addWidget(self._canvas)
 
-    def set_composition(self, composition: Dict[str, float], title: str = "Gas composition", normalize: bool = False) -> None:
+    def set_composition(
+        self, composition: Dict[str, float], title: str = "Gas composition", normalize: bool = False
+    ) -> None:
         if not composition:
             raise ValueError("composition dict is empty")
         labels = list(composition.keys())
@@ -43,4 +45,4 @@ class GasPieWidget(QtWidgets.QWidget):
             values, labels=labels, autopct=lambda p: f"{p:.1f}%", startangle=90, pctdistance=0.75, labeldistance=1.05
         )
         self._ax.set_aspect("equal")
-        self._canvas.draw_idle() #type:ignore
+        self._canvas.draw_idle()  # type:ignore

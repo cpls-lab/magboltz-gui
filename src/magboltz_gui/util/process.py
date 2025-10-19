@@ -6,6 +6,7 @@ from PyQt6.QtCore import QProcess
 if TYPE_CHECKING:
     from magboltz_gui.window.main_window import MagboltzGUI
 
+
 class ProcessManager:
 
     def __init__(self, main_window: MagboltzGUI):

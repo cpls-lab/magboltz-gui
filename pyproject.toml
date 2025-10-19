@@ -20,8 +20,6 @@ authors = [
   { name = "Dan Andrei Ciubotaru", email = "dan.andrei.ciubotaru@cern.ch" }
 ]
 dependencies = [
-
-    "PyQt6>=6.9.1",
     "matplotlib>=3.10.7",
 ]
 

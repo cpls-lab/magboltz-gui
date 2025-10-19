@@ -41,37 +41,30 @@ def _print_install_help_for_missing_pyqt6() -> None:
         print("\nPyQt6 (bindings) is not available.\n", file=sys.stderr)
         if d in {"debian", "ubuntu"}:
             print("Install system packages:", file=sys.stderr)
-            print("  sudo apt update", file=sys.stderr)
-            print(
-                "  sudo apt install python3-pyqt6 qt6-wayland qt6-gtk-platformtheme qt6-image-formats-plugins libqt6svg6",
-                file=sys.stderr,
-            )
+            print("  sudo apt install python3-pyqt6", file=sys.stderr)
         elif d == "fedora":
             print("Install system packages:", file=sys.stderr)
-            print("  sudo dnf install python3-qt6 qt6-qtwayland qt6-qtimageformats qt6-qtsvg", file=sys.stderr)
+            print("  sudo dnf install python3-qt6", file=sys.stderr)
         elif d == "arch":
             print("Install system packages:", file=sys.stderr)
-            print("  sudo pacman -S python-pyqt6 qt6-base qt6-wayland qt6-imageformats qt6-svg", file=sys.stderr)
+            print("  sudo pacman -S python-pyqt6", file=sys.stderr)
         elif d == "opensuse":
             print("Install system packages (adjust python version if needed):", file=sys.stderr)
-            print(
-                "  sudo zypper install python311-qt6 libqt6-qtwayland libqt6-qtimageformats libqt6-qtsvg",
-                file=sys.stderr,
-            )
+            print("  sudo zypper install python311-qt6", file=sys.stderr)
         else:
-            print("Install your distro’s PyQt6 package and Qt6 Wayland/XCB plugins.", file=sys.stderr)
+            print("Install your distro’s PyQt6 package.", file=sys.stderr)
             print("Examples:", file=sys.stderr)
-            print("  Debian/Ubuntu: sudo apt install python3-pyqt6 qt6-wayland", file=sys.stderr)
-            print("  Fedora:        sudo dnf install python3-qt6 qt6-qtwayland", file=sys.stderr)
+            print("  Debian/Ubuntu: sudo apt install python3-pyqt6", file=sys.stderr)
+            print("  Fedora:        sudo dnf install python3-qt6", file=sys.stderr)
         print("\nAlternative (portable wheels):", file=sys.stderr)
         print("  pip install PyQt6 PyQt6-Qt6 PyQt6-Qt6-Data\n", file=sys.stderr)
     elif system == "Darwin":  # macOS
-        print("\nPyQt6 is not available on macOS.\nInstall via PyPI wheels:", file=sys.stderr)
+        print("\nPyQt6 is not available on macOS.", file=sys.stderr)
         print("  python3 -m pip install PyQt6 PyQt6-Qt6 PyQt6-Qt6-Data", file=sys.stderr)
-        print("Or using Homebrew Qt + PyPI bindings:", file=sys.stderr)
+        print("Install using Homebrew Qt6:", file=sys.stderr)
         print("  brew install qt@6", file=sys.stderr)
-        print("  python3 -m pip install PyQt6", file=sys.stderr)
         print("", file=sys.stderr)
+
     else:  # Windows / other
         print("\nPyQt6 is not available.\nInstall via PyPI:", file=sys.stderr)
         print("  py -m pip install PyQt6 PyQt6-Qt6 PyQt6-Qt6-Data\n", file=sys.stderr)
@@ -108,7 +101,7 @@ def _platform_plugins_ok() -> Tuple[bool, Optional[str]]:
 
 def ensure_qt_runtime_or_explain() -> None:
     # Prefer Wayland if present, let Qt fall back automatically.
-    #os.environ.setdefault("QT_QPA_PLATFORM", "wayland")
+    # os.environ.setdefault("QT_QPA_PLATFORM", "wayland")
 
     # 1) PyQt6 available?
     try:

@@ -11,6 +11,7 @@ from magboltz_gui.window.search_window import SearchWindow
 if TYPE_CHECKING:
     from magboltz_gui.window.main_window import MagboltzGUI
 
+
 class PercentSpinBox(QDoubleSpinBox):
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
@@ -56,7 +57,7 @@ class PercentDelegate(QStyledItemDelegate):
 
 class GasNameDelegate(QStyledItemDelegate):
 
-    def __init__(self, main_window: MagboltzGUI, parent : Optional[QWidget]=None):
+    def __init__(self, main_window: MagboltzGUI, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self._main_window = main_window
 
