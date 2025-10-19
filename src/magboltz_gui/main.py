@@ -8,6 +8,7 @@ import sys
 from magboltz_gui.util.platform import ensure_qt_runtime_or_explain
 from magboltz_gui.window.main_window import MagboltzGUI
 
+
 def main() -> None:
     app: QApplication = QApplication(sys.argv)
     app.setWindowIcon(QIcon(str(files("magboltz_gui.icons").joinpath("icon-192x192.png"))))
@@ -15,6 +16,7 @@ def main() -> None:
     window.setWindowFlag(Qt.WindowType.Window)
     window.show()
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
 

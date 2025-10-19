@@ -18,6 +18,9 @@ authors = [
   { name = "Michele Renda", email = "michele.renda@cern.ch" },
   { name = "Dan Andrei Ciubotaru", email = "dan.andrei.ciubotaru@cern.ch" }
 ]
+dependencies = [
+    "matplotlib>=3.10.7",
+]
 
 [project.optional-dependencies]
 qt-pypi = [
@@ -36,8 +39,23 @@ package = true
 strict = true
 files = ["src"]
 
+[tool.black]
+line-length = 120
+target-version = ["py311"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+  | dist
+  | generated
+)/
+'''
+
 [dependency-groups]
 dev = [
+    "black>=25.9.0",
     "mypy>=1.18.2",
     "pyqt6-stubs>=20250824",
     "types-requests>=2.32.4.20250913",

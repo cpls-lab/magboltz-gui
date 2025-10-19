@@ -2,25 +2,28 @@
 from __future__ import annotations
 from typing import Dict
 from PyQt6 import QtWidgets
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt import NavigationToolbar2QT
+
 from matplotlib.figure import Figure
+
 
 class GasPieWidget(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self._figure = Figure(figsize=(4, 4))
-        self._canvas = FigureCanvas(self._figure)
+        self._canvas = FigureCanvas(self._figure) #type:ignore
         self._ax = self._figure.add_subplot(111)
         self._ax.set_aspect("equal")  # keep it round
 
-        toolbar = NavigationToolbar2QT(self._canvas, self)
+        toolbar = NavigationToolbar2QT(self._canvas, self) #type:ignore
 
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(toolbar)
         layout.addWidget(self._canvas)
 
-    def set_composition(self, composition: Dict[str, float], title: str = "Gas composition", normalize: bool = False):
+    def set_composition(self, composition: Dict[str, float], title: str = "Gas composition", normalize: bool = False) -> None:
         if not composition:
             raise ValueError("composition dict is empty")
         labels = list(composition.keys())
@@ -36,7 +39,8 @@ class GasPieWidget(QtWidgets.QWidget):
         self._ax.clear()
         self._ax.set_title(title)
         # autopct shows percentages; pctdistance/labeldistance tweak spacing for tiny slices
-        self._ax.pie(values, labels=labels, autopct=lambda p: f"{p:.1f}%", startangle=90,
-                     pctdistance=0.75, labeldistance=1.05)
+        self._ax.pie(
+            values, labels=labels, autopct=lambda p: f"{p:.1f}%", startangle=90, pctdistance=0.75, labeldistance=1.05
+        )
         self._ax.set_aspect("equal")
-        self._canvas.draw_idle()
+        self._canvas.draw_idle() #type:ignore

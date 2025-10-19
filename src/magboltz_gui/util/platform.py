@@ -2,6 +2,8 @@
 
 import os, sys, platform, re
 from pathlib import Path
+from typing import Tuple, Optional
+
 
 def _detect_linux_distro() -> str:
     """
@@ -11,9 +13,11 @@ def _detect_linux_distro() -> str:
         data = Path("/etc/os-release").read_text(errors="ignore")
     except Exception:
         return "linux"
+
     def get(k: str) -> str:
         m = re.search(rf'^{k}=(?:"([^"]+)"|([^\n]+))', data, flags=re.M)
         return (m.group(1) or m.group(2) or "").lower() if m else ""
+
     id_ = get("ID")
     like = get("ID_LIKE")
     # normalize some families
@@ -29,6 +33,7 @@ def _detect_linux_distro() -> str:
         return "opensuse"
     return "linux"
 
+
 def _print_install_help_for_missing_pyqt6() -> None:
     system = platform.system()
     if system == "Linux":
@@ -37,7 +42,10 @@ def _print_install_help_for_missing_pyqt6() -> None:
         if d in {"debian", "ubuntu"}:
             print("Install system packages:", file=sys.stderr)
             print("  sudo apt update", file=sys.stderr)
-            print("  sudo apt install python3-pyqt6 qt6-wayland qt6-gtk-platformtheme qt6-image-formats-plugins libqt6svg6", file=sys.stderr)
+            print(
+                "  sudo apt install python3-pyqt6 qt6-wayland qt6-gtk-platformtheme qt6-image-formats-plugins libqt6svg6",
+                file=sys.stderr,
+            )
         elif d == "fedora":
             print("Install system packages:", file=sys.stderr)
             print("  sudo dnf install python3-qt6 qt6-qtwayland qt6-qtimageformats qt6-qtsvg", file=sys.stderr)
@@ -46,7 +54,10 @@ def _print_install_help_for_missing_pyqt6() -> None:
             print("  sudo pacman -S python-pyqt6 qt6-base qt6-wayland qt6-imageformats qt6-svg", file=sys.stderr)
         elif d == "opensuse":
             print("Install system packages (adjust python version if needed):", file=sys.stderr)
-            print("  sudo zypper install python311-qt6 libqt6-qtwayland libqt6-qtimageformats libqt6-qtsvg", file=sys.stderr)
+            print(
+                "  sudo zypper install python311-qt6 libqt6-qtwayland libqt6-qtimageformats libqt6-qtsvg",
+                file=sys.stderr,
+            )
         else:
             print("Install your distro’s PyQt6 package and Qt6 Wayland/XCB plugins.", file=sys.stderr)
             print("Examples:", file=sys.stderr)
@@ -65,7 +76,8 @@ def _print_install_help_for_missing_pyqt6() -> None:
         print("\nPyQt6 is not available.\nInstall via PyPI:", file=sys.stderr)
         print("  py -m pip install PyQt6 PyQt6-Qt6 PyQt6-Qt6-Data\n", file=sys.stderr)
 
-def _platform_plugins_ok() -> None:
+
+def _platform_plugins_ok() -> Tuple[bool, Optional[str]]:
     """
     On Linux: check that at least one platform plugin we can use is present (wayland/xcb).
     On macOS: cocoa is baked in; if import works, we're fine.
@@ -73,12 +85,14 @@ def _platform_plugins_ok() -> None:
     """
     try:
         from PyQt6.QtCore import QLibraryInfo as LI
+
         plug_dir = Path(LI.path(LI.LibraryPath.PluginsPath)) / "platforms"
         # plugin filenames vary by OS
         files = [p.name.lower() for p in plug_dir.glob("*")]
         system = platform.system()
         if system == "Linux":
             has_wayland = any("wayland" in f for f in files)
+
             has_xcb = any("xcb" in f for f in files)
             if has_wayland or has_xcb:
                 return True, None
@@ -90,6 +104,7 @@ def _platform_plugins_ok() -> None:
             return True, None
     except Exception as e:
         return False, f"Failed to inspect Qt plugins: {e}"
+
 
 def ensure_qt_runtime_or_explain() -> None:
     # Prefer Wayland if present, let Qt fall back automatically.

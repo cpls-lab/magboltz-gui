@@ -1,22 +1,25 @@
 from importlib.resources import files
+from typing import Optional
 
 from PyQt6 import uic
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QDialog, QTableWidgetItem, QHeaderView, QTableWidget, QMessageBox
+from PyQt6.QtWidgets import QDialog, QTableWidgetItem, QHeaderView, QTableWidget, QMessageBox, QWidget
 
 from magboltz_gui.data.database import GasDatabase
 from magboltz_gui.generated.ui_search import Ui_SearchGasForm
 
+
 class SearchWindow(QDialog, Ui_SearchGasForm):
 
-    def __init__(self, database : GasDatabase, parent=None):
+    def __init__(self, database: GasDatabase, parent: Optional[QWidget] = None) -> None:
+
         super().__init__(parent)
         self.database = database
 
         self.setupUi(self)
         # uic.loadUi(files("magboltz_gui.ui").joinpath("search.ui"), self) <- Not needed anymore because we use pyuic6
 
-        self._selected_gas_id : int = 0
+        self._selected_gas_id: int = 0
 
         self.dialogButtons.accepted.connect(self.onAccept)
         self.dialogButtons.rejected.connect(self.reject)
@@ -28,13 +31,13 @@ class SearchWindow(QDialog, Ui_SearchGasForm):
         self.refresh(self.searchBarText.text())
         self.onSelectedRowChanged()
 
-    def onSelectedRowChanged(self):
+    def onSelectedRowChanged(self) -> None:
 
         row = self.searchResultTable.currentRow()
         if row != -1:
             gas_id = int(self.searchResultTable.item(row, 0).text())
             gas = self.database.get(gas_id)
-            self.label_year.setText(str(gas.year) if gas.year is not None else '-')
+            self.label_year.setText(str(gas.year) if gas.year is not None else "-")
             self.label_rating.setText(f"{'★' * gas.rating}{'☆' * (5 - gas.rating)}" if gas.rating is not None else "-")
             self.label_note.setText(gas.note if gas.note is not None else "")
         else:
@@ -42,7 +45,7 @@ class SearchWindow(QDialog, Ui_SearchGasForm):
             self.label_rating.setText("")
             self.label_note.setText("")
 
-    def onAccept(self):
+    def onAccept(self) -> None:
 
         row = self.searchResultTable.currentRow()
 
@@ -53,14 +56,9 @@ class SearchWindow(QDialog, Ui_SearchGasForm):
                 self.accept()
                 return
 
-        QMessageBox.warning(
-            self,  # Parent
-            "No Selection",  # Title
-            "Please select a row first."  # Message
-        )
+        QMessageBox.warning(self, "No Selection", "Please select a row first.")  # Parent  # Title  # Message
 
-
-    def refresh(self, search: str):
+    def refresh(self, search: str) -> None:
 
         self.searchResultTable.clear()
 
@@ -85,15 +83,18 @@ class SearchWindow(QDialog, Ui_SearchGasForm):
 
         for gas in self.database.content:
             # This is the most inefficient search algorithm possible
-            if (str(gas.id) == s or s in str(gas.name.lower()) or
-                    (gas.formula is not None and s in gas.formula.lower()) or
-                    (gas.year is not None and str(gas.year) == s) or
-                    (gas.note is not None and s in gas.note.lower())):
+            if (
+                str(gas.id) == s
+                or s in str(gas.name.lower())
+                or (gas.formula is not None and s in gas.formula.lower())
+                or (gas.year is not None and str(gas.year) == s)
+                or (gas.note is not None and s in gas.note.lower())
+            ):
                 gas_filtered.append(gas)
 
         self.searchResultTable.setRowCount(len(gas_filtered))
 
-        i  = 0
+        i = 0
         for gas in gas_filtered:
 
             widget_id = QTableWidgetItem(str(gas.id))
@@ -101,7 +102,7 @@ class SearchWindow(QDialog, Ui_SearchGasForm):
 
             widget_name = QTableWidgetItem(gas.name)
 
-            widget_formula = QTableWidgetItem(gas.formula)
+            widget_formula = QTableWidgetItem(gas.formula or "")
 
             widget_id.setFlags(widget_id.flags() & ~Qt.ItemFlag.ItemIsEditable)
             widget_name.setFlags(widget_name.flags() & ~Qt.ItemFlag.ItemIsEditable)
@@ -113,11 +114,11 @@ class SearchWindow(QDialog, Ui_SearchGasForm):
 
             i += 1
 
-    def setCurrentGasId(self, gas_id : int ) -> int:
+    def setCurrentGasId(self, gas_id: int) -> None:
         self._selected_gas_id = gas_id
 
     def getSelectedGasId(self) -> int:
         return self._selected_gas_id
 
-    def accept(self):
+    def accept(self) -> None:
         super().accept()

@@ -1,3 +1,4 @@
+from __future__ import annotations
 import platform
 from importlib.resources import files
 from pathlib import Path
@@ -6,8 +7,15 @@ from typing import Optional, List
 from PyQt6 import uic
 from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import QIcon, QAction
-from PyQt6.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QTableWidgetItem, QHeaderView, QTableWidget, \
-    QApplication
+from PyQt6.QtWidgets import (
+    QMainWindow,
+    QFileDialog,
+    QMessageBox,
+    QTableWidgetItem,
+    QHeaderView,
+    QTableWidget,
+    QApplication,
+)
 
 from magboltz_gui.data.database import GasDatabase
 from magboltz_gui.data.input_cards import InputCards, InputGas
@@ -19,10 +27,10 @@ from magboltz_gui.util.process import ProcessManager
 
 class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
-    def __init__(self: 'MagboltzGUI') -> None:
+    def __init__(self) -> None:
         super().__init__()
         self.setupUi(self)
-        #uic.loadUi(files("magboltz_gui.ui").joinpath("main.ui"), self) <- Not needed anymore because we use pyuic6
+        # uic.loadUi(files("magboltz_gui.ui").joinpath("main.ui"), self) <- Not needed anymore because we use pyuic6
 
         system = platform.system()
         if system == "Darwin":
@@ -30,15 +38,17 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self.centralWidget().setVisible(False)
 
-        self._currentCards: Optional[InputCards] = None
-        self._currentFile: Optional[Path] = None
-        self._currentModified : bool = False
+        self._currentInputFile: Optional[Path] = None
+        self._currentResultFile: Optional[Path] = None
 
-        self.actionNew.triggered.connect(self.new)
-        self.actionOpen.triggered.connect(self.open)
-        self.actionSave.triggered.connect(self.save)
-        self.actionSaveAs.triggered.connect(self.saveAs)
-        self.actionClose.triggered.connect(self.close)
+        self._currentCards: InputCards = InputCards()
+        self._currentModified: bool = False
+
+        self.actionNew.triggered.connect(self.fileNew)
+        self.actionOpen.triggered.connect(self.fileOpen)
+        self.actionSave.triggered.connect(self.fileSave)
+        self.actionSaveAs.triggered.connect(self.fileSaveAs)
+        self.actionClose.triggered.connect(self.fileClose)
         self.actionRun.triggered.connect(self.run)
         self.actionGasAdd.triggered.connect(self.gasAdd)
         self.actionGasRemove.triggered.connect(self.gasRemove)
@@ -66,29 +76,28 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         header.setMinimumSectionSize(50)
 
         self.database = GasDatabase()
-        self.database.load(files("magboltz_gui.database").joinpath("database.csv"))
+        self.database.load(Path(str(files("magboltz_gui.database").joinpath("database.csv"))))
 
-        self.magboltzPath : Optional[Path] = None
+        self.magboltzPath: Optional[Path] = None
         self.processes: List[ProcessManager] = []
 
+    def initDarwinActionIcons(self) -> None:
+        # This method set the icons for macOS
 
-    def initDarwinActionIcons(self):
-        # This method set the icons for MacOS
-
-        action_list : List[QAction] = [
-            self.actionNew	,
-            self.actionOpen	          ,
-            self.actionSave           ,
-            self.actionSaveAs         ,
-            self.actionRevert         ,
-            self.actionClose          ,
-            self.actionQuit	          ,
-            self.actionRun	          ,
-            self.actionGasAdd	      ,
-            self.actionGasRemove	  ,
-            self.actionNormalize,
-            self.actionCopyToClipboard,
-            self.actionExport,
+        action_list: List[QAction] = [
+            self.actionNew,
+            self.actionOpen,
+            self.actionSave,
+            self.actionSaveAs,
+            self.actionRevert,
+            self.actionClose,
+            self.actionQuit,
+            self.actionRun,
+            self.actionGasAdd,
+            self.actionGasRemove,
+            self.actionGasNormalize,
+            self.actionCmdCopyToClipboard,
+            self.actionResultExport,
         ]
 
         icns_map = {
@@ -114,55 +123,55 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
                 if Path(icon).is_file():
                     QIcon(icon)
 
-
-
-    def new(self):
+    def fileNew(self) -> None:
         self._currentCards = InputCards()
         self._currentCards = InputCards()
-        self._currentFile = None
+        self._currentInputFile = None
         self._currentModified = False
         self._currentResultFile = None
         self.connect()
 
-
-    def open(self) -> None:
+    def fileOpen(self) -> None:
 
         file_name, _ = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*);;Text Files (*.txt)")
 
         if file_name:  # If user picked a file (not Cancel)
             self._currentCards = parser.load(Path(file_name))
-            self._currentFile = Path(file_name)
+            self._currentInputFile = Path(file_name)
             self._currentModified = False
             self.updateCmdLine()
             self.connect()
 
-    def saveAs(self) -> None:
+    def fileSaveAs(self) -> None:
 
         if not self.checkInputOpen():
             return
 
-        file_name, _ = QFileDialog.getSaveFileName(self, "Save File", str(self._currentFile) if self._currentFile else "input.txt", "All Files (*);;Text Files (*.txt)")
+        file_name, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save File",
+            str(self._currentInputFile) if self._currentInputFile else "input.txt",
+            "All Files (*);;Text Files (*.txt)",
+        )
 
         if file_name:
             parser.save(self._currentCards, Path(file_name))
-            self._currentFile = Path(file_name)
+            self._currentInputFile = Path(file_name)
             self._currentModified = False
             self.updateCmdLine()
 
-
-    def save(self) -> None:
+    def fileSave(self) -> None:
         if not self.checkInputOpen():
             return
 
-        if self._currentFile is None:
-            self.saveAs()
+        if self._currentInputFile is None:
+            self.fileSaveAs()
         else:
-            parser.save(self._currentCards, self._currentFile)
+            parser.save(self._currentCards, self._currentInputFile)
             self._currentModified = False
             self.updateCmdLine()
 
-
-    def close(self):
+    def fileClose(self) -> None:
         if self._currentCards is not None:
 
             response = self.show_save_question()
@@ -171,13 +180,13 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
                 return
 
             if response == True:
-                self.save()
+                self.fileSave()
 
-            self._currentCards = None
-            self._currentFile = None
+            self._currentInputFile = None
+            self._currentResultFile = None
+
+            self._currentCards = InputCards()
             self._currentModified = False
-
-            _currentResultFile = None
 
             self.updateCmdLine()
             self.disconnect()
@@ -187,7 +196,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
     def checkInputOpen(self) -> bool:
         if self._currentCards is None:
-            self.show_error( "Error", "File was not open")
+            self.show_error("Error", "File was not open")
             return False
         return True
 
@@ -197,44 +206,48 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             return
 
         if not self.consoleOutput.toPlainText().strip():
-            self.show_info( "File Saved", f"First run Magboltz to save the results")
+            self.show_info("File Saved", f"First run Magboltz to save the results")
 
             return
 
-        currentResultFile, _ = QFileDialog.getSaveFileName(self, "Save Result", str(self._currentResultFile) if self._currentResultFile else "output.txt", "All Files (*);;Text Files (*.txt)")
+        currentResultFileName, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Result",
+            str(self._currentResultFile) if self._currentResultFile else "output.txt",
+            "All Files (*);;Text Files (*.txt)",
+        )
 
-        if currentResultFile:
+        if currentResultFileName is not None:
 
+            currentResultFile = Path(currentResultFileName)
 
             text = self.consoleOutput.toPlainText()
 
             try:
-                with open(currentResultFile, 'w', encoding='utf-8') as file:
+                with open(currentResultFile, "w", encoding="utf-8") as file:
                     file.write(text)
             except Exception as e:
-                self.show_error( "Error", f"Could not save result: {e}")
+                self.show_error("Error", f"Could not save result: {e}")
 
             else:
-                self.show_info( "Success", f"File saved successfully:\n{currentResultFile}")
-                self._currentResultFile = Path(currentResultFile)
-
+                self.show_info("Success", f"File saved successfully:\n{currentResultFile}")
+                self._currentResultFile = currentResultFile
 
     def openExportWindow(self) -> None:
         print("Test Test")
 
-
-    def run(self):
+    def run(self) -> None:
 
         if self._currentCards is None:
             self.show_error("To run the magboltz process, you must to open the input file")
             return
 
-        if self._currentFile is None:
-            self.show_error("To run the magboltz process, you must to save the file")
+        if self._currentInputFile is None:
+            self.show_error("Error", "To run the magboltz process, you must to save the file")
             return
 
         if self._currentModified is False:
-            self.save()
+            self.fileSave()
 
         self.mainTab.setCurrentWidget(self.tabExecution)
 
@@ -242,29 +255,45 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.processes.append(process)
         process.run()
 
+    def updateCmdLine(self) -> None:
 
-    def updateCmdLine(self):
-
-        if self._currentFile is not None:
-            self.commandLine.setText(f"{self.magboltzPath or 'magboltz'} < {self._currentFile}")
+        if self._currentInputFile is not None:
+            self.commandLine.setText(f"{self.magboltzPath or 'magboltz'} < {self._currentInputFile}")
         else:
             self.commandLine.setText("")
 
     def onFinalEnergyAutoChanged(self, state: int) -> None:
-        print("aaa")
-        if state == Qt.CheckState.Checked.value:
-            self.spinFinalEnergy.setValue(0.)
+        if Qt.CheckState(state) == Qt.CheckState.Checked:
+            self.spinFinalEnergy.setValue(0.0)
         else:
-            self.spinFinalEnergy.setValue(50.)
+            self.spinFinalEnergy.setValue(50.0)
 
-
-    def show_error(self, title: str,  message: str, buttons : QMessageBox.StandardButton = QMessageBox.StandardButton.Ok, default: QMessageBox.StandardButton | None = None):
+    def show_error(
+        self,
+        title: str,
+        message: str,
+        buttons: QMessageBox.StandardButton = QMessageBox.StandardButton.Ok,
+        default: QMessageBox.StandardButton | None = None,
+    ) -> None:
         self.show_message(QMessageBox.Icon.Critical, title, message, buttons, default)
-        
-    def show_info(self, title: str,  message: str, buttons : QMessageBox.StandardButton = QMessageBox.StandardButton.Ok, default: QMessageBox.StandardButton | None = None):
+
+    def show_info(
+        self,
+        title: str,
+        message: str,
+        buttons: QMessageBox.StandardButton = QMessageBox.StandardButton.Ok,
+        default: QMessageBox.StandardButton | None = None,
+    ) -> None:
         self.show_message(QMessageBox.Icon.Information, title, message, buttons, default)
-        
-    def show_message(self, icon : QMessageBox.Icon, title: str,  message: str, buttons : QMessageBox.StandardButton = QMessageBox.StandardButton.Ok, default: QMessageBox.StandardButton | None = None) -> None:
+
+    def show_message(
+        self,
+        icon: QMessageBox.Icon,
+        title: str,
+        message: str,
+        buttons: QMessageBox.StandardButton = QMessageBox.StandardButton.Ok,
+        default: QMessageBox.StandardButton | None = None,
+    ) -> None:
 
         msg = QMessageBox(self)
         msg.setIcon(icon)
@@ -295,10 +324,8 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self,
             "Save Changes?",
             "Do you want to save changes before closing?",
-            QMessageBox.StandardButton.Yes |
-            QMessageBox.StandardButton.No |
-            QMessageBox.StandardButton.Cancel,
-            QMessageBox.StandardButton.Yes
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Yes,
         )
 
         if reply == QMessageBox.StandardButton.Yes:
@@ -308,9 +335,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         else:
             return None
 
-    def connect(self):
-
-        assert self._currentCards is not None
+    def connect(self) -> None:
 
         self.centralWidget().setVisible(True)
 
@@ -318,7 +343,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.checkPenning.setChecked(self._currentCards.enable_penning)
         self.checkThermal.setChecked(self._currentCards.enable_thermal)
         self.spinFinalEnergy.setValue(self._currentCards.final_energy)
-        self.checkFinalEnergyAuto.setChecked(self._currentCards.final_energy == 0.)
+        self.checkFinalEnergyAuto.setChecked(self._currentCards.final_energy == 0.0)
         self.spinGasTemperature.setValue(self._currentCards.gas_temperature)
         self.spinGasPressure.setValue(self._currentCards.gas_pressure)
         self.spinElectricField.setValue(self._currentCards.electric_field)
@@ -349,8 +374,8 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         # self.btnGasNormalize.triggered.connect(self.onBtnGasNormalize)
         # self.btnExport.triggered.connect(self.onBtnExport)
 
+    def refresh(self) -> None:
 
-    def refresh(self):
         self.gasListTable.clear()
         self.gasListTable.setRowCount(0)
 
@@ -370,7 +395,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             try:
                 gas_name = self.database.get(gas.gas_id).pretty_name
             except KeyError:
-                gas_name = '(select gas)'
+                gas_name = "(select gas)"
             gas_name_widget = QTableWidgetItem(gas_name)
 
             gas_frac_widget = QTableWidgetItem(f"{gas.gas_frac} %")
@@ -382,71 +407,72 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self.gasListTable.setItem(i, 2, gas_frac_widget)
             i += 1
 
+    def gasAdd(self) -> None:
 
-
-
-    def gasAdd(self):
         row_index = self.gasListTable.rowCount()
         self.gasListTable.insertRow(row_index)
-        self._currentCards.gases.append(InputGas(80, 0.))
+        self._currentCards.gases.append(InputGas(80, 0.0))
         self.refresh()
 
-    def gasRemove(self):
+    def gasRemove(self) -> None:
         row = self.gasListTable.currentRow()
 
         if row >= 0:
             self._currentCards.gases.pop(row)
             self.refresh()
         else:
-            self.show_message('Select a row to remove')
+            self.show_error("Error", "Select a row to remove")
 
-    def gasNormalize(self):
-        fraction_sum = 0.
+    def gasNormalize(self) -> None:
+        fraction_sum = 0.0
         for gas in self._currentCards.gases:
             fraction_sum += gas.gas_frac
 
-        if fraction_sum > 0.:
+        if fraction_sum > 0.0:
 
             for gas in self._currentCards.gases:
-                gas.gas_frac *= 100. / fraction_sum
+                gas.gas_frac *= 100.0 / fraction_sum
 
             self.refresh()
         else:
 
-            QMessageBox.warning(
-                self,  # Parent
-                "Warning",  # Title
-                "Please set the gas fractions."  # Message
-            )
-
-
+            QMessageBox.warning(self, "Warning", "Please set the gas fractions.")  # Parent  # Title  # Message
 
     def onRealInteractionsChanged(self, value: int) -> None:
+
         self._currentCards.number_of_real_collisions = value
 
     def onPenningChanged(self, value: bool) -> None:
+
         self._currentCards.enable_penning = value
 
     def onThermalChanged(self, value: bool) -> None:
+
         self._currentCards.enable_thermal = value
-        
+
     def onFinalEnergyChanged(self, value: float) -> None:
-        self.checkFinalEnergyAuto.setChecked(value == 0.)
+
+        self.checkFinalEnergyAuto.setChecked(value == 0.0)
         self._currentCards.final_energy = value
 
     def onGasTemperatureChanged(self, value: float) -> None:
+
         self._currentCards.gas_temperature = value
 
     def onGasPressureChanged(self, value: float) -> None:
+
         self._currentCards.gas_pressure = value
 
     def onElectricFieldChanged(self, value: float) -> None:
+
         self._currentCards.electric_field = value
 
     def onMagneticFieldChanged(self, value: float) -> None:
+
         self._currentCards.magnetic_field = value
 
     def onAngleChanged(self, value: float) -> None:
+
         self._currentCards.angle = value
 
     def disconnect(self) -> None:
@@ -468,7 +494,5 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         # self.btnGasRemove.triggered.disconnect(self.onBtnGasRemove)
         # self.btnGasNormalize.triggered.disconnect(self.onBtnGasNormalize)
         # self.btnExport.triggered.disconnect(self.onBtnExport)
-        
-
 
         self.gasListTable.clear()

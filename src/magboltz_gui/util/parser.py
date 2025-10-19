@@ -4,14 +4,14 @@ from magboltz_gui.data.input_cards import InputCards, InputGas
 
 
 def load(filename: Path) -> InputCards:
-    with filename.open('r') as f:
+    with filename.open("r") as f:
         # Card 1
         line = f.readline()
         parts = line.strip().split()
         num_gases = int(parts[0])
         number_of_real_collisions = int(parts[1])
-        enable_penning = bool(parts[2] == '1')
-        enable_thermal = bool(parts[3] == '1')
+        enable_penning = bool(parts[2] == "1")
+        enable_thermal = bool(parts[3] == "1")
         final_energy = float(parts[4])
 
         # Card 2
@@ -33,10 +33,7 @@ def load(filename: Path) -> InputCards:
         angle = float(parts[2])
 
     # Rebuild gases list
-    gases = [
-        InputGas(gas_id=gas_ids[i], gas_frac=gas_fracs[i])
-        for i in range(num_gases)
-    ]
+    gases = [InputGas(gas_id=gas_ids[i], gas_frac=gas_fracs[i]) for i in range(num_gases)]
 
     return InputCards(
         gases=gases,
@@ -48,21 +45,23 @@ def load(filename: Path) -> InputCards:
         gas_pressure=gas_pressure,
         electric_field=electric_field,
         magnetic_field=magnetic_field,
-        angle=angle
+        angle=angle,
     )
 
 
-def save (input_cards: InputCards, filename: Path) -> None:
+def save(input_cards: InputCards, filename: Path) -> None:
 
     gas_ids = [gas.gas_id for gas in input_cards.gases] + [80] * (6 - len(input_cards.gases))
-    gas_fracs = [gas.gas_frac for gas in input_cards.gases] + [0.] * (6 - len(input_cards.gases))
+    gas_fracs = [gas.gas_frac for gas in input_cards.gases] + [0.0] * (6 - len(input_cards.gases))
 
-    with filename.open('w') as f:
+    with filename.open("w") as f:
         # Card 1
-        f.write(f"{len(input_cards.gases)}\t{input_cards.number_of_real_collisions}\t{'1' if input_cards.enable_penning else '0'}\t{'1' if input_cards.enable_thermal else '0'}\t{input_cards.final_energy}\n")
+        f.write(
+            f"{len(input_cards.gases)}\t{input_cards.number_of_real_collisions}\t{'1' if input_cards.enable_penning else '0'}\t{'1' if input_cards.enable_thermal else '0'}\t{input_cards.final_energy}\n"
+        )
 
         # Card 2
-        f.write("\t".join(str(v) for v in gas_ids)+"\n")
+        f.write("\t".join(str(v) for v in gas_ids) + "\n")
 
         # Card 3
         f.write("\t".join(str(v) for v in gas_fracs))
@@ -72,4 +71,4 @@ def save (input_cards: InputCards, filename: Path) -> None:
         f.write(f"{input_cards.electric_field}\t{input_cards.magnetic_field}\t{input_cards.angle}\n")
 
         # Card 4N + 1
-        f.write('{} {} {} {} {}\n'.format(0, 0, 0, 0, 0.))
+        f.write("{} {} {} {} {}\n".format(0, 0, 0, 0, 0.0))

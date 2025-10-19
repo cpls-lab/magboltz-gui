@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="mainTab">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tabConfiguration">
        <attribute name="title">
@@ -379,111 +379,129 @@
           <property name="title">
            <string>Gas components</string>
           </property>
-          <layout class="QVBoxLayout" name="verticalLayout_2">
+          <layout class="QHBoxLayout" name="horizontalLayout_3">
            <item>
-            <widget class="QWidget" name="widget" native="true">
-             <layout class="QHBoxLayout" name="horizontalLayout">
+            <widget class="QWidget" name="widget_5" native="true">
+             <layout class="QVBoxLayout" name="verticalLayout_2">
               <item>
-               <widget class="QToolButton" name="btnGasAdd">
-                <property name="text">
-                 <string>...</string>
-                </property>
-                <property name="icon">
-                 <iconset theme="list-add">
-                  <normaloff>../../ui</normaloff>../../ui</iconset>
-                </property>
+               <widget class="QWidget" name="widget" native="true">
+                <layout class="QHBoxLayout" name="horizontalLayout">
+                 <item>
+                  <widget class="QToolButton" name="btnGasAdd">
+                   <property name="text">
+                    <string>...</string>
+                   </property>
+                   <property name="icon">
+                    <iconset theme="list-add">
+                     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QToolButton" name="btnGasRemove">
+                   <property name="text">
+                    <string>...</string>
+                   </property>
+                   <property name="icon">
+                    <iconset theme="list-remove">
+                     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QToolButton" name="btnGasNormalize">
+                   <property name="toolTip">
+                    <string>Normalize gas fractions</string>
+                   </property>
+                   <property name="text">
+                    <string>...</string>
+                   </property>
+                   <property name="icon">
+                    <iconset theme="accessories-calculator">
+                     <normaloff>../../../../../../.designer/backup</normaloff>../../../../../../.designer/backup</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_6">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QToolButton" name="btnGasDown">
+                   <property name="text">
+                    <string>...</string>
+                   </property>
+                   <property name="icon">
+                    <iconset theme="go-down">
+                     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QToolButton" name="btnGasUp">
+                   <property name="text">
+                    <string>...</string>
+                   </property>
+                   <property name="icon">
+                    <iconset theme="go-up">
+                     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QWidget" name="widget_4" native="true"/>
+                 </item>
+                 <item>
+                  <widget class="QWidget" name="widget_3" native="true"/>
+                 </item>
+                 <item>
+                  <widget class="QWidget" name="widget_6" native="true"/>
+                 </item>
+                </layout>
                </widget>
               </item>
               <item>
-               <widget class="QToolButton" name="btnGasRemove">
-                <property name="text">
-                 <string>...</string>
+               <widget class="QTableWidget" name="gasListTable">
+                <property name="columnCount">
+                 <number>3</number>
                 </property>
-                <property name="icon">
-                 <iconset theme="list-remove">
-                  <normaloff>../../ui</normaloff>../../ui</iconset>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QToolButton" name="btnGasNormalize">
-                <property name="toolTip">
-                 <string>Normalize gas fractions</string>
-                </property>
-                <property name="text">
-                 <string>...</string>
-                </property>
-                <property name="icon">
-                 <iconset theme="accessories-calculator">
-                  <normaloff>.</normaloff>.</iconset>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <spacer name="horizontalSpacer_6">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <widget class="QToolButton" name="btnGasDown">
-                <property name="text">
-                 <string>...</string>
-                </property>
-                <property name="icon">
-                 <iconset theme="go-down">
-                  <normaloff>../../ui</normaloff>../../ui</iconset>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QToolButton" name="btnGasUp">
-                <property name="text">
-                 <string>...</string>
-                </property>
-                <property name="icon">
-                 <iconset theme="go-up">
-                  <normaloff>../../ui</normaloff>../../ui</iconset>
-                </property>
+                <column>
+                 <property name="text">
+                  <string>Gas ID</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Gas name</string>
+                 </property>
+                 <property name="textAlignment">
+                  <set>AlignLeading|AlignVCenter</set>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Gas fraction</string>
+                 </property>
+                 <property name="textAlignment">
+                  <set>AlignLeading|AlignVCenter</set>
+                 </property>
+                </column>
                </widget>
               </item>
              </layout>
             </widget>
            </item>
            <item>
-            <widget class="QTableWidget" name="gasListTable">
-             <property name="columnCount">
-              <number>3</number>
-             </property>
-             <column>
-              <property name="text">
-               <string>Gas ID</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Gas name</string>
-              </property>
-              <property name="textAlignment">
-               <set>AlignLeading|AlignVCenter</set>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Gas fraction</string>
-              </property>
-              <property name="textAlignment">
-               <set>AlignLeading|AlignVCenter</set>
-              </property>
-             </column>
-            </widget>
+            <widget class="QWidget" name="widget_7" native="true"/>
            </item>
           </layout>
          </widget>
@@ -522,7 +540,7 @@
              </property>
              <property name="icon">
               <iconset theme="edit-copy">
-               <normaloff>../../ui</normaloff>../../ui</iconset>
+               <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
              </property>
             </widget>
            </item>
@@ -532,7 +550,8 @@
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset theme="document-save-as"/>
+              <iconset theme="document-save-as">
+               <normaloff>../../../../../../.designer/backup</normaloff>../../../../../../.designer/backup</iconset>
              </property>
             </widget>
            </item>
@@ -542,7 +561,8 @@
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset theme="x-office-spreadsheet"/>
+              <iconset theme="x-office-spreadsheet">
+               <normaloff>../../../../../../.designer/backup</normaloff>../../../../../../.designer/backup</iconset>
              </property>
             </widget>
            </item>
@@ -567,7 +587,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QMenuBar" name="menuBar">
+  <widget class="QMenuBar" name="mainMenuBar">
    <property name="geometry">
     <rect>
      <x>0</x>
@@ -642,7 +662,7 @@
   <action name="actionNew">
    <property name="icon">
     <iconset theme="document-new">
-     <normaloff>../../ui</normaloff>../../ui</iconset>
+     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>&amp;New</string>
@@ -651,7 +671,7 @@
   <action name="actionOpen">
    <property name="icon">
     <iconset theme="document-open">
-     <normaloff>../../ui</normaloff>../../ui</iconset>
+     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>&amp;Open</string>
@@ -660,7 +680,7 @@
   <action name="actionQuit">
    <property name="icon">
     <iconset theme="application-exit">
-     <normaloff>../../ui</normaloff>../../ui</iconset>
+     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>&amp;Exit</string>
@@ -669,7 +689,7 @@
   <action name="actionSave">
    <property name="icon">
     <iconset theme="document-save">
-     <normaloff>../../ui</normaloff>../../ui</iconset>
+     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>&amp;Save</string>
@@ -678,7 +698,7 @@
   <action name="actionClose">
    <property name="icon">
     <iconset theme="edit-delete">
-     <normaloff>../../ui</normaloff>../../ui</iconset>
+     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>Close</string>
@@ -687,7 +707,7 @@
   <action name="actionSaveAs">
    <property name="icon">
     <iconset theme="document-save-as">
-     <normaloff>../../ui</normaloff>../../ui</iconset>
+     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>Save As</string>
@@ -696,7 +716,7 @@
   <action name="actionRevert">
    <property name="icon">
     <iconset theme="document-revert">
-     <normaloff>../../ui</normaloff>../../ui</iconset>
+     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>Revert</string>
@@ -705,7 +725,7 @@
   <action name="actionRun">
    <property name="icon">
     <iconset theme="system-run">
-     <normaloff>../../ui</normaloff>../../ui</iconset>
+     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>Run</string>
@@ -714,7 +734,7 @@
   <action name="actionGasAdd">
    <property name="icon">
     <iconset theme="list-add">
-     <normaloff>../../ui</normaloff>../../ui</iconset>
+     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>Add</string>
@@ -723,7 +743,7 @@
   <action name="actionGasRemove">
    <property name="icon">
     <iconset theme="list-remove">
-     <normaloff>../../ui</normaloff>../../ui</iconset>
+     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>Remove</string>
@@ -732,7 +752,7 @@
   <action name="actionGasNormalize">
    <property name="icon">
     <iconset theme="accessories-calculator">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../../../../../.designer/backup</normaloff>../../../../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>Normalize</string>
@@ -743,7 +763,8 @@
   </action>
   <action name="actionResultExport">
    <property name="icon">
-    <iconset theme="x-office-spreadsheet"/>
+    <iconset theme="x-office-spreadsheet">
+     <normaloff>../../../../../../.designer/backup</normaloff>../../../../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>Export</string>
@@ -751,7 +772,8 @@
   </action>
   <action name="actionCmdCopyToClipboard">
    <property name="icon">
-    <iconset theme="edit-copy"/>
+    <iconset theme="edit-copy">
+     <normaloff>../../../../../../.designer/backup</normaloff>../../../../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>Cooy to clipboard</string>
@@ -762,7 +784,8 @@
   </action>
   <action name="actionResultSave">
    <property name="icon">
-    <iconset theme="document-save-as"/>
+    <iconset theme="document-save-as">
+     <normaloff>../../../../../../.designer/backup</normaloff>../../../../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>Save</string>
