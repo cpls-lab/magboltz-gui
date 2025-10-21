@@ -86,7 +86,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
     def createPieChart(self) -> None:
         fig = Figure(figsize=(3, 3))
-        canvas = FigureCanvasQTAgg(fig)
+        canvas = FigureCanvasQTAgg(fig) #type:ignore
 
         # 2. Create an Axes and draw something (pie chart)
         ax = fig.add_subplot(111)
@@ -94,12 +94,14 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         # 3. Add the canvas to the QWidget container
         layout = QVBoxLayout(self.pieContainer)
-        #layout.setContentsMargins(0, 0, 0, 0)  # remove spacing
+        layout.setContentsMargins(0, 0, 0, 0)  # remove spacing
         layout.addWidget(canvas)
 
         self._gas_fig = fig
         self._gas_ax = ax
         self._gas_canvas = canvas
+
+        self.splitterGases.setSizes([600, 200])
 
 
     def initDarwinActionIcons(self) -> None:
@@ -396,7 +398,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         # self.btnGasNormalize.triggered.connect(self.onBtnGasNormalize)
         # self.btnExport.triggered.connect(self.onBtnExport)
 
-    def refresh_pie(self):
+    def refresh_pie(self) -> None:
 
         self._gas_ax.clear()
 
@@ -418,7 +420,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self._gas_ax.pie([], labels=[], autopct="%1.1f%%",
                              wedgeprops={"edgecolor": "black", "linewidth": 1},)
         self._gas_ax.set_aspect("equal")
-        self._gas_canvas.draw()
+        self._gas_canvas.draw() #type:ignore
 
 
     def refresh(self) -> None:
