@@ -284,14 +284,15 @@ wheels = [
 
 [[package]]
 name = "magboltz-gui"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "matplotlib" },
+    { name = "typing-extensions" },
 ]
 
 [package.optional-dependencies]
-qt-pypi = [
+qt = [
     { name = "pyqt6" },
     { name = "pyqt6-qt6" },
     { name = "pyqt6-utils" },
@@ -308,11 +309,12 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "matplotlib", specifier = ">=3.10.7" },
-    { name = "pyqt6", marker = "extra == 'qt-pypi'", specifier = ">=6.9.1" },
-    { name = "pyqt6-qt6", marker = "extra == 'qt-pypi'", specifier = ">=6.9.1" },
-    { name = "pyqt6-utils", marker = "extra == 'qt-pypi'", specifier = ">=0.5.0" },
+    { name = "pyqt6", marker = "extra == 'qt'", specifier = ">=6.9.1" },
+    { name = "pyqt6-qt6", marker = "extra == 'qt'", specifier = ">=6.9.1" },
+    { name = "pyqt6-utils", marker = "extra == 'qt'", specifier = ">=0.5.0" },
+    { name = "typing-extensions", specifier = ">=4.15.0" },
 ]
-provides-extras = ["qt-pypi"]
+provides-extras = ["qt"]
 
 [package.metadata.requires-dev]
 dev = [

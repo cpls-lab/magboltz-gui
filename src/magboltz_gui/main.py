@@ -4,13 +4,10 @@ from importlib.resources import files
 import sys
 from typing import Any
 
-make
 from magboltz_gui.util.platform import ensure_qt_runtime_or_explain
 
 
 def main() -> None:
-
-    ensure_qt_runtime_or_explain()
 
     from PyQt6.QtGui import QIcon
     from PyQt6.QtWidgets import QApplication
