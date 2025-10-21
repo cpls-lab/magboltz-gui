@@ -13,7 +13,8 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem,
     QHeaderView,
     QTableWidget,
-    QApplication, QVBoxLayout,
+    QApplication,
+    QVBoxLayout,
 )
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -86,7 +87,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
     def createPieChart(self) -> None:
         fig = Figure(figsize=(3, 3))
-        canvas = FigureCanvasQTAgg(fig) #type:ignore
+        canvas = FigureCanvasQTAgg(fig)  # type:ignore
 
         # 2. Create an Axes and draw something (pie chart)
         ax = fig.add_subplot(111)
@@ -102,7 +103,6 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self._gas_canvas = canvas
 
         self.splitterGases.setSizes([600, 200])
-
 
     def initDarwinActionIcons(self) -> None:
         # This method set the icons for macOS
@@ -124,7 +124,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         ]
 
         icns_map = {
-            self.actionNew : "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/NewDocumentIcon.icns",
+            self.actionNew: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/NewDocumentIcon.icns",
             self.actionOpen: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericDocumentIcon.icns",
             self.actionSave: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/SaveDocumentIcon.icns",
             self.actionSaveAs: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/SaveAsTemplateIcon.icns",
@@ -136,7 +136,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self.actionGasRemove: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/RemoveIcon.icns",
             self.actionGasNormalize: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/CalculatorIcon.icns",
             self.actionCmdCopyToClipboard: "",
-            self.actionResultExport: "", # find an incon similary to Excel
+            self.actionResultExport: "",  # find an incon similary to Excel
         }
 
         for action in actions:
@@ -417,11 +417,14 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         if sum(gas_fracs) > 0:
             self._gas_ax.pie(gas_fracs, labels=gas_labels, autopct="%1.1f%%")
         else:
-            self._gas_ax.pie([], labels=[], autopct="%1.1f%%",
-                             wedgeprops={"edgecolor": "black", "linewidth": 1},)
+            self._gas_ax.pie(
+                [],
+                labels=[],
+                autopct="%1.1f%%",
+                wedgeprops={"edgecolor": "black", "linewidth": 1},
+            )
         self._gas_ax.set_aspect("equal")
-        self._gas_canvas.draw() #type:ignore
-
+        self._gas_canvas.draw()  # type:ignore
 
     def refresh(self) -> None:
 
@@ -434,7 +437,6 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.gasListTable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.gasListTable.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.gasListTable.setShowGrid(False)
-
 
         i = 0
         for gas in self._currentCards.gases:

@@ -32,7 +32,9 @@ class ProcessManager:
         cmd = str(self.main_window.magboltzPath) if self.main_window.magboltzPath is not None else "magboltz"
         self.process.start(cmd)
         self.main_window.consoleOutput.clear()
-        self.main_window.consoleOutput.append(f"<span style='color:blue;'>{cmd} &lt; {self.main_window._currentInputFile}</span>")
+        self.main_window.consoleOutput.append(
+            f"<span style='color:blue;'>{cmd} &lt; {self.main_window._currentInputFile}</span>"
+        )
         self.main_window.consoleOutput.append(f"")
         self.main_window.consoleOutput.append("Starting process...")
 

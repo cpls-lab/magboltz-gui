@@ -1,6 +1,6 @@
 [project]
 name = "magboltz-gui"
-version = "0.1.1"
+version = "0.2.0"
 description = "Magboltz GUI - a GUI for Magboltz"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -54,7 +54,7 @@ dev = [
 
 [project.scripts]
 magboltz-gui = "magboltz_gui.main:main"
-gen-ui = "magboltz_gui.tool.gen_ui:main"
+#gen-ui = "magboltz_gui.tool.gen_ui:main"
 
 [project.urls]
 Homepage = "https://gitlab.com/micrenda/magboltz-gui"
