@@ -135,7 +135,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self.actionGasAdd: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AddIcon.icns",
             self.actionGasRemove: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/RemoveIcon.icns",
             self.actionGasNormalize: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/CalculatorIcon.icns",
-            self.actionCmdCopyToClipboard: "",
+            self.actionCmdCopyToClipboard: "", 
             self.actionResultExport: "",  # find an incon similary to Excel
         }
 
@@ -486,13 +486,13 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         if fraction_sum > 0.0:
 
             for gas in self._currentCards.gases:
-                gas.gas_frac *= round(100.0 / fraction_sum, 1)
+                gas.gas_frac *= round(100. / fraction_sum, 2)
 
             self.refresh()
         else:
             # Split evenly
             for gas in self._currentCards.gases:
-                gas.gas_frac = round(100.0 / len(self._currentCards.gases), 1)
+                gas.gas_frac = round(100. / len(self._currentCards.gases), 2)
 
     def onRealInteractionsChanged(self, value: int) -> None:
 
