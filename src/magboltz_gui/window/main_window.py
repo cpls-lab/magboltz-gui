@@ -84,6 +84,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self.magboltzPath: Optional[Path] = None
         self.processes: List[ProcessManager] = []
+        self.actionNew.trigger()
 
     def createPieChart(self) -> None:
         fig = Figure(figsize=(3, 3))
