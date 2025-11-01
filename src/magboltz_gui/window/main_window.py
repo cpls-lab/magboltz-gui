@@ -46,6 +46,19 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self._currentCards: InputCards = InputCards()
         self._currentModified: bool = False
 
+
+        # Associating button to actions
+        self.btnGasAdd.setDefaultAction(self.actionGasAdd)
+        self.btnGasRemove.setDefaultAction(self.actionGasRemove)
+        self.btnGasNormalize.setDefaultAction(self.actionGasNormalize)
+        self.btnCmdCopyToClipbord.setDefaultAction(self.actionCmdCopyToClipboard)
+        self.btnResultSave.setDefaultAction(self.actionResultSave)
+        self.btnResultExport.setDefaultAction(self.actionResultExport)
+        self.btnGraphSave.setDefaultAction(self.actionGraphSave)
+        self.btnGasUp.setDefaultAction(self.actionGasMoveUp)
+        self.btnGasDown.setDefaultAction(self.actionGasMoveDown)
+
+        # Associating actions to methods
         self.actionNew.triggered.connect(self.fileNew)
         self.actionOpen.triggered.connect(self.fileOpen)
         self.actionSave.triggered.connect(self.fileSave)
@@ -58,14 +71,8 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.actionCmdCopyToClipboard.triggered.connect(self.cmdCopyToClipboard)
         self.actionResultSave.triggered.connect(self.saveResult)
         self.actionResultExport.triggered.connect(self.openExportWindow)
-
-        self.btnGasAdd.setDefaultAction(self.actionGasAdd)
-        self.btnGasRemove.setDefaultAction(self.actionGasRemove)
-        self.btnGasNormalize.setDefaultAction(self.actionGasNormalize)
-
-        self.btnCmdCopyToClipbord.setDefaultAction(self.actionCmdCopyToClipboard)
-        self.btnResultSave.setDefaultAction(self.actionResultSave)
-        self.btnResultExport.setDefaultAction(self.actionResultExport)
+        self.actionGasMoveUp.triggered.connect(self.gasMoveUp)
+        self.actionGasMoveDown.triggered.connect(self.gasMoveDown)
 
         self.mainTab.setCurrentWidget(self.tabConfiguration)
 
@@ -394,10 +401,6 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self.refresh()
 
-        # self.btnGasAdd.triggered.connect(self.onBtnGasAdd)
-        # self.btnGasRemove.triggered.connect(self.onBtnGasRemove)
-        # self.btnGasNormalize.triggered.connect(self.onBtnGasNormalize)
-        # self.btnExport.triggered.connect(self.onBtnExport)
 
     def refresh_pie(self) -> None:
 
@@ -469,6 +472,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.gasListTable.insertRow(row_index)
         self._currentCards.gases.append(InputGas(80, 0.0))
         self.refresh()
+        self.gasListTable.setCurrentCell(row_index, 0)
 
     def gasRemove(self) -> None:
         row = self.gasListTable.currentRow()
@@ -494,6 +498,31 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             # Split evenly
             for gas in self._currentCards.gases:
                 gas.gas_frac = round(100. / len(self._currentCards.gases), 2)
+
+    def gasMoveUp(self) -> None:
+
+        row = self.gasListTable.currentRow()
+
+        if row >= 0:
+            if row > 0:
+                self._currentCards.gases[row], self._currentCards.gases[row - 1] = self._currentCards.gases[row - 1], self._currentCards.gases[row]
+                self.refresh()
+                self.gasListTable.setCurrentCell(row - 1, 0)
+        else:
+            self.show_error("Error", "Select a row to move")
+
+    def gasMoveDown(self) -> None:
+
+        row = self.gasListTable.currentRow()
+
+        if row >= 0:
+            if row < len(self._currentCards.gases) - 1:
+                self._currentCards.gases[row], self._currentCards.gases[row + 1] = self._currentCards.gases[row + 1], self._currentCards.gases[row]
+                self.refresh()
+                self.gasListTable.setCurrentCell(row + 1, 0)
+        else:
+            self.show_error("Error", "Select a row to move")
+
 
     def onRealInteractionsChanged(self, value: int) -> None:
 

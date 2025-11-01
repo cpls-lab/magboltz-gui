@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1066</width>
-    <height>1019</height>
+    <width>1301</width>
+    <height>912</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,15 +24,9 @@
        <attribute name="title">
         <string>Configuration</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_3">
-        <item row="0" column="0">
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
          <widget class="QGroupBox" name="groupSimParameters">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
           <property name="title">
            <string>SImulation parameters</string>
           </property>
@@ -63,7 +57,7 @@
            <item row="0" column="4">
             <spacer name="horizontalSpacer">
              <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
+              <enum>Qt::Horizontal</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -112,7 +106,7 @@
               <string> NMAX: Number of real collisions, use a value between 2 and 5 for inelastic gas to obtain 1% accuracy, use a value above 10 for better than 0.5 % accuracy and a value of at least 10 for pure elastic gases like Argon</string>
              </property>
              <property name="alignment">
-              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
             </widget>
            </item>
@@ -122,7 +116,7 @@
               <string>EFINAL: upper limit of the electron energy in electron Volts, if EFINAL = 0.0, program automatically calculates upper integration energy limit</string>
              </property>
              <property name="alignment">
-              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
             </widget>
            </item>
@@ -175,14 +169,213 @@
           </layout>
          </widget>
         </item>
-        <item row="2" column="0" colspan="2">
-         <widget class="QGroupBox" name="groupGases">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
+        <item>
+         <widget class="QGroupBox" name="groupGasList">
+          <property name="title">
+           <string>Conditions</string>
           </property>
+          <layout class="QGridLayout" name="gridLayout_2">
+           <item row="0" column="2">
+            <widget class="QLabel" name="label_12">
+             <property name="text">
+              <string>℃</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="2">
+            <widget class="QLabel" name="label_6">
+             <property name="text">
+              <string>V/cm</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QDoubleSpinBox" name="spinGasTemperature">
+             <property name="minimumSize">
+              <size>
+               <width>100</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>TEMP: temperature of gas in centigrade</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="decimals">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <double>500.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QDoubleSpinBox" name="spinGasPressure">
+             <property name="toolTip">
+              <string>TORR: pressure of gas in Torr</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="decimals">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <double>10000.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>10.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QDoubleSpinBox" name="spinMagneticField">
+             <property name="toolTip">
+              <string>BMAG: magnitude of the magnetic field in kilogauss</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="decimals">
+              <number>3</number>
+             </property>
+             <property name="maximum">
+              <double>10.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="2">
+            <widget class="QLabel" name="label_8">
+             <property name="text">
+              <string>kG</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="4">
+            <spacer name="horizontalSpacer_3">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="label_9">
+             <property name="minimumSize">
+              <size>
+               <width>200</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Angle</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_7">
+             <property name="minimumSize">
+              <size>
+               <width>200</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Magnetic field</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_11">
+             <property name="minimumSize">
+              <size>
+               <width>200</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Gas temperature</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QDoubleSpinBox" name="spinAngle">
+             <property name="toolTip">
+              <string>BTHETA: angle between the electric and magnetic fields in degrees</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="maximum">
+              <double>359.990000000000009</double>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QLabel" name="label_14">
+             <property name="text">
+              <string>Torr</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_5">
+             <property name="minimumSize">
+              <size>
+               <width>200</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Electric field</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_13">
+             <property name="text">
+              <string>Gas pressure</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QDoubleSpinBox" name="spinElectricField">
+             <property name="toolTip">
+              <string>EFIELD: electric field in Volt/cm</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="decimals">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <double>100000.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>100.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="2">
+            <widget class="QLabel" name="label_10">
+             <property name="text">
+              <string>°</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupGases">
           <property name="title">
            <string>Gas components</string>
           </property>
@@ -190,7 +383,7 @@
            <item>
             <widget class="QSplitter" name="splitterGases">
              <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
+              <enum>Qt::Horizontal</enum>
              </property>
              <widget class="QWidget" name="splitterGasesLeft" native="true">
               <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -204,7 +397,7 @@
                     </property>
                     <property name="icon">
                      <iconset theme="list-add">
-                      <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+                      <normaloff>../../../../../../../../../../ui</normaloff>../../../../../../../../../../ui</iconset>
                     </property>
                    </widget>
                   </item>
@@ -215,7 +408,7 @@
                     </property>
                     <property name="icon">
                      <iconset theme="list-remove">
-                      <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+                      <normaloff>../../../../../../../../../../ui</normaloff>../../../../../../../../../../ui</iconset>
                     </property>
                    </widget>
                   </item>
@@ -229,14 +422,14 @@
                     </property>
                     <property name="icon">
                      <iconset theme="accessories-calculator">
-                      <normaloff>../../../../../../.designer/backup</normaloff>../../../../../../.designer/backup</iconset>
+                      <normaloff>../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../.designer/backup</iconset>
                     </property>
                    </widget>
                   </item>
                   <item>
                    <spacer name="horizontalSpacer_6">
                     <property name="orientation">
-                     <enum>Qt::Orientation::Horizontal</enum>
+                     <enum>Qt::Horizontal</enum>
                     </property>
                     <property name="sizeHint" stdset="0">
                      <size>
@@ -253,7 +446,7 @@
                     </property>
                     <property name="icon">
                      <iconset theme="go-down">
-                      <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+                      <normaloff>../../../../../../../../../../ui</normaloff>../../../../../../../../../../ui</iconset>
                     </property>
                    </widget>
                   </item>
@@ -264,18 +457,9 @@
                     </property>
                     <property name="icon">
                      <iconset theme="go-up">
-                      <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+                      <normaloff>../../../../../../../../../../ui</normaloff>../../../../../../../../../../ui</iconset>
                     </property>
                    </widget>
-                  </item>
-                  <item>
-                   <widget class="QWidget" name="widget_4" native="true"/>
-                  </item>
-                  <item>
-                   <widget class="QWidget" name="widget_3" native="true"/>
-                  </item>
-                  <item>
-                   <widget class="QWidget" name="widget_6" native="true"/>
                   </item>
                  </layout>
                 </widget>
@@ -313,228 +497,67 @@
              <widget class="QWidget" name="splitterGasRight" native="true">
               <layout class="QVBoxLayout" name="verticalLayout_5">
                <item>
+                <widget class="QWidget" name="widget_3" native="true">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <layout class="QHBoxLayout" name="horizontalLayout_4">
+                  <item>
+                   <spacer name="horizontalSpacer_2">
+                    <property name="orientation">
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>40</width>
+                      <height>20</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item>
+                   <widget class="QToolButton" name="btnGraphSave">
+                    <property name="text">
+                     <string>...</string>
+                    </property>
+                    <property name="icon">
+                     <iconset theme="document-save-as"/>
+                    </property>
+                    <property name="iconSize">
+                     <size>
+                      <width>16</width>
+                      <height>16</height>
+                     </size>
+                    </property>
+                    <property name="toolButtonStyle">
+                     <enum>Qt::ToolButtonIconOnly</enum>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
                 <widget class="QFrame" name="pieContainer">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
                  <property name="frameShape">
-                  <enum>QFrame::Shape::StyledPanel</enum>
+                  <enum>QFrame::StyledPanel</enum>
                  </property>
                  <property name="frameShadow">
-                  <enum>QFrame::Shadow::Raised</enum>
+                  <enum>QFrame::Raised</enum>
                  </property>
                 </widget>
                </item>
               </layout>
              </widget>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QGroupBox" name="groupGasList">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="title">
-           <string>Conditions</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_2">
-           <item row="4" column="1">
-            <widget class="QDoubleSpinBox" name="spinAngle">
-             <property name="toolTip">
-              <string>BTHETA: angle between the electric and magnetic fields in degrees</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-             </property>
-             <property name="maximum">
-              <double>359.990000000000009</double>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="2">
-            <widget class="QLabel" name="label_6">
-             <property name="text">
-              <string>V/cm</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="2">
-            <widget class="QLabel" name="label_14">
-             <property name="text">
-              <string>Torr</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_9">
-             <property name="minimumSize">
-              <size>
-               <width>200</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>Angle</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="2">
-            <widget class="QLabel" name="label_8">
-             <property name="text">
-              <string>kG</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QDoubleSpinBox" name="spinGasTemperature">
-             <property name="minimumSize">
-              <size>
-               <width>100</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="toolTip">
-              <string>TEMP: temperature of gas in centigrade</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-             </property>
-             <property name="decimals">
-              <number>1</number>
-             </property>
-             <property name="maximum">
-              <double>500.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_11">
-             <property name="minimumSize">
-              <size>
-               <width>200</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>Gas temperature</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="4">
-            <spacer name="horizontalSpacer_3">
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item row="4" column="2">
-            <widget class="QLabel" name="label_10">
-             <property name="text">
-              <string>°</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QDoubleSpinBox" name="spinGasPressure">
-             <property name="toolTip">
-              <string>TORR: pressure of gas in Torr</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-             </property>
-             <property name="decimals">
-              <number>0</number>
-             </property>
-             <property name="maximum">
-              <double>10000.000000000000000</double>
-             </property>
-             <property name="singleStep">
-              <double>10.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_7">
-             <property name="minimumSize">
-              <size>
-               <width>200</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>Magnetic field</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QDoubleSpinBox" name="spinMagneticField">
-             <property name="toolTip">
-              <string>BMAG: magnitude of the magnetic field in kilogauss</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-             </property>
-             <property name="decimals">
-              <number>3</number>
-             </property>
-             <property name="maximum">
-              <double>10.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_5">
-             <property name="minimumSize">
-              <size>
-               <width>200</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>Electric field</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_13">
-             <property name="text">
-              <string>Gas pressure</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="2">
-            <widget class="QLabel" name="label_12">
-             <property name="text">
-              <string>℃</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QDoubleSpinBox" name="spinElectricField">
-             <property name="toolTip">
-              <string>EFIELD: electric field in Volt/cm</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-             </property>
-             <property name="decimals">
-              <number>0</number>
-             </property>
-             <property name="maximum">
-              <double>100000.000000000000000</double>
-             </property>
-             <property name="singleStep">
-              <double>100.000000000000000</double>
-             </property>
             </widget>
            </item>
           </layout>
@@ -574,7 +597,7 @@
              </property>
              <property name="icon">
               <iconset theme="edit-copy">
-               <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+               <normaloff>../../../../../../../../../../ui</normaloff>../../../../../../../../../../ui</iconset>
              </property>
             </widget>
            </item>
@@ -585,7 +608,7 @@
              </property>
              <property name="icon">
               <iconset theme="document-save-as">
-               <normaloff>../../../../../../.designer/backup</normaloff>../../../../../../.designer/backup</iconset>
+               <normaloff>../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../.designer/backup</iconset>
              </property>
             </widget>
            </item>
@@ -596,7 +619,7 @@
              </property>
              <property name="icon">
               <iconset theme="x-office-spreadsheet">
-               <normaloff>../../../../../../.designer/backup</normaloff>../../../../../../.designer/backup</iconset>
+               <normaloff>../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../.designer/backup</iconset>
              </property>
             </widget>
            </item>
@@ -626,8 +649,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1066</width>
-     <height>24</height>
+     <width>1301</width>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -696,7 +719,7 @@
   <action name="actionNew">
    <property name="icon">
     <iconset theme="document-new">
-     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+     <normaloff>../../../../../../../../../../ui</normaloff>../../../../../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>&amp;New</string>
@@ -705,7 +728,7 @@
   <action name="actionOpen">
    <property name="icon">
     <iconset theme="document-open">
-     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+     <normaloff>../../../../../../../../../../ui</normaloff>../../../../../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>&amp;Open</string>
@@ -714,7 +737,7 @@
   <action name="actionQuit">
    <property name="icon">
     <iconset theme="application-exit">
-     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+     <normaloff>../../../../../../../../../../ui</normaloff>../../../../../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>&amp;Exit</string>
@@ -723,7 +746,7 @@
   <action name="actionSave">
    <property name="icon">
     <iconset theme="document-save">
-     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+     <normaloff>../../../../../../../../../../ui</normaloff>../../../../../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>&amp;Save</string>
@@ -732,7 +755,7 @@
   <action name="actionClose">
    <property name="icon">
     <iconset theme="edit-delete">
-     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+     <normaloff>../../../../../../../../../../ui</normaloff>../../../../../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>Close</string>
@@ -741,7 +764,7 @@
   <action name="actionSaveAs">
    <property name="icon">
     <iconset theme="document-save-as">
-     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+     <normaloff>../../../../../../../../../../ui</normaloff>../../../../../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>Save As</string>
@@ -750,7 +773,7 @@
   <action name="actionRevert">
    <property name="icon">
     <iconset theme="document-revert">
-     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+     <normaloff>../../../../../../../../../../ui</normaloff>../../../../../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>Revert</string>
@@ -759,7 +782,7 @@
   <action name="actionRun">
    <property name="icon">
     <iconset theme="system-run">
-     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+     <normaloff>../../../../../../../../../../ui</normaloff>../../../../../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>Run</string>
@@ -768,7 +791,7 @@
   <action name="actionGasAdd">
    <property name="icon">
     <iconset theme="list-add">
-     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+     <normaloff>../../../../../../../../../../ui</normaloff>../../../../../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>Add</string>
@@ -777,7 +800,7 @@
   <action name="actionGasRemove">
    <property name="icon">
     <iconset theme="list-remove">
-     <normaloff>../../../../../../ui</normaloff>../../../../../../ui</iconset>
+     <normaloff>../../../../../../../../../../ui</normaloff>../../../../../../../../../../ui</iconset>
    </property>
    <property name="text">
     <string>Remove</string>
@@ -786,7 +809,7 @@
   <action name="actionGasNormalize">
    <property name="icon">
     <iconset theme="accessories-calculator">
-     <normaloff>../../../../../../.designer/backup</normaloff>../../../../../../.designer/backup</iconset>
+     <normaloff>../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>Normalize</string>
@@ -798,7 +821,7 @@
   <action name="actionResultExport">
    <property name="icon">
     <iconset theme="x-office-spreadsheet">
-     <normaloff>../../../../../../.designer/backup</normaloff>../../../../../../.designer/backup</iconset>
+     <normaloff>../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>Export</string>
@@ -807,7 +830,7 @@
   <action name="actionCmdCopyToClipboard">
    <property name="icon">
     <iconset theme="edit-copy">
-     <normaloff>../../../../../../.designer/backup</normaloff>../../../../../../.designer/backup</iconset>
+     <normaloff>../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>Cooy to clipboard</string>
@@ -819,10 +842,34 @@
   <action name="actionResultSave">
    <property name="icon">
     <iconset theme="document-save-as">
-     <normaloff>../../../../../../.designer/backup</normaloff>../../../../../../.designer/backup</iconset>
+     <normaloff>../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>Save</string>
+   </property>
+  </action>
+  <action name="actionGraphSave">
+   <property name="icon">
+    <iconset theme="document-save-as"/>
+   </property>
+   <property name="text">
+    <string>Save graph</string>
+   </property>
+  </action>
+  <action name="actionGasMoveUp">
+   <property name="icon">
+    <iconset theme="go-up"/>
+   </property>
+   <property name="text">
+    <string>Move up</string>
+   </property>
+  </action>
+  <action name="actionGasMoveDown">
+   <property name="icon">
+    <iconset theme="go-down"/>
+   </property>
+   <property name="text">
+    <string>Move down</string>
    </property>
   </action>
  </widget>

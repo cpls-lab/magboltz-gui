@@ -104,5 +104,6 @@ class GasNameDelegate(QStyledItemDelegate):
 
                 self._main_window._currentCards.gases[index.row()].gas_id = selected_gas_id
                 self._main_window.refresh()
+                self._main_window.gasListTable.setCurrentCell(index.row(), 0)
             return True
         return False
