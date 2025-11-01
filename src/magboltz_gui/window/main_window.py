@@ -84,6 +84,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self.magboltzPath: Optional[Path] = None
         self.processes: List[ProcessManager] = []
+        self.actionNew.trigger()
 
     def createPieChart(self) -> None:
         fig = Figure(figsize=(3, 3))
@@ -124,19 +125,19 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         ]
 
         icns_map = {
-            self.actionNew: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/NewDocumentIcon.icns",
-            self.actionOpen: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericDocumentIcon.icns",
-            self.actionSave: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/SaveDocumentIcon.icns",
-            self.actionSaveAs: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/SaveAsTemplateIcon.icns",
-            self.actionRevert: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/UndoIcon.icns",
-            self.actionClose: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/TrashIcon.icns",
-            self.actionQuit: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AlertStopIcon.icns",
-            self.actionRun: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/ExecutableBinaryIcon.icns",
-            self.actionGasAdd: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AddIcon.icns",
-            self.actionGasRemove: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/RemoveIcon.icns",
-            self.actionGasNormalize: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/CalculatorIcon.icns",
-            self.actionCmdCopyToClipboard: "",
-            self.actionResultExport: "",  # find an incon similary to Excel
+            self.actionNew: "src/magboltz_gui/icons/macOS_icons/new_file.png",
+            self.actionOpen: "src/magboltz_gui/icons/macOS_icons/open.png",
+            self.actionSave: "src/magboltz_gui/icons/macOS_icons/save.png",
+            self.actionSaveAs: "src/magboltz_gui/icons/macOS_icons/save_as.png",
+            self.actionRevert: "src/magboltz_gui/icons/macOS_icons/revert.png",
+            self.actionClose: "src/magboltz_gui/icons/macOS_icons/TrashIcon.icns",
+            self.actionQuit: "src/magboltz_gui/icons/macOS_icons/AlertStopIcon.icns",
+            self.actionRun: "src/magboltz_gui/icons/macOS_icons/execute.png",
+            self.actionGasAdd: "src/magboltz_gui/icons/macOS_icons/add.png",
+            self.actionGasRemove: "src/magboltz_gui/icons/macOS_icons/remove.png",
+            self.actionGasNormalize: "src/magboltz_gui/icons/macOS_icons/CalculatorIcon.icns",
+            self.actionCmdCopyToClipboard: "src/magboltz_gui/icons/macOS_icons/copy.png", 
+            self.actionResultExport: "src/magboltz_gui/icons/macOS_icons/export.png", 
         }
 
         for action in actions:
@@ -486,13 +487,13 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         if fraction_sum > 0.0:
 
             for gas in self._currentCards.gases:
-                gas.gas_frac *= round(100.0 / fraction_sum, 1)
+                gas.gas_frac *= round(100. / fraction_sum, 2)
 
             self.refresh()
         else:
             # Split evenly
             for gas in self._currentCards.gases:
-                gas.gas_frac = round(100.0 / len(self._currentCards.gases), 1)
+                gas.gas_frac = round(100. / len(self._currentCards.gases), 2)
 
     def onRealInteractionsChanged(self, value: int) -> None:
 

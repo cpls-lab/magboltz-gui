@@ -1,3 +1,5 @@
+rm -r dist/
+
 uv pip install build twine
 uv run python3 -m build
 
