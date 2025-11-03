@@ -292,6 +292,10 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+dev = [
+    { name = "black" },
+    { name = "mypy" },
+]
 qt = [
     { name = "pyqt6" },
     { name = "pyqt6-qt6" },
@@ -308,13 +312,15 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "black", marker = "extra == 'dev'" },
     { name = "matplotlib", specifier = ">=3.10.7" },
+    { name = "mypy", marker = "extra == 'dev'" },
     { name = "pyqt6", marker = "extra == 'qt'", specifier = ">=6.9.1" },
     { name = "pyqt6-qt6", marker = "extra == 'qt'", specifier = ">=6.9.1" },
     { name = "pyqt6-utils", marker = "extra == 'qt'", specifier = ">=0.5.0" },
     { name = "typing-extensions", specifier = ">=4.15.0" },
 ]
-provides-extras = ["qt"]
+provides-extras = ["qt", "dev"]
 
 [package.metadata.requires-dev]
 dev = [

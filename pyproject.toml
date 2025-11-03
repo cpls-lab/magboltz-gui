@@ -1,6 +1,6 @@
 [project]
 name = "magboltz-gui"
-version = "0.2.1"
+version = "0.2.2"
 description = "Magboltz GUI - a GUI for Magboltz"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -20,6 +20,9 @@ qt = [
   "PyQt6-Qt6>=6.9.1",
   "pyqt6-utils>=0.5.0",
 ]
+
+dev = ["mypy", "black"]
+
 
 [tool.setuptools.package-data]
 magboltz_gui = ["ui/*.ui", "data/*.csv", "icons/*.svg", "icons/*.png"]
