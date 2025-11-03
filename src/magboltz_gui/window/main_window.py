@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
-from matplotlib.colors import Colormap
+from matplotlib.colors import Colormap, ListedColormap
 from matplotlib.figure import Figure
 from matplotlib.pyplot import colormaps, get_cmap
 from matplotlib.rcsetup import cycler
@@ -411,7 +411,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self.refresh()
 
-    def get_colors(self, cmap_name: str, n: int):
+    def get_colors(self, cmap_name: str, n: int) -> List[Tuple[float, float, float, float]]:
         cmap = get_cmap(cmap_name)
 
         # print("===============================")
@@ -422,12 +422,13 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         # print("First color:", cmap.colors[0])
         # print("Bad color:", cmap._rgba_bad)
 
-        if cmap.N < 256:
-            return list(cmap.colors)
+        if isinstance(cmap, ListedColormap):
+            if cmap.N < 256:
+                return list(cmap.colors) #type: ignore
+            else:
+                return list(cmap.resampled(n).colors) #type: ignore
         else:
-            return list(cmap.resampled(n).colors)
-
-        #return [cmap(i / (n - 1 if n > 1 else 1)) for i in range(n)]
+            return [cmap(i / (n - 1 if n > 1 else 1)) for i in range(n)]
 
     def refresh_pie(self) -> None:
 
@@ -688,7 +689,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self.gasListTable.clear()
 
-    def fillColorMap(self):
+    def fillColorMap(self) -> None:
         self.cmbColorMap.clear()
 
         names = [name for name in colormaps() if hasattr(get_cmap(name), "colors")]
