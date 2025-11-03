@@ -15,11 +15,15 @@ class GasItem:
     rating: Optional[int]
 
     @property
-    def pretty_name(self) -> str:
+    def as_name(self) -> str:
+        return self.name
+
+    @property
+    def as_name_formula(self) -> str:
         return f"{self.name} ({self.formula})" if self.formula else self.name
 
     @property
-    def short_name(self) -> str:
+    def as_formula(self) -> str:
         return self.formula if self.formula else self.name
 
 

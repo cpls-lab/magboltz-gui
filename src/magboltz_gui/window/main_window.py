@@ -2,7 +2,7 @@ from __future__ import annotations
 import platform
 from importlib.resources import files
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Tuple, Callable
 
 from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import QIcon, QAction
@@ -17,12 +17,16 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+from matplotlib.colors import Colormap
 from matplotlib.figure import Figure
+from matplotlib.pyplot import colormaps, get_cmap
+from matplotlib.rcsetup import cycler
 
 from magboltz_gui.data.database import GasDatabase
 from magboltz_gui.data.input_cards import InputCards, InputGas
 from magboltz_gui.generated.ui_main import Ui_MainWindow
 from magboltz_gui.util import parser
+from magboltz_gui.util.other import linspace_0_1
 from magboltz_gui.window.delegates import PercentDelegate, GasNameDelegate
 from magboltz_gui.util.process import ProcessManager
 
@@ -73,10 +77,16 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.actionResultExport.triggered.connect(self.openExportWindow)
         self.actionGasMoveUp.triggered.connect(self.gasMoveUp)
         self.actionGasMoveDown.triggered.connect(self.gasMoveDown)
+        self.actionGraphSave.triggered.connect(self.graphSave)
 
         self.mainTab.setCurrentWidget(self.tabConfiguration)
 
+        self.fillColorMap()
+
         self.createPieChart()
+
+        self.cmbLabelFormat.currentIndexChanged.connect(self.refresh_pie)
+        self.cmbColorMap.currentIndexChanged.connect(self.refresh_pie)
 
         # Make "Gas name" stretch to fill available space
         header = self.gasListTable.horizontalHeader()
@@ -401,6 +411,23 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self.refresh()
 
+    def get_colors(self, cmap_name: str, n: int):
+        cmap = get_cmap(cmap_name)
+
+        # print("===============================")
+        # print("Name:", cmap.name)
+        # print("Type:", type(cmap))
+        # print("N:", cmap.N)
+        # print("Has colors:", hasattr(cmap, "colors"))
+        # print("First color:", cmap.colors[0])
+        # print("Bad color:", cmap._rgba_bad)
+
+        if cmap.N < 256:
+            return list(cmap.colors)
+        else:
+            return list(cmap.resampled(n).colors)
+
+        #return [cmap(i / (n - 1 if n > 1 else 1)) for i in range(n)]
 
     def refresh_pie(self) -> None:
 
@@ -410,23 +437,41 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         gas_labels = []
 
         for gas in self._currentCards.gases:
+
+
             try:
-                gas_name = self.database.get(gas.gas_id).short_name
+                db_item = self.database.get(gas.gas_id)
+
+                match self.cmbLabelFormat.currentIndex():
+                    case 0:
+                        gas_name = db_item.as_formula
+                    case 1:
+                        gas_name = db_item.as_name
+                    case 2:
+                        gas_name = db_item.as_name_formula
+                    case 3:
+                        gas_name = ''
+                    case _:
+                        gas_name = db_item.as_formula
             except KeyError:
                 gas_name = "?"
 
             gas_fracs.append(gas.gas_frac)
             gas_labels.append(gas_name)
 
-        if sum(gas_fracs) > 0:
-            self._gas_ax.pie(gas_fracs, labels=gas_labels, autopct="%1.1f%%")
-        else:
-            self._gas_ax.pie(
-                [],
-                labels=[],
-                autopct="%1.1f%%",
-                wedgeprops={"edgecolor": "black", "linewidth": 1},
-            )
+
+        if len(gas_fracs) > 0:
+            colors = self.get_colors(self.cmbColorMap.currentText(), len(gas_fracs))
+            self._gas_ax.set_prop_cycle(cycler(color=colors))
+
+        self._gas_ax.pie(
+            gas_fracs if sum(gas_fracs) > 0 else [],
+            labels=gas_labels if sum(gas_fracs) > 0 else [],
+            autopct="%1.1f%%",
+            wedgeprops={"edgecolor": "black", "linewidth": 1},
+
+        )
+
         self._gas_ax.set_aspect("equal")
         self._gas_canvas.draw()  # type:ignore
 
@@ -449,7 +494,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             gas_id_widget.setFlags(gas_id_widget.flags() & ~Qt.ItemFlag.ItemIsEditable)
 
             try:
-                gas_name = self.database.get(gas.gas_id).pretty_name
+                gas_name = self.database.get(gas.gas_id).as_name_formula
             except KeyError:
                 gas_name = "(select gas)"
 
@@ -465,6 +510,14 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             i += 1
 
         self.refresh_pie()
+        self.refreshNeedNormalize()
+
+    def refreshNeedNormalize(self) -> None:
+        sum = 0.
+        for gas in self._currentCards.gases:
+            sum += gas.gas_frac
+
+        self.lblNeedNormalize.setVisible(sum < 99.9 or sum >= 100.1)
 
     def gasAdd(self) -> None:
 
@@ -491,13 +544,13 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         if fraction_sum > 0.0:
 
             for gas in self._currentCards.gases:
-                gas.gas_frac *= round(100. / fraction_sum, 2)
-
-            self.refresh()
+                gas.gas_frac = round(gas.gas_frac * 100. / fraction_sum, 2)
         else:
             # Split evenly
             for gas in self._currentCards.gases:
                 gas.gas_frac = round(100. / len(self._currentCards.gases), 2)
+
+        self.refresh()
 
     def gasMoveUp(self) -> None:
 
@@ -523,6 +576,58 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         else:
             self.show_error("Error", "Select a row to move")
 
+    def graphSave(self) -> None:
+        canvas = self._gas_fig.canvas
+        types = canvas.get_supported_filetypes()
+        print(types)
+
+        items: List[Tuple[str, str]] = []
+        for ext, desc in sorted(types.items()):
+            items.append((f"{desc} (*.{ext})", ext))
+
+
+        dict_items = { g : [k[1] for k in items if k[0].startswith(g)] for g in set(' '.join(v[0].split()[:-1]) for v in items)}
+        dict_items["All files"] = []
+
+        fn_format_ext : Callable[[str], str] = lambda x: f"*.{x}" if x else "*"
+
+        group_items = [ (format_name + " (" + ' '.join(fn_format_ext(x) for x in format_exts) + ")", ' '.join(format_exts)) for format_name, format_exts in dict_items.items() ]
+
+        filter_str = ";;".join(name for name, _ in group_items)
+
+        path_str, selected = QFileDialog.getSaveFileName(
+            self,
+            "Save chart",
+            "",
+            filter_str
+        )
+
+        if not path_str:
+            return
+
+        path = Path(path_str)
+
+        # Decide the format/extension
+        ext = path.suffix.lower().lstrip(".")
+        if not ext:
+            # No extension typed → infer from selected filter (take its mapped ext)
+            for name, mapped_ext in group_items:
+                if name == selected:
+                    ext = mapped_ext
+                    break
+            # If still unknown, default to PNG
+            if not ext:
+                ext = "png"
+            path = path.with_suffix(f".{ext}")
+
+        # Save with tight bbox, decent DPI
+        self._gas_fig.savefig(
+            path,
+            format=ext,
+            dpi=300,
+            bbox_inches="tight",
+            facecolor=self._gas_fig.get_facecolor()  # keep current background
+        )
 
     def onRealInteractionsChanged(self, value: int) -> None:
 
@@ -582,3 +687,14 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         # self.btnExport.triggered.disconnect(self.onBtnExport)
 
         self.gasListTable.clear()
+
+    def fillColorMap(self):
+        self.cmbColorMap.clear()
+
+        names = [name for name in colormaps() if hasattr(get_cmap(name), "colors")]
+
+        names.sort()
+
+        #self.cmbColorMap.setIconSize(self.cmbColorMap.iconSize())  # keep default or adjust via setIconSize()
+        for name in names:
+            self.cmbColorMap.addItem(name, userData=name)
