@@ -136,9 +136,12 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self.actionRun,
             self.actionGasAdd,
             self.actionGasRemove,
+            self.actionGasMoveUp,
+            self.actionGasMoveDown,
             self.actionGasNormalize,
             self.actionCmdCopyToClipboard,
             self.actionResultExport,
+            self.actionGraphSave
         ]
 
         icns_map = {
@@ -150,11 +153,14 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self.actionClose: "src/magboltz_gui/icons/macOS_icons/TrashIcon.icns",
             self.actionQuit: "src/magboltz_gui/icons/macOS_icons/AlertStopIcon.icns",
             self.actionRun: "src/magboltz_gui/icons/macOS_icons/execute.png",
-            self.actionGasAdd: "src/magboltz_gui/icons/macOS_icons/add.png",
-            self.actionGasRemove: "src/magboltz_gui/icons/macOS_icons/remove.png",
-            self.actionGasNormalize: "src/magboltz_gui/icons/macOS_icons/CalculatorIcon.icns",
+            self.actionGasAdd: "src/magboltz_gui/icons/macOS_icons/add_fill.png",
+            self.actionGasRemove: "src/magboltz_gui/icons/macOS_icons/remove_fill.png",
+            self.actionGasMoveUp: "src/magboltz_gui/icons/macOS_icons/up.png",
+            self.actionGasMoveDown: "src/magboltz_gui/icons/macOS_icons/down.png",
+            self.actionGasNormalize: "src/magboltz_gui/icons/macOS_icons/normalize.png",
             self.actionCmdCopyToClipboard: "src/magboltz_gui/icons/macOS_icons/copy.png", 
-            self.actionResultExport: "src/magboltz_gui/icons/macOS_icons/export.png", 
+            self.actionResultExport: "src/magboltz_gui/icons/macOS_icons/export.png",
+            self.actionGraphSave: "src/magboltz_gui/icons/macOS_icons/graph.png",
         }
 
         for action in actions:
