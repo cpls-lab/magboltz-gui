@@ -20,6 +20,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from importlib.resources import files
+from PyQt6.QtGui import QIcon
 from magboltz_gui.util.export_types import ExportType, ExportFormat, CsvOptions, JsonOptions, XmlOptions
 from magboltz_gui.util.export_controller import default_filename, available_export_types
 from magboltz_gui.util.run_result import RunResult
@@ -29,6 +31,9 @@ class ExportDialog(QDialog):
     def __init__(self, run: RunResult, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Export Results")
+        icon_path = files("magboltz_gui.icons").joinpath("icon.svg")
+        if icon_path.is_file():
+            self.setWindowIcon(QIcon(str(icon_path)))
         self._run = run
         self._settings = QSettings()
         self._init_ui()

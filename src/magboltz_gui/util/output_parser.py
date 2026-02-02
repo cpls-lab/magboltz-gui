@@ -274,23 +274,27 @@ def parse_magboltz_output(stdout_text: str, input_text: Optional[str] = None, in
         elif line.strip().startswith("ATTACHMENT COLL. FREQ."):
             result.frequencies_total.attachment_coll_freq_1e12_s = _find_first_float(line)
 
-    # Detailed collision frequencies
+    # Detailed collision frequencies (bounded section)
+    in_detail = False
     gas_section: Optional[str] = None
-    for line in lines:
-        if line.strip() and line.strip().isupper() and "DETAILED COLLISION FREQUENCIES" not in line:
-            # gas header e.g. "ARGON ANISOTROPIC    2014"
-            if "ANISOTROPIC" in line or "CO2" in line or "ARGON" in line:
-                gas_section = " ".join(line.strip().split())
-                result.frequencies_by_gas.append(GasFrequencies(gas_name=gas_section))
+    for i, line in enumerate(lines):
+        if "DETAILED COLLISION FREQUENCIES" in line:
+            in_detail = True
             continue
-
-        if gas_section and line.strip().startswith("----"):
+        if not in_detail:
             continue
-
-        if gas_section and line.strip().startswith("NORMALISED ENERGY DISTRIBUTION"):
-            gas_section = None
-
-        if gas_section and line.strip():
+        if line.strip().startswith("NORMALISED ENERGY DISTRIBUTION"):
+            break
+        if not line.strip():
+            continue
+        # Gas header is followed by a dashed line
+        if i + 1 < len(lines) and lines[i + 1].strip().startswith("---"):
+            gas_section = " ".join(line.strip().split())
+            result.frequencies_by_gas.append(GasFrequencies(gas_name=gas_section))
+            continue
+        if line.strip().startswith("---"):
+            continue
+        if gas_section and "+-" in line:
             # Parse process line
             if "ELOSS=" in line:
                 m = re.search(r"ELOSS=\s*([-+0-9\.DEde]+)", line)
@@ -303,7 +307,6 @@ def parse_magboltz_output(stdout_text: str, input_text: Optional[str] = None, in
                 freq = nums[-2]
                 err = nums[-1]
                 label = line.strip()
-                # Remove trailing numeric section
                 label = re.sub(r"[-+0-9\.DEde]+\s*\+\-\s*[-+0-9\.DEde]+\s*%?", "", label).strip()
                 label = re.sub(r"\s+ELOSS=.*", "", label).strip()
                 category = label.split()[0] if label else None

@@ -58,9 +58,11 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.btnGasAdd.setDefaultAction(self.actionGasAdd)
         self.btnGasRemove.setDefaultAction(self.actionGasRemove)
         self.btnGasNormalize.setDefaultAction(self.actionGasNormalize)
-        self.btnCmdCopyToClipbord.setDefaultAction(self.actionCmdCopyToClipboard)
+        self.btnCmdCopyToClipbord.setDefaultAction(self.actionResultCopy)
         self.btnResultSave.setDefaultAction(self.actionResultSave)
+        self.btnResultOpen.setDefaultAction(self.actionResultOpen)
         self.btnResultExport.setDefaultAction(self.actionResultExport)
+        self.btnResultPlots.setDefaultAction(self.actionShowPlots)
         self.btnGraphSave.setDefaultAction(self.actionGraphSave)
         self.btnGasUp.setDefaultAction(self.actionGasMoveUp)
         self.btnGasDown.setDefaultAction(self.actionGasMoveDown)
@@ -72,14 +74,20 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.actionSaveAs.triggered.connect(self.fileSaveAs)
         self.actionClose.triggered.connect(self.fileClose)
         self.actionRun.triggered.connect(self.run)
+        self.actionStop.triggered.connect(self.stopRun)
         self.actionGasAdd.triggered.connect(self.gasAdd)
         self.actionGasRemove.triggered.connect(self.gasRemove)
         self.actionCmdCopyToClipboard.triggered.connect(self.cmdCopyToClipboard)
+        self.actionResultCopy.triggered.connect(self.resultCopyToClipboard)
+        self.actionResultClear.triggered.connect(self.resultClear)
         self.actionResultSave.triggered.connect(self.saveResult)
+        self.actionResultOpen.triggered.connect(self.openResultFile)
         self.actionResultExport.triggered.connect(self.openExportWindow)
+        self.actionShowPlots.triggered.connect(self.showPlotsWindow)
         self.actionGasMoveUp.triggered.connect(self.gasMoveUp)
         self.actionGasMoveDown.triggered.connect(self.gasMoveDown)
         self.actionGraphSave.triggered.connect(self.graphSave)
+        self.actionAbout.triggered.connect(self.show_about_dialog)
 
         self.mainTab.setCurrentWidget(self.tabConfiguration)
 
@@ -112,6 +120,13 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.btnGasNormalize.setVisible(False)
         self.actionGasNormalize.setEnabled(False)
         self.actionGasNormalize.setVisible(False)
+        self.actionResultExport.setEnabled(False)
+        self.btnResultExport.setEnabled(False)
+        self.actionShowPlots.setEnabled(False)
+        self.btnResultPlots.setEnabled(False)
+        self.actionResultOpen.setEnabled(True)
+        self.btnResultOpen.setEnabled(True)
+        self.actionStop.setVisible(False)
         self.actionNew.trigger()
 
     def createPieChart(self) -> None:
@@ -145,13 +160,19 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self.actionClose,
             self.actionQuit,
             self.actionRun,
+            self.actionStop,
             self.actionGasAdd,
             self.actionGasRemove,
             self.actionGasMoveUp,
             self.actionGasMoveDown,
             self.actionGasNormalize,
             self.actionCmdCopyToClipboard,
+            self.actionResultCopy,
+            self.actionResultClear,
+            self.actionResultSave,
+            self.actionResultOpen,
             self.actionResultExport,
+            self.actionShowPlots,
             self.actionGraphSave,
         ]
 
@@ -164,13 +185,19 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self.actionClose: "src/magboltz_gui/icons/macOS_icons/TrashIcon.icns",
             self.actionQuit: "src/magboltz_gui/icons/macOS_icons/AlertStopIcon.icns",
             self.actionRun: "src/magboltz_gui/icons/macOS_icons/execute.png",
+            self.actionStop: "src/magboltz_gui/icons/macOS_icons/AlertStopIcon.icns",
             self.actionGasAdd: "src/magboltz_gui/icons/macOS_icons/add_fill.png",
             self.actionGasRemove: "src/magboltz_gui/icons/macOS_icons/remove_fill.png",
             self.actionGasMoveUp: "src/magboltz_gui/icons/macOS_icons/up.png",
             self.actionGasMoveDown: "src/magboltz_gui/icons/macOS_icons/down.png",
             self.actionGasNormalize: "src/magboltz_gui/icons/macOS_icons/normalize.png",
             self.actionCmdCopyToClipboard: "src/magboltz_gui/icons/macOS_icons/copy.png",
+            self.actionResultCopy: "src/magboltz_gui/icons/macOS_icons/copy.png",
+            self.actionResultClear: "src/magboltz_gui/icons/macOS_icons/remove.png",
+            self.actionResultSave: "src/magboltz_gui/icons/macOS_icons/save.png",
+            self.actionResultOpen: "src/magboltz_gui/icons/macOS_icons/open.png",
             self.actionResultExport: "src/magboltz_gui/icons/macOS_icons/export.png",
+            self.actionShowPlots: "src/magboltz_gui/icons/macOS_icons/graph.png",
             self.actionGraphSave: "src/magboltz_gui/icons/macOS_icons/graph.png",
         }
 
@@ -206,13 +233,19 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self.actionClose: QStyle.StandardPixmap.SP_DialogCloseButton,
             self.actionQuit: QStyle.StandardPixmap.SP_TitleBarCloseButton,
             self.actionRun: QStyle.StandardPixmap.SP_MediaPlay,
+            self.actionStop: QStyle.StandardPixmap.SP_MediaStop,
             self.actionGasAdd: QStyle.StandardPixmap.SP_FileDialogNewFolder,
             self.actionGasRemove: QStyle.StandardPixmap.SP_TrashIcon,
             self.actionGasMoveUp: QStyle.StandardPixmap.SP_ArrowUp,
             self.actionGasMoveDown: QStyle.StandardPixmap.SP_ArrowDown,
             self.actionGasNormalize: QStyle.StandardPixmap.SP_BrowserReload,
             self.actionCmdCopyToClipboard: QStyle.StandardPixmap.SP_FileDialogListView,
+            self.actionResultCopy: QStyle.StandardPixmap.SP_FileDialogListView,
+            self.actionResultClear: QStyle.StandardPixmap.SP_TrashIcon,
+            self.actionResultSave: QStyle.StandardPixmap.SP_DialogSaveButton,
+            self.actionResultOpen: QStyle.StandardPixmap.SP_DialogOpenButton,
             self.actionResultExport: QStyle.StandardPixmap.SP_DialogSaveButton,
+            self.actionShowPlots: QStyle.StandardPixmap.SP_FileDialogDetailedView,
             self.actionGraphSave: QStyle.StandardPixmap.SP_DialogSaveButton,
         }
 
@@ -290,6 +323,32 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
     def cmdCopyToClipboard(self) -> None:
         QApplication.clipboard().setText(self.commandLine.text())
 
+    def resultCopyToClipboard(self) -> None:
+        QApplication.clipboard().setText(self.consoleOutput.toPlainText())
+
+    def resultClear(self) -> None:
+        self.consoleOutput.clear()
+
+    def show_about_dialog(self) -> None:
+        msg = QMessageBox(self)
+        msg.setWindowTitle("About Magboltz GUI")
+        msg.setTextFormat(Qt.TextFormat.RichText)
+        msg.setText(
+            "<b>Magboltz GUI</b><br><br>"
+            "<b>Credits</b><br>"
+            'Michele Renda &lt;<a href="mailto:michele.renda@cern.ch">michele.renda@cern.ch</a>&gt;<br>'
+            'Dan Andrei Ciubotaru &lt;<a href="mailto:dan.andrei.ciubotaru@cern.ch">dan.andrei.ciubotaru@cern.ch</a>&gt;<br><br>'
+            "<b>In memory of Stephen Francis Biagi</b><br><br>"
+            "Stephen Francis Biagi was the creator of Magboltz, a cornerstone of modern gaseous detector physics.<br>"
+            "Through this work, he provided a precise and enduring description of electron transport in gases, "
+            "enabling accurate simulation and understanding across an extraordinary range of applications.<br><br>"
+            "This dedication honors a contribution whose impact is profound, lasting, and woven into the history "
+            "of detector physics."
+        )
+        msg.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg.exec()
+
     def checkInputOpen(self) -> bool:
         if self._currentCards is None:
             self.show_error("Error", "File was not open")
@@ -329,6 +388,24 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
                 self.show_info("Success", f"File saved successfully:\n{currentResultFile}")
                 self._currentResultFile = currentResultFile
 
+    def openResultFile(self) -> None:
+        file_name, _ = QFileDialog.getOpenFileName(self, "Open Result", "", "All Files (*);;Text Files (*.txt)")
+        if not file_name:
+            return
+        try:
+            text = Path(file_name).read_text(encoding="utf-8")
+            self.consoleOutput.setPlainText(text)
+            from magboltz_gui.util.output_parser import parse_magboltz_output
+
+            self._last_run_result = parse_magboltz_output(stdout_text=text)
+            self.actionResultExport.setEnabled(True)
+            self.btnResultExport.setEnabled(True)
+            self.actionShowPlots.setEnabled(True)
+            self.btnResultPlots.setEnabled(True)
+            self.show_info("Result loaded", f"Loaded result file:\n{file_name}")
+        except Exception as exc:
+            self.show_error("Error", f"Could not open result file: {exc}")
+
     def openExportWindow(self) -> None:
         if self._last_run_result is None:
             self.show_error("No results", "No parsed results available. Run Magboltz first.")
@@ -350,6 +427,15 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
                 self.show_info("Export complete", f"Exported to:\n{path}")
             except Exception as exc:
                 self.show_error("Export failed", str(exc))
+
+    def showPlotsWindow(self) -> None:
+        if self._last_run_result is None:
+            self.show_error("No results", "No parsed results available. Run Magboltz first.")
+            return
+        from magboltz_gui.window.plots_window import PlotsWindow
+
+        window = PlotsWindow(self._last_run_result, self)
+        window.show()
 
     def run(self) -> None:
 
@@ -376,7 +462,21 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         process = ProcessManager(self)
         self.processes.append(process)
+        self._set_running_state(True)
+        self.actionShowPlots.setEnabled(False)
+        self.btnResultPlots.setEnabled(False)
         process.run()
+
+    def stopRun(self) -> None:
+        if not self.processes:
+            return
+        for process in list(self.processes):
+            process.stop()
+        self._set_running_state(False)
+
+    def _set_running_state(self, running: bool) -> None:
+        self.actionRun.setVisible(not running)
+        self.actionStop.setVisible(running)
 
     def updateCmdLine(self) -> None:
 
@@ -788,3 +888,8 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         # self.cmbColorMap.setIconSize(self.cmbColorMap.iconSize())  # keep default or adjust via setIconSize()
         for name in names:
             self.cmbColorMap.addItem(name, userData=name)
+
+        # Default to Pastel1 if available
+        idx = self.cmbColorMap.findText("Pastel1")
+        if idx >= 0:
+            self.cmbColorMap.setCurrentIndex(idx)

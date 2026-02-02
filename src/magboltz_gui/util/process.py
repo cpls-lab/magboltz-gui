@@ -24,6 +24,15 @@ class ProcessManager:
 
         self.run_process()
 
+    def stop(self) -> None:
+        try:
+            self.process.terminate()
+        except Exception:
+            try:
+                self.process.kill()
+            except Exception:
+                pass
+
     def run_process(self) -> None:
 
         if self.main_window._currentInputFile is None:
@@ -69,6 +78,12 @@ class ProcessManager:
             self.main_window._last_run_result = parse_magboltz_output(
                 stdout_text=stdout_text, input_text=input_text, input_path=input_path
             )
+            self.main_window.actionResultExport.setEnabled(True)
+            self.main_window.btnResultExport.setEnabled(True)
+            self.main_window.actionShowPlots.setEnabled(True)
+            self.main_window.btnResultPlots.setEnabled(True)
         except Exception as exc:
             self.main_window.show_error("Parse error", f"Failed to parse Magboltz output: {exc}")
         self.main_window.processes.remove(self)
+        if not self.main_window.processes:
+            self.main_window._set_running_state(False)

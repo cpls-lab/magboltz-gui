@@ -33,7 +33,13 @@ def main() -> None:
     app.setOrganizationName("CERN")
     # IMPORTANT for Wayland/GNOME: this sets the app-id from a desktop file name
     app.setDesktopFileName(str(files("magboltz_gui.icons").joinpath("magboltz-gui.desktop")))
-    app.setWindowIcon(QIcon(str(files("magboltz_gui.icons").joinpath("icon-192x192.png"))))
+    # Prefer SVG app icon; keep PNG as fallback.
+    app_icon_svg = files("magboltz_gui.icons").joinpath("icon.svg")
+    app_icon_png = files("magboltz_gui.icons").joinpath("icon-192x192.png")
+    if app_icon_svg.is_file():
+        app.setWindowIcon(QIcon(str(app_icon_svg)))
+    elif app_icon_png.is_file():
+        app.setWindowIcon(QIcon(str(app_icon_png)))
 
     signal.signal(signal.SIGINT, _sigint_handler)
 
