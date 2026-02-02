@@ -177,6 +177,17 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         (common on minimal Linux setups). Runs after macOS overrides; only fills null icons.
         """
         style = self.style()
+
+        # On Linux, force bundled icons for Gas Add/Remove (clear "+" / "-" visuals)
+        if platform.system() == "Linux":
+            linux_icons_dir = files("magboltz_gui.icons").joinpath("linux_icons")
+            add_icon = linux_icons_dir.joinpath("addition-color-icon.svg")
+            remove_icon = linux_icons_dir.joinpath("subtract-color-icon.svg")
+            if add_icon.is_file():
+                self.actionGasAdd.setIcon(QIcon(str(add_icon)))
+            if remove_icon.is_file():
+                self.actionGasRemove.setIcon(QIcon(str(remove_icon)))
+
         mapping: dict[QAction, QStyle.StandardPixmap] = {
             self.actionNew: QStyle.StandardPixmap.SP_FileIcon,
             self.actionOpen: QStyle.StandardPixmap.SP_DialogOpenButton,

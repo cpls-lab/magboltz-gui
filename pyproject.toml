@@ -29,7 +29,15 @@ dev = [
 
 
 [tool.setuptools.package-data]
-magboltz_gui = ["ui/*.ui", "database/*.csv", "icons/*.svg", "icons/*.png"]
+magboltz_gui = [
+    "ui/*.ui",
+    "database/*.csv",
+    "icons/*.svg",
+    "icons/*.png",
+    "icons/macOS_icons/*.png",
+    "icons/linux_icons/*.png",
+    "icons/linux_icons/*.svg",
+]
 
 [tool.mypy]
 strict = true
