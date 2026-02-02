@@ -980,7 +980,7 @@
      <normaloff>../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../.designer/backup</iconset>
    </property>
    <property name="text">
-    <string>Cooy to clipboard</string>
+    <string>Copy to clipboard</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+C</string>

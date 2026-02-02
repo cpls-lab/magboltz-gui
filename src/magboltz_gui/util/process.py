@@ -11,6 +11,7 @@ class ProcessManager:
 
     def __init__(self, main_window: MagboltzGUI):
         self.main_window = main_window
+        self._stdout_buffer: list[str] = []
 
     def run(self) -> None:
 
@@ -45,6 +46,7 @@ class ProcessManager:
     def handle_stdout(self) -> None:
         data = self.process.readAllStandardOutput().data()
         text = data.decode("utf-8")
+        self._stdout_buffer.append(text)
         self.main_window.consoleOutput.append(text)
 
     def handle_stderr(self) -> None:
@@ -55,4 +57,18 @@ class ProcessManager:
     def process_finished(self) -> None:
         self.main_window.consoleOutput.append("")
         self.main_window.consoleOutput.append("Process finished.")
+        stdout_text = "".join(self._stdout_buffer)
+        try:
+            from magboltz_gui.util.output_parser import parse_magboltz_output
+
+            input_text = None
+            input_path = str(self.main_window._currentInputFile) if self.main_window._currentInputFile else None
+            if self.main_window._currentInputFile is not None:
+                with self.main_window._currentInputFile.open("r", encoding="utf-8") as f:
+                    input_text = f.read()
+            self.main_window._last_run_result = parse_magboltz_output(
+                stdout_text=stdout_text, input_text=input_text, input_path=input_path
+            )
+        except Exception as exc:
+            self.main_window.show_error("Parse error", f"Failed to parse Magboltz output: {exc}")
         self.main_window.processes.remove(self)

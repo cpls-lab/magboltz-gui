@@ -29,6 +29,9 @@ from magboltz_gui.generated.ui_main import Ui_MainWindow
 from magboltz_gui.util import parser
 from magboltz_gui.window.delegates import GasNameDelegate, AmountDelegate
 from magboltz_gui.util.process import ProcessManager
+from magboltz_gui.window.export_window import ExportDialog
+from magboltz_gui.util.export_controller import export_to_file
+from magboltz_gui.util.export_types import ExportFormat, ExportType, CsvOptions, JsonOptions, XmlOptions
 
 
 class MagboltzGUI(QMainWindow, Ui_MainWindow):
@@ -49,6 +52,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self._currentCards: InputCards = InputCards()
         self._currentModified: bool = False
+        self._last_run_result = None
 
         # Associating button to actions
         self.btnGasAdd.setDefaultAction(self.actionGasAdd)
@@ -326,7 +330,26 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
                 self._currentResultFile = currentResultFile
 
     def openExportWindow(self) -> None:
-        print("Test Test")
+        if self._last_run_result is None:
+            self.show_error("No results", "No parsed results available. Run Magboltz first.")
+            return
+
+        dialog = ExportDialog(self._last_run_result, self)
+        if dialog.exec():
+            export_type, fmt, path, csv_opts, json_opts, xml_opts = dialog.export_settings()
+            try:
+                export_to_file(
+                    self._last_run_result,
+                    export_type,
+                    fmt,
+                    path,
+                    csv_options=csv_opts,
+                    json_options=json_opts,
+                    xml_options=xml_opts,
+                )
+                self.show_info("Export complete", f"Exported to:\n{path}")
+            except Exception as exc:
+                self.show_error("Export failed", str(exc))
 
     def run(self) -> None:
 
