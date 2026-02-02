@@ -11,6 +11,7 @@ from magboltz_gui.util.qt_style import (
     apply_linux_style_fallback,
     set_linux_platform_theme_env_if_available,
 )
+from magboltz_gui.util.icon_theme import ensure_icon_theme
 
 
 def main() -> None:
@@ -26,6 +27,7 @@ def main() -> None:
     app: QApplication = QApplication(sys.argv)
 
     apply_linux_style_fallback(app)
+    ensure_icon_theme()
 
     app.setApplicationName("Magboltz GUI")
     app.setOrganizationName("CERN")

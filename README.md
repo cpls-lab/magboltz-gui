@@ -22,6 +22,8 @@ If you want to reuse your distro’s Qt bindings, use instead:
 ```bash
 # Debian/Ubuntu: install system PyQt6
 sudo apt install python3-pyqt6
+# Recommended for proper theming on GNOME/Wayland:
+#   sudo apt install qt6-gtk-platformtheme qt6ct
 ```
 and then:
 ```bash
@@ -40,6 +42,14 @@ magboltz-gui
 # or
 python -m magboltz_gui
 ```
+
+#### Linux theming note
+- The app auto-detects platform themes on Linux and will log what it picks.
+- If your desktop still looks “Fusion/disabled”, you can force a theme:
+  ```bash
+  QT_QPA_PLATFORMTHEME=qt6ct QT_STYLE_OVERRIDE=qt6ct-style magboltz-gui
+  ```
+  (assuming `qt6ct` / `qt6-gtk-platformtheme` are installed)
 
 ---
 

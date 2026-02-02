@@ -6,6 +6,7 @@ from typing import Optional, List, Tuple, Callable
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QAction
+from PyQt6.QtWidgets import QStyle
 from PyQt6.QtWidgets import (
     QMainWindow,
     QFileDialog,
@@ -85,6 +86,9 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self.cmbLabelFormat.currentIndexChanged.connect(self.refresh_pie)
         self.cmbColorMap.currentIndexChanged.connect(self.refresh_pie)
+
+        # Ensure icons are visible even when the desktop icon theme is missing.
+        self._apply_icon_fallbacks()
 
         # Make "Gas name" stretch to fill available space
         header = self.gasListTable.horizontalHeader()
@@ -166,6 +170,35 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             if icon is not None:
                 if Path(icon).is_file():
                     action.setIcon(QIcon(icon))
+
+    def _apply_icon_fallbacks(self) -> None:
+        """
+        Assign Qt standard icons when theme icons are missing
+        (common on minimal Linux setups). Runs after macOS overrides; only fills null icons.
+        """
+        style = self.style()
+        mapping: dict[QAction, QStyle.StandardPixmap] = {
+            self.actionNew: QStyle.StandardPixmap.SP_FileIcon,
+            self.actionOpen: QStyle.StandardPixmap.SP_DialogOpenButton,
+            self.actionSave: QStyle.StandardPixmap.SP_DialogSaveButton,
+            self.actionSaveAs: QStyle.StandardPixmap.SP_DialogSaveButton,
+            self.actionRevert: QStyle.StandardPixmap.SP_BrowserReload,
+            self.actionClose: QStyle.StandardPixmap.SP_DialogCloseButton,
+            self.actionQuit: QStyle.StandardPixmap.SP_TitleBarCloseButton,
+            self.actionRun: QStyle.StandardPixmap.SP_MediaPlay,
+            self.actionGasAdd: QStyle.StandardPixmap.SP_FileDialogNewFolder,
+            self.actionGasRemove: QStyle.StandardPixmap.SP_TrashIcon,
+            self.actionGasMoveUp: QStyle.StandardPixmap.SP_ArrowUp,
+            self.actionGasMoveDown: QStyle.StandardPixmap.SP_ArrowDown,
+            self.actionGasNormalize: QStyle.StandardPixmap.SP_BrowserReload,
+            self.actionCmdCopyToClipboard: QStyle.StandardPixmap.SP_FileDialogListView,
+            self.actionResultExport: QStyle.StandardPixmap.SP_DialogSaveButton,
+            self.actionGraphSave: QStyle.StandardPixmap.SP_DialogSaveButton,
+        }
+
+        for action, sp in mapping.items():
+            if action.icon().isNull():
+                action.setIcon(style.standardIcon(sp))
 
     def fileNew(self) -> None:
         self._currentCards = InputCards()

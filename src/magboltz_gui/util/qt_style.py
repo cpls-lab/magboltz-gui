@@ -57,9 +57,6 @@ def set_linux_platform_theme_env_if_available() -> None:
     cand = _detect_platform_theme_plugin()
     if cand:
         os.environ["QT_QPA_PLATFORMTHEME"] = cand
-        print(f"[magboltz-gui] Qt platform theme auto-set to {cand}", file=sys.stderr)
-    else:
-        print("[magboltz-gui] Qt platform theme not set; no known platformthemes found", file=sys.stderr)
 
 
 def apply_linux_style_fallback(app) -> None:
@@ -83,4 +80,3 @@ def apply_linux_style_fallback(app) -> None:
             break
     else:
         print(f"[magboltz-gui] Qt style remains: {style_now}", file=sys.stderr)
-
