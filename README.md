@@ -25,14 +25,45 @@ sudo apt install python3-pyqt6
 ```
 and then:
 ```bash
+# Create venv that can see system site-packages
+python3 -m venv .venv --system-site-packages
+source .venv/bin/activate
+
 # Then install magboltz-gui with access to system packages
-pipx install magboltz-gui --system-site-packages
+pip install -e .
 ```
 
 ## Quick start
 
 ```bash
 magboltz-gui
+# or
+python -m magboltz_gui
+```
+
+---
+
+## Developer notes
+
+### Regenerate Qt UI bindings
+
+The `.ui` files in `src/magboltz_gui/ui/` are the source of truth. The Python bindings
+in `src/magboltz_gui/generated/` are generated artifacts.
+
+To regenerate them (requires `pyuic6` from PyQt6):
+
+```bash
+python -m magboltz_gui.tool.gen_ui
+```
+
+This will update both `ui_*.py` and `ui_*.pyi` files under `src/magboltz_gui/generated/`.
+
+### Development dependencies
+
+Install dev tools (mypy/black/etc.) with:
+
+```bash
+pip install -e ".[dev]"
 ```
 
 ---

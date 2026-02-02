@@ -6,12 +6,14 @@ dist/
 wheels/
 *.egg-info
 .idea
+.mypy_cache/
 
 # Generated files
 src/magboltz_gui/generated/
 
 # Virtual environments
 .venv
+.env
 
 # Common input and output files
 input.txt

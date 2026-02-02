@@ -35,11 +35,11 @@ def compile_ui(ui_dir: str, out_dir: str) -> int:
     return 0
 
 
-
 def main() -> None:
     # Optional: take directories from argv: uv run gen-ui ui generated
     ui_dir = sys.argv[1] if len(sys.argv) > 1 else "src/magboltz_gui/ui"
     out_dir = sys.argv[2] if len(sys.argv) > 2 else "src/magboltz_gui/generated"
     raise SystemExit(compile_ui(ui_dir, out_dir))
+
 
 main()

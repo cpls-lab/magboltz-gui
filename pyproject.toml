@@ -20,15 +20,16 @@ qt = [
   "PyQt6-Qt6>=6.9.1",
   "pyqt6-utils>=0.5.0",
 ]
-
-dev = ["mypy", "black"]
+dev = [
+  "black>=25.9.0",
+  "mypy>=1.18.2",
+  "pyqt6-stubs>=20250824",
+  "types-requests>=2.32.4.20250913",
+]
 
 
 [tool.setuptools.package-data]
 magboltz_gui = ["ui/*.ui", "database/*.csv", "icons/*.svg", "icons/*.png"]
-
-[tool.uv]
-package = true
 
 [tool.mypy]
 strict = true
@@ -48,17 +49,9 @@ exclude = '''
 )/
 '''
 
-[dependency-groups]
-dev = [
-    "black>=25.9.0",
-    "mypy>=1.18.2",
-    "pyqt6-stubs>=20250824",
-    "types-requests>=2.32.4.20250913",
-]
-
 [project.scripts]
 magboltz-gui = "magboltz_gui.main:main"
-#gen-ui = "magboltz_gui.tool.gen_ui:main"
+gen-ui = "magboltz_gui.tool.gen_ui:main"
 
 [project.urls]
 Homepage = "https://gitlab.com/micrenda/magboltz-gui"

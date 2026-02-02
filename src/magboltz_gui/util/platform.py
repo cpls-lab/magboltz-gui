@@ -1,6 +1,6 @@
 # --- Put this at the very top of main.py (before creating QApplication) ---
 
-import os, sys, platform, re
+import sys, platform, re
 from pathlib import Path
 from typing import Tuple, Optional
 
@@ -128,4 +128,12 @@ def ensure_qt_runtime_or_explain() -> None:
     except Exception as e:
         _print_install_help_for_missing_pyqt6()
         print(f"Details: {e}\n", file=sys.stderr)
+        sys.exit(1)
+
+    ok, hint = _platform_plugins_ok()
+    if not ok:
+        print("\nQt platform plugins are missing or unusable.", file=sys.stderr)
+        if hint:
+            print(f"Details: {hint}", file=sys.stderr)
+        print("Install a Qt platform plugin (wayland or xcb) and ensure it is discoverable.", file=sys.stderr)
         sys.exit(1)
