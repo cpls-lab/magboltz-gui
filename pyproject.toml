@@ -27,6 +27,17 @@ dev = [
   "types-requests>=2.32.4.20250913",
 ]
 
+[dependency-groups]
+dev = [
+    "black>=25.9.0",
+    "mypy>=1.18.2",
+    "pyqt6-stubs>=20250824",
+    "types-requests>=2.32.4.20250913",
+]
+
+[tool.uv]
+package = true
+
 
 [tool.setuptools.package-data]
 magboltz_gui = [

@@ -1,0 +1,262 @@
+magboltz < /home/mrenda/research/plasma/magboltz-gui/input.txt
+
+Starting process...
+ RM48 INITIALIZED:  54217137           0         0
+
+
+
+          PROGRAM MAGBOLTZ 2 VERSION 11.19
+
+          MONTE CARLO SOLUTION FOR MIXTURE OF  2 GASES.
+     ------------------------------------------------------
+
+       GASES  USED                 PERCENTAGE USED 
+
+      ARGON ANISOTROPIC    2014       70.0000
+      CO2  2018 ANISOTROPIC           30.0000
+
+
+
+  GAS TEMPERATURE =  20.0 DEGREES CENTIGRADE.
+  GAS PRESSURE =   760.0 TORR.
+
+  INTEGRATION FROM 0.0 TO     4.00 EV.  IN 4000 STEPS. 
+
+ PENNING EFFECTS NOT INCLUDED
+
+ ANISOTROPIC SCATTERING TYPE 2 (OKHRIMOVSKYY) USED IF AVAILABLE
+
+ SHORT DECORRELATION LENGTH = 400000 COLLISIONS.
+
+
+ THERMAL MOTION OF GAS INCLUDED
+
+  ELECTRIC FIELD =   1000.0000 VOLTS/CM.
+  MAGNETIC FIELD =     0.0000 KILOGAUSS.
+  ANGLE BETWEEN ELECTRIC AND MAGNETIC FIELD =     0.000 DEGREES.
+  CYCLOTRON FREQ. =   0.000D+00 RADIANS/PICOSECOND
+
+  INITIAL ELECTRON ENERGY =   0.080 EV.
+
+  TOTAL NUMBER OF REAL COLLISIONS =  200000000
+
+  NULL COLLISION FREQUENCY FOR EACH GAS COMPONENT IN UNITS OF  (*10**12/SEC)
+         0.147D+01         0.118D+01         0.000D+00
+         0.000D+00         0.000D+00         0.000D+00
+
+
+
+    VEL      POS        TIME      ENERGY   COUNT   DIFXX     DIFYY     DIFZZ
+
+
+    29.45  0.824D+00  0.280D+08   0.1458    50      291.6     313.2       0.0
+
+    29.44  0.165D+01  0.559D+08   0.1457   100      328.3     300.3       0.0
+
+    29.44  0.247D+01  0.839D+08   0.1456   150      309.1     297.7     436.9
+
+    29.43  0.329D+01  0.112D+09   0.1456   200      303.1     317.3     481.7
+
+    29.44  0.412D+01  0.140D+09   0.1456   250      301.2     312.7     498.0
+
+    29.43  0.494D+01  0.168D+09   0.1456   300      315.2     295.9     479.9
+
+    29.43  0.576D+01  0.196D+09   0.1455   350      307.6     296.3     477.8
+
+    29.43  0.658D+01  0.224D+09   0.1455   400      305.7     297.0     474.7
+
+    29.43  0.741D+01  0.252D+09   0.1455   450      300.4     302.2     467.4
+
+    29.43  0.823D+01  0.280D+09   0.1455   500      300.2     292.2     489.4
+-----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
+
+  CALCULATED MAX. COLLISION TIME =  41.88 PICOSECONDS.
+
+  NUMBER OF NULL COLLISIONS =  540776987
+  NUMBER OF REAL COLLISIONS =  200000000
+
+  Z DRIFT VELOCITY = 0.2943E+02 MICRONS/NANOSECOND  +-    0.02% 
+  Y DRIFT VELOCITY = 0.0000E+00 MICRONS/NANOSECOND  +-    0.00%
+  X DRIFT VELOCITY = 0.0000E+00 MICRONS/NANOSECOND  +-    0.00%
+
+
+           DIFFUSION IN CM**2/SEC.
+
+
+
+  TRANSVERSE DIFFUSION   = 0.2962D+03 +-    5.04%
+          =  0.10064 EV. +-   5.044%
+          =  141.871 MICRONS/CENTIMETER**0.5  +-    2.52%
+
+
+  LONGITUDINAL DIFFUSION = 0.4894D+03 +-     5.4%
+          =   0.1663 EV. +-    5.41%
+          =  182.353 MICRONS/CENTIMETER**0.5  +-    2.71%
+
+
+
+  IONISATION RATE /CM.= 0.0000D+00 +/-  0.00 PERCENT.
+  ATTACHMENT RATE /CM.= 0.0000D+00 +/-  0.00 PERCENT.
+
+
+
+  MEAN ELECTRON ENERGY =   0.1455 EV. ERROR =  +-    0.05%
+
+-----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
+
+
+ NUMBER OF COLLISIONS IN FINAL ENERGY BIN =     0.0
+
+      TOTAL COLL. FREQ. = 0.7152D+00 (*10**12)/SEC.
+    ELASTIC COLL. FREQ. = 0.6529D+00 (*10**12)/SEC.
+  INELASTIC COLL. FREQ. = 0.6226D-01 (*10**12)/SEC.
+ IONISATION COLL. FREQ. = 0.0000D+00 (*10**12)/SEC.
+ ATTACHMENT COLL. FREQ. = 0.0000D+00 (*10**12)/SEC.
+
+-----------------------------------------------------------------------------
+
+  DETAILED COLLISION FREQUENCIES FOR EACH GAS IN UNITS OF 10**12/SEC. :
+
+
+
+   ARGON ANISOTROPIC    2014
+----------------------------
+
+
+    ELASTIC ANISOTROPIC       ARGON                      0.4052D-01 +-  0.0297 %
+    ATTACHMENT                                           0.0000D+00 +-  0.0000 %
+
+   CO2  2018 ANISOTROPIC    
+----------------------------
+
+
+    ELASTIC  ANISOTROPIC          CO2                    0.6124D+00 +-  0.0076 %
+    ATTACHMENT                                           0.0000D+00 +-  0.0000 %
+    ROTATION  0-2                    ELOSS=  0.00029     0.1892D-03 +-  0.4347 %
+    ROTATION  2-0                    ELOSS= -0.00029     0.1870D-03 +-  0.4373 %
+    ROTATION  2-4                    ELOSS=  0.00068     0.4779D-03 +-  0.2736 %
+    ROTATION  4-2                    ELOSS= -0.00068     0.4735D-03 +-  0.2748 %
+    ROTATION  4-6                    ELOSS=  0.00106     0.7442D-03 +-  0.2192 %
+    ROTATION  6-4                    ELOSS= -0.00106     0.7191D-03 +-  0.2230 %
+    ROTATION  6-8                    ELOSS=  0.00145     0.9709D-03 +-  0.1919 %
+    ROTATION  8-6                    ELOSS= -0.00145     0.9334D-03 +-  0.1957 %
+    ROTATION  8-10                   ELOSS=  0.00184     0.1161D-02 +-  0.1755 %
+    ROTATION 10-8                    ELOSS= -0.00184     0.1105D-02 +-  0.1799 %
+    ROTATION 10-12                   ELOSS=  0.00223     0.1306D-02 +-  0.1654 %
+    ROTATION 12-10                   ELOSS= -0.00223     0.1226D-02 +-  0.1708 %
+    ROTATION 12-14                   ELOSS=  0.00261     0.1404D-02 +-  0.1596 %
+    ROTATION 14-12                   ELOSS= -0.00261     0.1303D-02 +-  0.1657 %
+    ROTATION 14-16                   ELOSS=  0.00300     0.1445D-02 +-  0.1573 %
+    ROTATION 16-14                   ELOSS= -0.00300     0.1328D-02 +-  0.1641 %
+    ROTATION 16-18                   ELOSS=  0.00339     0.1449D-02 +-  0.1571 %
+    ROTATION 18-16                   ELOSS= -0.00339     0.1315D-02 +-  0.1649 %
+    ROTATION 18-20                   ELOSS=  0.00377     0.1401D-02 +-  0.1597 %
+    ROTATION 20-18                   ELOSS= -0.00377     0.1268D-02 +-  0.1680 %
+    ROTATION 20-22                   ELOSS=  0.00416     0.1332D-02 +-  0.1638 %
+    ROTATION 22-20                   ELOSS= -0.00416     0.1185D-02 +-  0.1737 %
+    ROTATION 22-24                   ELOSS=  0.00455     0.1232D-02 +-  0.1704 %
+    ROTATION 24-22                   ELOSS= -0.00455     0.1085D-02 +-  0.1816 %
+    ROTATION 24-26                   ELOSS=  0.00493     0.1115D-02 +-  0.1791 %
+    ROTATION 26-24                   ELOSS= -0.00493     0.9672D-03 +-  0.1923 %
+    ROTATION 26-28                   ELOSS=  0.00532     0.9851D-03 +-  0.1905 %
+    ROTATION 28-26                   ELOSS= -0.00532     0.8501D-03 +-  0.2051 %
+    ROTATION 28-30                   ELOSS=  0.00571     0.8568D-03 +-  0.2043 %
+    ROTATION 30-28                   ELOSS= -0.00571     0.7274D-03 +-  0.2217 %
+    ROTATION 30-32                   ELOSS=  0.00610     0.7294D-03 +-  0.2214 %
+    ROTATION 32-30                   ELOSS= -0.00610     0.6139D-03 +-  0.2413 %
+    ROTATION 32-34                   ELOSS=  0.00648     0.6046D-03 +-  0.2432 %
+    ROTATION 34-32                   ELOSS= -0.00648     0.5039D-03 +-  0.2664 %
+    ROTATION 34-36                   ELOSS=  0.00687     0.4940D-03 +-  0.2690 %
+    ROTATION 36-34                   ELOSS= -0.00687     0.4086D-03 +-  0.2958 %
+    ROTATION 36-38                   ELOSS=  0.00726     0.4000D-03 +-  0.2990 %
+    ROTATION 38-36                   ELOSS= -0.00726     0.3241D-03 +-  0.3322 %
+    ROTATION 38-40                   ELOSS=  0.00764     0.3123D-03 +-  0.3384 %
+    ROTATION 40-38                   ELOSS= -0.00764     0.2551D-03 +-  0.3744 %
+    ROTATION 40-42                   ELOSS=  0.00803     0.2423D-03 +-  0.3842 %
+    ROTATION 42-40                   ELOSS= -0.00803     0.1954D-03 +-  0.4278 %
+    ROTATION 42-44                   ELOSS=  0.00842     0.1856D-03 +-  0.4389 %
+    ROTATION 44-42                   ELOSS= -0.00842     0.1460D-03 +-  0.4948 %
+    ROTATION 44-46                   ELOSS=  0.00881     0.1378D-03 +-  0.5094 %
+    ROTATION 46-44                   ELOSS= -0.00881     0.1083D-03 +-  0.5747 %
+    ROTATION 46-48                   ELOSS=  0.00919     0.1016D-03 +-  0.5932 %
+    ROTATION 48-46                   ELOSS= -0.00919     0.7862D-04 +-  0.6744 %
+    ROTATION 48-50                   ELOSS=  0.00958     0.7368D-04 +-  0.6966 %
+    ROTATION 50-48                   ELOSS= -0.00958     0.5615D-04 +-  0.7980 %
+    ROTATION 50-52                   ELOSS=  0.00997     0.5250D-04 +-  0.8253 %
+    ROTATION 52-50                   ELOSS= -0.00997     0.3880D-04 +-  0.9599 %
+    ROTATION 52-54                   ELOSS=  0.01035     0.3646D-04 +-  0.9903 %
+    ROTATION 54-52                   ELOSS= -0.01035     0.2774D-04 +-  1.1353 %
+    ROTATION 54-56                   ELOSS=  0.01074     0.2493D-04 +-  1.1975 %
+    ROTATION 56-54                   ELOSS= -0.01074     0.1862D-04 +-  1.3860 %
+    ROTATION 56-58                   ELOSS=  0.01113     0.1697D-04 +-  1.4517 %
+    ROTATION 58-56                   ELOSS= -0.01113     0.1226D-04 +-  1.7080 %
+    ROTATION 58-60                   ELOSS=  0.01151     0.1106D-04 +-  1.7978 %
+    ROTATION 60-58                   ELOSS= -0.01151     0.8171D-05 +-  2.0920 %
+    VIBRATION  (010)                 ELOSS= -0.08275     0.1575D-02 +-  0.1507 %
+    VIBRATION (010)                  ELOSS=  0.08275     0.1606D-01 +-  0.0472 %
+    VIBRATION (020)                  ELOSS= -0.15937     0.1262D-05 +-  5.3225 %
+    VIBRATION (020)                  ELOSS=  0.15937     0.9577D-04 +-  0.6111 %
+    VIBRATION (100)                  ELOSS= -0.17211     0.3232D-04 +-  1.0518 %
+    VIBRATION (100)                  ELOSS=  0.17211     0.4007D-02 +-  0.0945 %
+    VIBRATION (030)+(110)            ELOSS= -0.251       0.0000D+00 +-  0.0000 %
+    VIBRATION (030)+(110)            ELOSS=  0.251       0.1609D-06 +- 14.9071 %
+    VIBRATION (001)                  ELOSS= -0.29126     0.5006D-06 +-  8.4515 %
+    VIBRATION (001)                  ELOSS=  0.29126     0.3409D-02 +-  0.1024 %
+    VIBRATION  POLYAD 3              ELOSS=  0.335       0.1211D-03 +-  0.5434 %
+    VIBRATION (130)+(210)            ELOSS=  0.422       0.3933D-07 +- 30.1511 %
+    VIBRATION  POLYAD 4              ELOSS=  0.505       0.8940D-06 +-  6.3246 %
+    VIBRATION  POLYAD 5              ELOSS=  0.685       0.4649D-07 +- 27.7350 %
+    VIBRATION  POLYAD 6              ELOSS=  0.825       0.2861D-07 +- 35.3553 %
+    VIBRATION  POLYAD 7              ELOSS=  0.995       0.7152D-08 +- 70.7107 %
+    VIBRATION  POLYAD 8              ELOSS=  1.160       0.7152D-08 +- 70.7107 %
+    VIBRATION  POLYAD 9              ELOSS=  1.320       0.1788D-07 +- 44.7214 %
+    VIBRATION  POLYAD HIGH SUM       ELOSS=  2.50        0.3576D-08 +-100.0000 %
+-----------------------------------------------------------------------------
+
+
+           NORMALISED ENERGY DISTRIBUTION
+      E=      0.050      SPEC= 0.5673D+00
+      E=      0.150      SPEC= 0.2931D+00
+      E=      0.250      SPEC= 0.7896D-01
+      E=      0.350      SPEC= 0.2614D-01
+      E=      0.450      SPEC= 0.1194D-01
+      E=      0.550      SPEC= 0.6639D-02
+      E=      0.650      SPEC= 0.4138D-02
+      E=      0.750      SPEC= 0.2827D-02
+      E=      0.850      SPEC= 0.2058D-02
+      E=      0.950      SPEC= 0.1581D-02
+      E=      1.050      SPEC= 0.1230D-02
+      E=      1.150      SPEC= 0.9562D-03
+      E=      1.250      SPEC= 0.7342D-03
+      E=      1.350      SPEC= 0.5705D-03
+      E=      1.450      SPEC= 0.4456D-03
+      E=      1.550      SPEC= 0.3433D-03
+      E=      1.650      SPEC= 0.2630D-03
+      E=      1.750      SPEC= 0.2059D-03
+      E=      1.850      SPEC= 0.1565D-03
+      E=      1.950      SPEC= 0.1199D-03
+      E=      2.050      SPEC= 0.8870D-04
+      E=      2.150      SPEC= 0.6622D-04
+      E=      2.250      SPEC= 0.4649D-04
+      E=      2.350      SPEC= 0.3206D-04
+      E=      2.450      SPEC= 0.2121D-04
+      E=      2.550      SPEC= 0.1335D-04
+      E=      2.650      SPEC= 0.8295D-05
+      E=      2.750      SPEC= 0.4790D-05
+      E=      2.850      SPEC= 0.2150D-05
+      E=      2.950      SPEC= 0.1105D-05
+      E=      3.050      SPEC= 0.4050D-06
+      E=      3.150      SPEC= 0.1900D-06
+      E=      3.250      SPEC= 0.1150D-06
+      E=      3.350      SPEC= 0.3000D-07
+      E=      3.450      SPEC= 0.0000D+00
+      E=      3.550      SPEC= 0.0000D+00
+      E=      3.650      SPEC= 0.0000D+00
+      E=      3.750      SPEC= 0.0000D+00
+      E=      3.850      SPEC= 0.0000D+00
+      E=      3.950      SPEC= 0.0000D+00
+
+
+Process finished.

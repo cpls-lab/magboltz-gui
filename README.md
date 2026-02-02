@@ -6,18 +6,17 @@ A lightweight, cross-platform Qt6 GUI for Magboltz.
 
 ## Installation
 
-### Option A — pipx with bundled Qt (recommended for most users)
+### With uv
+
+#### Option A — bundled Qt (pip)
 
 ```bash
-pipx install magboltz-gui[qt]
+uv venv
+source .venv/bin/activate
+uv pip install -e ".[qt]"
 ```
 
-- Works the same on Linux, macOS, and Windows.
-- No system packages required; everything lives inside pipx’s venv.
-
-### Option B — Use your **system Qt** (Linux/Debian/Ubuntu), then install via pip
- 
-If you want to reuse your distro’s Qt bindings, use instead:
+#### Option B — system Qt (Linux/Debian/Ubuntu)
 
 ```bash
 # Debian/Ubuntu: install system PyQt6
@@ -27,11 +26,33 @@ sudo apt install python3-pyqt6
 ```
 and then:
 ```bash
-# Create venv that can see system site-packages
+uv venv --system-site-packages
+source .venv/bin/activate
+uv pip install -e .
+```
+
+### Without uv
+
+#### Option A — bundled Qt (pip)
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[qt]"
+```
+
+#### Option B — system Qt (Linux/Debian/Ubuntu)
+
+```bash
+# Debian/Ubuntu: install system PyQt6
+sudo apt install python3-pyqt6
+# Recommended for proper theming on GNOME/Wayland:
+#   sudo apt install qt6-gtk-platformtheme qt6ct
+```
+and then:
+```bash
 python3 -m venv .venv --system-site-packages
 source .venv/bin/activate
-
-# Then install magboltz-gui with access to system packages
 pip install -e .
 ```
 
@@ -70,11 +91,19 @@ This will update both `ui_*.py` and `ui_*.pyi` files under `src/magboltz_gui/gen
 
 ### Development dependencies
 
-Install dev tools (mypy/black/etc.) with:
+With uv:
+
+```bash
+uv sync --group dev
+```
+
+Without uv:
 
 ```bash
 pip install -e ".[dev]"
 ```
+
+Both install the same dev tools (black/mypy/stubs); use whichever matches your workflow.
 
 ---
 

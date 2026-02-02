@@ -28,6 +28,7 @@ class PlotsWindow(QDialog):
     def __init__(self, run: RunResult, parent=None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Results plots")
+        self.resize(900, 800)
         icon_path = files("magboltz_gui.icons").joinpath("icon.svg")
         if icon_path.is_file():
             self.setWindowIcon(QIcon(str(icon_path)))
