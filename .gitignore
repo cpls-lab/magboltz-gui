@@ -7,6 +7,7 @@ wheels/
 *.egg-info
 .idea
 .mypy_cache/
+uv.lock
 
 # Generated files
 src/magboltz_gui/generated/
