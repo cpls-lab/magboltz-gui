@@ -55,6 +55,41 @@ class PercentDelegate(QStyledItemDelegate):
         self._main_window.refresh()
 
 
+class AmountDelegate(QStyledItemDelegate):
+    """
+    Editable float without percent suffix for gas amount.
+    """
+
+    def __init__(self, main_window: MagboltzGUI, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self._main_window = main_window
+
+    def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QModelIndex) -> QWidget:
+        editor = QDoubleSpinBox(parent)
+        editor.setDecimals(3)
+        editor.setRange(0, 1_000_000)
+        editor.setSingleStep(1.0)
+        editor.setAlignment(Qt.AlignmentFlag.AlignRight)
+        return editor
+
+    @override
+    def setEditorData(self, editor: QWidget, index: QModelIndex) -> None:
+        assert isinstance(editor, QDoubleSpinBox)
+        text = index.model().data(index, Qt.ItemDataRole.EditRole)
+        value = float(str(text))
+        editor.setValue(value)
+
+    @override
+    def setModelData(self, editor: QWidget, model: QAbstractItemModel, index: QModelIndex) -> None:
+        assert isinstance(editor, QDoubleSpinBox)
+        editor.interpretText()
+        value = editor.value()
+        model.setData(index, f"{value:.3f}", Qt.ItemDataRole.EditRole)
+
+        self._main_window._currentCards.gases[index.row()].gas_frac = value
+        self._main_window.refresh()
+
+
 class GasNameDelegate(QStyledItemDelegate):
 
     def __init__(self, main_window: MagboltzGUI, parent: Optional[QWidget] = None):

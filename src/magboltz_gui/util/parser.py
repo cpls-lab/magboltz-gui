@@ -52,7 +52,12 @@ def load(filename: Path) -> InputCards:
 def save(input_cards: InputCards, filename: Path) -> None:
 
     gas_ids = [gas.gas_id for gas in input_cards.gases] + [80] * (6 - len(input_cards.gases))
-    gas_fracs = [gas.gas_frac for gas in input_cards.gases] + [0.0] * (6 - len(input_cards.gases))
+    total = sum(gas.gas_frac for gas in input_cards.gases)
+    if total > 0:
+        normalized = [gas.gas_frac * 100.0 / total for gas in input_cards.gases]
+    else:
+        normalized = [0.0 for _ in input_cards.gases]
+    gas_fracs = normalized + [0.0] * (6 - len(input_cards.gases))
 
     with filename.open("w") as f:
         # Card 1

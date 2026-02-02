@@ -9,7 +9,7 @@ class InputGas:
     # NGAS etc.: gas number identifiers (between 1 and 80) see gas list below for identifying numbers.
 
     gas_frac: float
-    # FRAC etc.: percentage fraction of gas1 etc.;
+    # FRAC etc.: gas ratio (normalized to percent on save);
 
 
 @dataclass

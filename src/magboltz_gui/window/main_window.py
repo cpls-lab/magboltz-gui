@@ -27,7 +27,7 @@ from magboltz_gui.data.database import GasDatabase
 from magboltz_gui.data.input_cards import InputCards, InputGas
 from magboltz_gui.generated.ui_main import Ui_MainWindow
 from magboltz_gui.util import parser
-from magboltz_gui.window.delegates import PercentDelegate, GasNameDelegate
+from magboltz_gui.window.delegates import GasNameDelegate, AmountDelegate
 from magboltz_gui.util.process import ProcessManager
 
 
@@ -70,7 +70,6 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.actionRun.triggered.connect(self.run)
         self.actionGasAdd.triggered.connect(self.gasAdd)
         self.actionGasRemove.triggered.connect(self.gasRemove)
-        self.actionGasNormalize.triggered.connect(self.gasNormalize)
         self.actionCmdCopyToClipboard.triggered.connect(self.cmdCopyToClipboard)
         self.actionResultSave.triggered.connect(self.saveResult)
         self.actionResultExport.triggered.connect(self.openExportWindow)
@@ -90,11 +89,13 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         # Ensure icons are visible even when the desktop icon theme is missing.
         self._apply_icon_fallbacks()
 
+        self.gasListTable.setColumnCount(4)
         # Make "Gas name" stretch to fill available space
         header = self.gasListTable.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # Gas ID shrinks to content
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Gas name fills extra space
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)  # Gas fraction shrinks to content
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)  # Gas ratio
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)  # Gas percent
 
         header.setMinimumSectionSize(50)
 
@@ -103,6 +104,10 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self.magboltzPath: Optional[Path] = None
         self.processes: List[ProcessManager] = []
+        # Gas normalize button is obsolete with amount/percent split.
+        self.btnGasNormalize.setVisible(False)
+        self.actionGasNormalize.setEnabled(False)
+        self.actionGasNormalize.setVisible(False)
         self.actionNew.trigger()
 
     def createPieChart(self) -> None:
@@ -333,6 +338,14 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self.show_error("Error", "To run the magboltz process, you must to save the file")
             return
 
+        invalid_rows = [
+            idx + 1 for idx, gas in enumerate(self._currentCards.gases) if gas.gas_id <= 0
+        ]
+        if invalid_rows:
+            rows = ", ".join(str(r) for r in invalid_rows)
+            self.show_error("Missing gas", f"Select a gas for each row (missing: {rows})")
+            return
+
         if self._currentModified is False:
             self.fileSave()
 
@@ -453,7 +466,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         gas_name_delegate = GasNameDelegate(self, self.gasListTable)
         self.gasListTable.setItemDelegateForColumn(1, gas_name_delegate)
 
-        delegate = PercentDelegate(self, self.gasListTable)
+        delegate = AmountDelegate(self, self.gasListTable)
         self.gasListTable.setItemDelegateForColumn(2, delegate)
 
         self.refresh()
@@ -484,6 +497,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         gas_fracs = []
         gas_labels = []
 
+        total = sum(g.gas_frac for g in self._currentCards.gases)
         for gas in self._currentCards.gases:
 
             try:
@@ -503,7 +517,8 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             except KeyError:
                 gas_name = "?"
 
-            gas_fracs.append(gas.gas_frac)
+            if total > 0:
+                gas_fracs.append(gas.gas_frac * 100.0 / total)
             gas_labels.append(gas_name)
 
         if len(gas_fracs) > 0:
@@ -524,8 +539,9 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self.gasListTable.clear()
         self.gasListTable.setRowCount(0)
+        self.gasListTable.setColumnCount(4)
 
-        self.gasListTable.setHorizontalHeaderLabels(["Gas ID", "Gas name", "Gas fraction"])
+        self.gasListTable.setHorizontalHeaderLabels(["Gas ID", "Gas name", "Gas ratio", "Gas percent"])
 
         self.gasListTable.verticalHeader().setVisible(False)
         self.gasListTable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
@@ -533,6 +549,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.gasListTable.setShowGrid(False)
 
         i = 0
+        total = sum(g.gas_frac for g in self._currentCards.gases)
         for gas in self._currentCards.gases:
             gas_id_widget = QTableWidgetItem(str(gas.gas_id))
             gas_id_widget.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
@@ -545,24 +562,26 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
             gas_name_widget = QTableWidgetItem(gas_name)
 
-            gas_frac_widget = QTableWidgetItem(f"{gas.gas_frac} %")
-            gas_frac_widget.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            gas_ratio_widget = QTableWidgetItem(f"{gas.gas_frac:.3f}")
+            gas_ratio_widget.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+
+            percent = gas.gas_frac * 100.0 / total if total > 0 else 0.0
+            gas_percent_widget = QTableWidgetItem(f"{percent:.1f} %")
+            gas_percent_widget.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            gas_percent_widget.setFlags(gas_percent_widget.flags() & ~Qt.ItemFlag.ItemIsEditable)
 
             self.gasListTable.insertRow(i)
             self.gasListTable.setItem(i, 0, gas_id_widget)
             self.gasListTable.setItem(i, 1, gas_name_widget)
-            self.gasListTable.setItem(i, 2, gas_frac_widget)
+            self.gasListTable.setItem(i, 2, gas_ratio_widget)
+            self.gasListTable.setItem(i, 3, gas_percent_widget)
             i += 1
 
         self.refresh_pie()
         self.refreshNeedNormalize()
 
     def refreshNeedNormalize(self) -> None:
-        total = 0.0
-        for gas in self._currentCards.gases:
-            total += gas.gas_frac
-
-        self.lblNeedNormalize.setVisible(total < 99.9 or total >= 100.1)
+        self.lblNeedNormalize.setVisible(False)
 
     def gasAdd(self) -> None:
 
