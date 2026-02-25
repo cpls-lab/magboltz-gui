@@ -29,6 +29,7 @@ from magboltz_gui.generated.ui_main import Ui_MainWindow
 from magboltz_gui.util import parser
 from magboltz_gui.window.delegates import GasNameDelegate, AmountDelegate
 from magboltz_gui.util.process import ProcessManager
+from magboltz_gui.util.run_result import RunResult
 from magboltz_gui.window.export_window import ExportDialog
 from magboltz_gui.util.export_controller import export_to_file
 from magboltz_gui.util.export_types import ExportFormat, ExportType, CsvOptions, JsonOptions, XmlOptions
@@ -45,14 +46,16 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         if system == "Darwin":
             self.initDarwinActionIcons()
 
-        self.centralWidget().setVisible(False)
+        cw = self.centralWidget()
+        assert cw is not None
+        cw.setVisible(False)
 
         self._currentInputFile: Optional[Path] = None
         self._currentResultFile: Optional[Path] = None
 
         self._currentCards: InputCards = InputCards()
         self._currentModified: bool = False
-        self._last_run_result = None
+        self._last_run_result: Optional[RunResult] = None
 
         # Associating button to actions
         self.btnGasAdd.setDefaultAction(self.actionGasAdd)
@@ -104,6 +107,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.gasListTable.setColumnCount(4)
         # Make "Gas name" stretch to fill available space
         header = self.gasListTable.horizontalHeader()
+        assert header is not None
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # Gas ID shrinks to content
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Gas name fills extra space
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)  # Gas ratio
@@ -213,6 +217,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         (common on minimal Linux setups). Runs after macOS overrides; only fills null icons.
         """
         style = self.style()
+        assert style is not None
 
         # On Linux, force bundled icons for Gas Add/Remove (clear "+" / "-" visuals)
         if platform.system() == "Linux":
@@ -318,13 +323,17 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self._currentModified = False
 
             self.updateCmdLine()
-            self.disconnect()
+            self.disconnect_ui()
 
     def cmdCopyToClipboard(self) -> None:
-        QApplication.clipboard().setText(self.commandLine.text())
+        clipboard = QApplication.clipboard()
+        assert clipboard is not None
+        clipboard.setText(self.commandLine.text())
 
     def resultCopyToClipboard(self) -> None:
-        QApplication.clipboard().setText(self.consoleOutput.toPlainText())
+        clipboard = QApplication.clipboard()
+        assert clipboard is not None
+        clipboard.setText(self.consoleOutput.toPlainText())
 
     def resultClear(self) -> None:
         self.consoleOutput.clear()
@@ -560,7 +569,9 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
     def connect(self) -> None:
 
-        self.centralWidget().setVisible(True)
+        cw = self.centralWidget()
+        assert cw is not None
+        cw.setVisible(True)
 
         self.spinRealInteractions.setValue(self._currentCards.number_of_real_collisions)
         self.checkPenning.setChecked(self._currentCards.enable_penning)
@@ -666,7 +677,9 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self.gasListTable.setHorizontalHeaderLabels(["Gas ID", "Gas name", "Gas ratio", "Gas percent"])
 
-        self.gasListTable.verticalHeader().setVisible(False)
+        vheader = self.gasListTable.verticalHeader()
+        assert vheader is not None
+        vheader.setVisible(False)
         self.gasListTable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.gasListTable.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.gasListTable.setShowGrid(False)
@@ -856,9 +869,11 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self._currentCards.angle = value
 
-    def disconnect(self) -> None:
+    def disconnect_ui(self) -> None:
 
-        self.centralWidget().setVisible(False)
+        cw = self.centralWidget()
+        assert cw is not None
+        cw.setVisible(False)
 
         self.spinRealInteractions.valueChanged.disconnect(self.onRealInteractionsChanged)
         self.checkPenning.stateChanged.disconnect(self.onPenningChanged)

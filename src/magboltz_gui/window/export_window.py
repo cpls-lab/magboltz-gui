@@ -150,7 +150,9 @@ class ExportDialog(QDialog):
         if not self.txtPath.text().strip():
             error = "Select a destination path."
         self.lblError.setText(error)
-        self.buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(error == "")
+        ok_btn = self.buttons.button(QDialogButtonBox.StandardButton.Ok)
+        if ok_btn is not None:
+            ok_btn.setEnabled(error == "")
 
         # raw stdout only meaningful for full run
         self.chkIncludeRaw.setEnabled(export_type == ExportType.FULL_RUN_ARCHIVE)

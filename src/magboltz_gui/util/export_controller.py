@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple, cast
 
 from magboltz_gui.util.export_types import ExportFormat, ExportType, CsvOptions, JsonOptions, XmlOptions
 from magboltz_gui.util.run_result import RunResult, GasFrequencies, CollisionProcess
@@ -45,6 +45,8 @@ def _summary_dict(run: RunResult) -> Dict[str, Any]:
     trans = run.transport
     freq = run.frequencies_total
     counts = run.counts
+    dt = trans.diffusion.transverse.get("DT_cm2_s")
+    dl = trans.diffusion.longitudinal.get("DL_cm2_s")
     return {
         "gas_temperature_C": cond.gas_temperature_C,
         "gas_pressure_torr": cond.gas_pressure_torr,
@@ -69,10 +71,10 @@ def _summary_dict(run: RunResult) -> Dict[str, Any]:
         "vy_err_pct": trans.vy_um_ns.err_pct if trans.vy_um_ns else None,
         "vz_um_ns": trans.vz_um_ns.v_um_ns if trans.vz_um_ns else None,
         "vz_err_pct": trans.vz_um_ns.err_pct if trans.vz_um_ns else None,
-        "DT_cm2_s": trans.diffusion.transverse.get("DT_cm2_s").value if "DT_cm2_s" in trans.diffusion.transverse else None,
-        "DT_cm2_s_err_pct": trans.diffusion.transverse.get("DT_cm2_s").err_pct if "DT_cm2_s" in trans.diffusion.transverse else None,
-        "DL_cm2_s": trans.diffusion.longitudinal.get("DL_cm2_s").value if "DL_cm2_s" in trans.diffusion.longitudinal else None,
-        "DL_cm2_s_err_pct": trans.diffusion.longitudinal.get("DL_cm2_s").err_pct if "DL_cm2_s" in trans.diffusion.longitudinal else None,
+        "DT_cm2_s": dt.value if dt else None,
+        "DT_cm2_s_err_pct": dt.err_pct if dt else None,
+        "DL_cm2_s": dl.value if dl else None,
+        "DL_cm2_s_err_pct": dl.err_pct if dl else None,
         "ionisation_rate_per_cm": trans.ionisation_rate_per_cm,
         "ionisation_rate_err_pct": trans.ionisation_rate_err_pct,
         "attachment_rate_per_cm": trans.attachment_rate_per_cm,
@@ -146,7 +148,7 @@ def _csv_rows_convergence(run: RunResult, opts: CsvOptions) -> Tuple[List[str], 
     units = {"vel": "um/ns", "pos": "", "time": "ps", "energy": "eV", "count": "", "difxx": "cm^2/s", "difyy": "cm^2/s", "difzz": "cm^2/s"}
     if opts.include_units:
         headers = [_unit_header(h, units.get(h), True) for h in headers]
-    rows = [[r.vel, r.pos, r.time, r.energy, r.count, r.difxx, r.difyy, r.difzz] for r in run.tables.convergence_table]
+    rows: List[List[Any]] = [[r.vel, r.pos, r.time, r.energy, r.count, r.difxx, r.difyy, r.difzz] for r in run.tables.convergence_table]
     if opts.include_metadata:
         rows = [[run.meta.tool_version, run.meta.timestamp_utc, run.input.input_path, *row] for row in rows]
         headers = ["tool_version", "timestamp_utc", "input_path", *headers]
@@ -158,7 +160,7 @@ def _csv_rows_energy(run: RunResult, opts: CsvOptions) -> Tuple[List[str], List[
     units = {"E_eV": "eV", "spec": ""}
     if opts.include_units:
         headers = [_unit_header(h, units.get(h), True) for h in headers]
-    rows = [[r.E_eV, r.spec] for r in run.tables.energy_distribution]
+    rows: List[List[Any]] = [[r.E_eV, r.spec] for r in run.tables.energy_distribution]
     if opts.include_metadata:
         rows = [[run.meta.tool_version, run.meta.timestamp_utc, run.input.input_path, *row] for row in rows]
         headers = ["tool_version", "timestamp_utc", "input_path", *headers]
@@ -198,7 +200,7 @@ def export_csv(run: RunResult, export_type: ExportType, path: Path, opts: CsvOpt
     _write_atomic(path, data)
 
 
-def _filter_run_for_export(run: RunResult, export_type: ExportType, opts: JsonOptions | XmlOptions) -> Dict[str, Any]:
+def _filter_run_for_export(run: RunResult, export_type: ExportType, opts: JsonOptions | XmlOptions) -> Any:
     data = run.to_dict()
     if not opts.include_input_text:
         data["input"]["input_text"] = None

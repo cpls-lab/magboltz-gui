@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, cast
 
 
 @dataclass
@@ -171,4 +171,4 @@ class RunResult:
                 return [_serialize(v) for v in obj]
             return obj
 
-        return _serialize(self)
+        return cast(Dict[str, Any], _serialize(self))

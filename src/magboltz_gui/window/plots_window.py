@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List
+from typing import List, TypedDict
 
 from matplotlib.figure import Figure
 from matplotlib.pyplot import get_cmap, colormaps
@@ -25,7 +25,7 @@ from magboltz_gui.util.run_result import RunResult
 
 
 class PlotsWindow(QDialog):
-    def __init__(self, run: RunResult, parent=None) -> None:
+    def __init__(self, run: RunResult, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Results plots")
         self.resize(900, 800)
@@ -43,7 +43,9 @@ class PlotsWindow(QDialog):
 
         menubar = QMenuBar(self)
         menu = menubar.addMenu("File")
+        assert menu is not None
         action_save = menu.addAction("Save current plot...")
+        assert action_save is not None
         action_save.triggered.connect(self._save_current_plot)
         layout.setMenuBar(menubar)
 
@@ -91,15 +93,23 @@ class PlotsWindow(QDialog):
         self._tab_diff = self._make_tab()
         self.tabs.addTab(self._tab_diff["widget"], "Diffusion")
 
-    def _make_tab(self) -> dict:
+    class _PlotTab(TypedDict):
+        widget: QWidget
+        fig: Figure
+        canvas: FigureCanvasQTAgg
+
+    def _make_tab(self) -> _PlotTab:
         fig = Figure(figsize=(5, 4))
-        canvas = FigureCanvasQTAgg(fig)  # type: ignore
+        canvas = FigureCanvasQTAgg(fig)
         widget = QWidget()
         layout = QVBoxLayout(widget)
         layout.addWidget(canvas)
         return {"widget": widget, "fig": fig, "canvas": canvas}
 
-    def _make_collfreq_tab(self) -> dict:
+    class _CollfreqTab(TypedDict):
+        widget: QWidget
+
+    def _make_collfreq_tab(self) -> _CollfreqTab:
         widget = QWidget()
         layout = QVBoxLayout(widget)
 
@@ -119,7 +129,7 @@ class PlotsWindow(QDialog):
 
         return {"widget": widget}
 
-    def _colors(self, n: int) -> List:
+    def _colors(self, n: int) -> List[object]:
         cmap = get_cmap(self._cmap_name)
         if hasattr(cmap, "colors") and getattr(cmap, "N", 0) >= n:
             return list(cmap.colors)[:n]  # type: ignore
@@ -222,7 +232,7 @@ class PlotsWindow(QDialog):
                 rows = rows[:top_n]
 
             fig = Figure(figsize=(5, 4))
-            canvas = FigureCanvasQTAgg(fig)  # type: ignore
+            canvas = FigureCanvasQTAgg(fig)
             ax = fig.add_subplot(111)
             labels = [r[0] for r in rows]
             values = [r[1] for r in rows]

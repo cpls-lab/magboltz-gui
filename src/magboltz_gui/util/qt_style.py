@@ -59,7 +59,7 @@ def set_linux_platform_theme_env_if_available() -> None:
         os.environ["QT_QPA_PLATFORMTHEME"] = cand
 
 
-def apply_linux_style_fallback(app) -> None:
+def apply_linux_style_fallback(app: object) -> None:
     """
     If on Linux and the user hasn't set QT_STYLE_OVERRIDE, try to pick a better
     style than Fusion when available.

@@ -35,7 +35,10 @@ class SearchWindow(QDialog, Ui_SearchGasForm):
 
         row = self.searchResultTable.currentRow()
         if row != -1:
-            gas_id = int(self.searchResultTable.item(row, 0).text())
+            item = self.searchResultTable.item(row, 0)
+            if item is None:
+                return
+            gas_id = int(item.text())
             gas = self.database.get(gas_id)
             self.label_year.setText(str(gas.year) if gas.year is not None else "-")
             self.label_rating.setText(f"{'★' * gas.rating}{'☆' * (5 - gas.rating)}" if gas.rating is not None else "-")
@@ -68,11 +71,14 @@ class SearchWindow(QDialog, Ui_SearchGasForm):
 
         # Make "Gas name" stretch to fill available space
         header = self.searchResultTable.horizontalHeader()
+        assert header is not None
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
 
-        self.searchResultTable.verticalHeader().setVisible(False)
+        vheader = self.searchResultTable.verticalHeader()
+        assert vheader is not None
+        vheader.setVisible(False)
         self.searchResultTable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.searchResultTable.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.searchResultTable.setShowGrid(False)

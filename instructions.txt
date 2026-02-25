@@ -1,0 +1,330 @@
+PRESENTATION STRUCTURE
+Talk: A GUI for Magboltz
+Duration: 15 minutes
+Slides: 10
+Style: CERN minimal (handled by presentations.ai)
+Tone: Technical / pragmatic / no hype
+
+────────────────────────────────────────────
+
+SLIDE 1 — Title Slide
+
+Content:
+- Title: A GUI for Magboltz
+- Authors:
+    Michele Renda — michele.renda@cern.ch
+    Dan Andrei Ciubotaru — andrei.ciubotaru@cern.ch
+- Institution: IFIN-HH (Romania)
+- Event:
+    7th DRD1 Collaboration Meeting
+    WG4 — Modeling and Simulations
+    Date
+
+Layout:
+- Clean centered layout
+- No screenshots
+- Optional subtle background graphic (abstract / detector / field lines)
+
+Narrative Goal:
+Set context. No fluff.
+
+────────────────────────────────────────────
+
+SLIDE 2 — Magboltz: Why It Matters (very brief)
+
+Content (dense but short):
+
+Header:
+Magboltz in Detector Physics
+
+Body:
+- Monte Carlo electron transport simulation
+- Fundamental tool for:
+    • Gas detector design
+    • Drift properties
+    • Diffusion
+    • Townsend / attachment
+- Used across:
+    • MPGDs
+    • TPCs
+    • RPC studies
+    • Simulation chains (Garfield++)
+
+Key Statement:
+"Magboltz remains a cornerstone of gas detector modeling."
+
+Layout:
+- Text only
+- No images (audience already knows Magboltz)
+
+Narrative Goal:
+Acknowledge importance without lecturing experts.
+
+────────────────────────────────────────────
+
+SLIDE 3 — The Practical Problem
+
+Header:
+The CLI Workflow Reality
+
+Body:
+- Text-based input cards
+- Text-based output parsing
+- Typical friction points:
+    • Input syntax errors
+    • Iterative parameter tuning
+    • Manual data extraction
+    • Ad-hoc plotting scripts
+    • Student onboarding difficulty
+
+Key Line:
+"Powerful physics engine, but workflow-heavy interface."
+
+Layout:
+- Text focused
+- Optional small CLI screenshot graphic (not required)
+
+Narrative Goal:
+Establish justification WITHOUT overselling.
+
+────────────────────────────────────────────
+
+SLIDE 4 — Introducing Magboltz GUI
+
+Header:
+Magboltz GUI
+
+Body:
+- Python + PyQt6 application
+- Cross-platform
+- Designed as a workflow layer, not a replacement
+
+Core Functions:
+- Input file creation & editing
+- Magboltz execution wrapper
+- Output parsing → structured model
+- Data export → CSV / JSON / XML
+- Built-in plotting tools
+
+Layout:
+RIGHT SIDE:
+Screenshot → main_window.png
+
+LEFT SIDE:
+Dense bullet points
+
+Narrative Goal:
+Clear positioning: interface + workflow tool.
+
+────────────────────────────────────────────
+
+SLIDE 5 — Input Configuration & Mixture Handling
+
+Header:
+Simulation & Gas Configuration
+
+Body:
+- Editable simulation parameters
+- Gas mixture editor
+- Ratio → automatic normalization
+- Visual mixture representation
+- Reduced input mistakes during iteration
+
+Layout:
+RIGHT:
+Screenshot → main_window.png (zoomed/cropped if possible)
+
+LEFT:
+Bullet points:
+    • Parameters
+    • Mixture table
+    • Pie chart visualization
+
+Narrative Goal:
+Focus on usability & error reduction.
+
+────────────────────────────────────────────
+
+SLIDE 6 — Execution & Output Handling
+
+Header:
+Execution Workflow
+
+Body:
+- Direct Magboltz invocation
+- Command line transparency
+- Live stdout/stderr streaming
+- Run/Stop controls
+- Raw output persistence
+- Reopen previous runs
+
+Layout:
+RIGHT:
+Screenshot → execution_tab_running_output.png
+
+LEFT:
+Bullet points
+
+Narrative Goal:
+Stress: non-intrusive, CLI-compatible.
+
+────────────────────────────────────────────
+
+SLIDE 7 — Structured Parsing & Exports
+
+Header:
+From Text Output → Structured Data
+
+Body:
+- Canonical RunResult model
+- Extracted:
+    • Transport coefficients
+    • Collision frequencies
+    • Convergence tables
+    • Energy distributions
+- Export formats:
+    • CSV
+    • JSON
+    • XML
+- Reproducible analysis pipelines
+
+Layout:
+RIGHT:
+Screenshot → export_window.png
+
+LEFT:
+Bullet points
+
+Narrative Goal:
+Highlight actual technical contribution (data model).
+
+────────────────────────────────────────────
+
+SLIDE 8 — Plotting & Rapid Exploration
+
+Header:
+Built-in Plotting Tools
+
+Body:
+- Energy distributions
+- Convergence diagnostics
+- Collision frequencies
+- Drift velocities
+- Diffusion summaries
+
+Key Line:
+"Immediate visual feedback without external scripts."
+
+Layout:
+GRID OF IMAGES:
+
+Top row:
+    plots_energy_distribution_bars.png
+    plots_convergence.png
+
+Bottom row:
+    plots_collision_frequencies.png
+    plots_diffusion_summary.png
+
+Narrative Goal:
+Show breadth quickly → visual impact slide.
+
+────────────────────────────────────────────
+
+SLIDE 9 — Installation & Availability
+
+Header:
+Availability & Setup
+
+Body:
+
+Repository:
+https://gitlab.com/micrenda/magboltz-gui/
+
+Basic Setup:
+- Python environment
+- pip / uv installation
+- Standard Magboltz binary workflow
+
+Minimal Commands (small font block):
+
+pip install magboltz-gui
+magboltz-gui
+
+Optional Nerd Block (visually separated):
+- uv workflow
+- system Qt vs bundled Qt
+- developer notes
+
+Layout:
+Mostly text
+No screenshots
+
+Narrative Goal:
+Lower barrier for students / schools / quick adoption.
+
+────────────────────────────────────────────
+
+SLIDE 10 — Tribute to Stephen Biagi
+
+Header:
+Acknowledgement
+
+Body (minimal, respectful):
+
+"We gratefully acknowledge the work of
+Stephen F. Biagi,
+
+whose Magboltz program remains fundamental
+to gas detector physics."
+
+Optional (smaller text):
+"This work stands on the foundations he built."
+
+Layout:
+Very clean
+No dense bullets
+Optional photo ONLY if stylistically appropriate
+
+Narrative Goal:
+Academic + personal respect
+Quiet ending
+
+────────────────────────────────────────────
+
+OPTIONAL TALK FLOW (implicit timing)
+
+1–2 min:
+Slides 1–3 (context + problem)
+
+4–5 min:
+Slides 4–6 (tool + workflow)
+
+4–5 min:
+Slides 7–8 (structured data + plots)
+
+2 min:
+Slide 9 (installation)
+
+1 min:
+Slide 10 (tribute)
+
+────────────────────────────────────────────
+
+POSITIONING STRATEGY (important for delivery)
+
+Avoid:
+❌ "Revolutionary"
+❌ "Game changer"
+❌ "Improves physics"
+
+Use:
+✔ "Workflow tool"
+✔ "Interface layer"
+✔ "Student-friendly"
+✔ "Rapid exploration"
+✔ "Reduces friction"
+
+Underlying Message:
+"We did not change Magboltz.
+We changed how humans interact with it."

@@ -1,0 +1,92 @@
+Magboltz-GUI Functional Overview
+===============================
+
+Purpose
+-------
+Magboltz-GUI is a cross-platform Qt6 application that helps users configure and run
+Magboltz simulations and then explore, export, and plot the results. It provides a
+friendly interface over the Magboltz text input/output format while keeping the
+underlying CLI workflow intact.
+
+Core Workflow
+-------------
+1) Create or open a Magboltz input file (the classic multi-card format).
+2) Edit simulation parameters and gas mixture in the GUI.
+3) Run Magboltz (via standard input), view console output, and stop runs if needed.
+4) Save the raw output, reopen it later, and parse it into structured results.
+5) Export parsed results to CSV/JSON/XML or view plots directly in the GUI.
+
+Main UI Areas
+-------------
+Configuration Tab
+- Simulation parameters: number of collisions, Penning effects, thermal motion,
+  integration energy, gas temperature/pressure, electric/magnetic fields, and
+  angle between E and B.
+- Gas mixture editor: table of gas ID, gas name, and gas ratio (editable), plus a
+  computed gas percent column. Gas selection uses a searchable gas database.
+- Pie chart: live visualization of the mixture; palette and label formatting are
+  configurable (default palette: Pastel1).
+
+Execution Tab
+- Command line preview: shows the exact Magboltz command that will be run.
+- Run/Stop controls: runs Magboltz using QProcess, toggles Run/Stop icons during
+  execution, and supports stopping a running process.
+- Console output: live stdout/stderr stream from Magboltz with colored stderr.
+- Clipboard utilities: copy the command line or the results text; clear output.
+- File actions: save results to a text file or open an existing result file for
+  parsing/plotting/exporting without re-running Magboltz.
+
+Results Parsing (Canonical Model)
+---------------------------------
+The tool parses Magboltz output into a structured RunResult model. This model
+includes:
+- Meta and input info (tool version, timestamp, input text/path).
+- Conditions (gas parameters, fields, flags, integration range).
+- Mixture details (gas name, model tag, percentage).
+- Counts (collisions, max collision time, null frequency components).
+- Transport data (drift velocities, diffusion components, rates, mean energy).
+- Collision frequencies (totals and detailed per-gas processes).
+- Tables (convergence table and energy distribution).
+- Raw output and parser warnings (optional for export).
+
+Exports
+-------
+Exports are built from RunResult (not from raw console text).
+Export dialog options:
+- Export type: Summary, Convergence table, Energy distribution, Collision
+  frequencies, or Full run archive.
+- Format: CSV, JSON, or XML (full run is not available for CSV).
+- Options: delimiter, include units/metadata/mixture flattening (CSV), include
+  input text, raw stdout, parser warnings, and JSON pretty print.
+- Filename suggestions and persistent settings are provided.
+
+Plotting
+--------
+A dedicated plots window offers multiple tabs, driven by parsed results:
+- Energy distribution (line or bar style).
+- Convergence (velocity, energy, transverse and longitudinal diffusion vs count).
+- Collision frequencies per gas (top-N selector, sub-tabs per gas).
+- Total collision frequencies (summary bars).
+- Drift velocities (Vx/Vy/Vz bars).
+- Diffusion summary (DT/DL bars).
+Plots can be saved from a menu, and palettes are configurable.
+
+Platform and UI Integration
+---------------------------
+- Linux: best-effort Qt theming and icon theme fallback for GNOME/Wayland.
+- macOS: custom icon set support; on other platforms, Qt standard icons are used
+  as fallbacks when themed icons are missing.
+- App icon: uses the bundled SVG/PNG and a desktop file for integration.
+
+Input/Output Files
+------------------
+- Input files follow the Magboltz card format; the GUI reads/writes these files
+  and normalizes gas ratios to percentages on save.
+- Output files are plain text (Magboltz stdout) and can be opened later for
+  plotting and export.
+
+In Short
+--------
+Magboltz-GUI is a full workflow tool: input editing, process control, output
+inspection, structured parsing, export to common formats, and plotting — all
+without requiring users to manually edit Magboltz input/output files.

@@ -28,7 +28,7 @@ class PercentDelegate(QStyledItemDelegate):
         super().__init__(parent)
         self._main_window = main_window
 
-    def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QModelIndex) -> QWidget:
+    def createEditor(self, parent: Optional[QWidget], option: QStyleOptionViewItem, index: QModelIndex) -> QWidget:
         editor = QDoubleSpinBox(parent)
         editor.setSuffix(" %")
         editor.setDecimals(1)
@@ -38,15 +38,18 @@ class PercentDelegate(QStyledItemDelegate):
         return editor
 
     @override
-    def setEditorData(self, editor: QWidget, index: QModelIndex) -> None:
+    def setEditorData(self, editor: Optional[QWidget], index: QModelIndex) -> None:
         assert isinstance(editor, QDoubleSpinBox)
-        text = index.model().data(index, Qt.ItemDataRole.EditRole)
+        model = index.model()
+        assert model is not None
+        text = model.data(index, Qt.ItemDataRole.EditRole)
         value = float(str(text).replace(" %", "").strip())
         editor.setValue(value)
 
     @override
-    def setModelData(self, editor: QWidget, model: QAbstractItemModel, index: QModelIndex) -> None:
+    def setModelData(self, editor: Optional[QWidget], model: Optional[QAbstractItemModel], index: QModelIndex) -> None:
         assert isinstance(editor, QDoubleSpinBox)
+        assert model is not None
         editor.interpretText()
         value = editor.value()
         model.setData(index, f"{value:.1f} %", Qt.ItemDataRole.EditRole)
@@ -64,7 +67,7 @@ class AmountDelegate(QStyledItemDelegate):
         super().__init__(parent)
         self._main_window = main_window
 
-    def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QModelIndex) -> QWidget:
+    def createEditor(self, parent: Optional[QWidget], option: QStyleOptionViewItem, index: QModelIndex) -> QWidget:
         editor = QDoubleSpinBox(parent)
         editor.setDecimals(3)
         editor.setRange(0, 1_000_000)
@@ -73,15 +76,18 @@ class AmountDelegate(QStyledItemDelegate):
         return editor
 
     @override
-    def setEditorData(self, editor: QWidget, index: QModelIndex) -> None:
+    def setEditorData(self, editor: Optional[QWidget], index: QModelIndex) -> None:
         assert isinstance(editor, QDoubleSpinBox)
-        text = index.model().data(index, Qt.ItemDataRole.EditRole)
+        model = index.model()
+        assert model is not None
+        text = model.data(index, Qt.ItemDataRole.EditRole)
         value = float(str(text))
         editor.setValue(value)
 
     @override
-    def setModelData(self, editor: QWidget, model: QAbstractItemModel, index: QModelIndex) -> None:
+    def setModelData(self, editor: Optional[QWidget], model: Optional[QAbstractItemModel], index: QModelIndex) -> None:
         assert isinstance(editor, QDoubleSpinBox)
+        assert model is not None
         editor.interpretText()
         value = editor.value()
         model.setData(index, f"{value:.3f}", Qt.ItemDataRole.EditRole)
@@ -99,7 +105,7 @@ class GasNameDelegate(QStyledItemDelegate):
     @override
     def createEditor(
         self,
-        parent: QWidget,
+        parent: Optional[QWidget],
         option: QStyleOptionViewItem,
         index: QModelIndex,
     ) -> QWidget:
@@ -107,14 +113,14 @@ class GasNameDelegate(QStyledItemDelegate):
         return QWidget(parent)
 
     @override
-    def setEditorData(self, editor: QWidget, index: QModelIndex) -> None:
+    def setEditorData(self, editor: Optional[QWidget], index: QModelIndex) -> None:
         pass  # Not needed
 
     @override
     def setModelData(
         self,
-        editor: QWidget,
-        model: QAbstractItemModel,
+        editor: Optional[QWidget],
+        model: Optional[QAbstractItemModel],
         index: QModelIndex,
     ) -> None:
         pass  # Not needed
@@ -122,11 +128,13 @@ class GasNameDelegate(QStyledItemDelegate):
     @override
     def editorEvent(
         self,
-        event: QEvent,
-        model: QAbstractItemModel,
+        event: Optional[QEvent],
+        model: Optional[QAbstractItemModel],
         option: QStyleOptionViewItem,
         index: QModelIndex,
     ) -> bool:
+        if event is None or model is None:
+            return False
         if event.type() == event.Type.MouseButtonDblClick:
             # Create and show the SearchWidget as a modal dialog
             search_dialog = SearchWindow(self._main_window.database)

@@ -55,6 +55,10 @@ strict = true
 files = ["src"]
 python_version = "3.12"
 
+[[tool.mypy.overrides]]
+module = ["PyQt6", "PyQt6.*"]
+ignore_missing_imports = true
+
 [tool.black]
 line-length = 120
 target-version = ["py311"]

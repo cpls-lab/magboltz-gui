@@ -9,7 +9,8 @@ PDF=$(TEX:.tex=.pdf)
 
 .PHONY: build clean clean-keep-pdf
 
-build: $(PDF)
+build:
+	TEXINPUTS=$(TEXINPUTS) $(LATEX) $(LATEX_FLAGS) $(TEX)
 
 $(PDF): $(TEX)
 	TEXINPUTS=$(TEXINPUTS) $(LATEX) $(LATEX_FLAGS) $(TEX)
