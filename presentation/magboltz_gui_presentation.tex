@@ -1,0 +1,246 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{multicol}
+
+% Add search paths for images (slides + CERN theme assets)
+\graphicspath{{screenshots/}{../screenshots/}{presentation_latex/cern-beamer/}{presentation_latex/cern-beamer/logos/}{cern-beamer/}{cern-beamer/logos/}}
+
+% CERN Beamer theme
+\usetheme{CERN}
+\setbeamerfont{frametitle}{size=\large}
+\setbeamerfont{normal text}{size=\small}
+\setbeamerfont{itemize/enumerate body}{size=\small}
+\setbeamerfont{itemize/enumerate subbody}{size=\small}
+
+% Date shown in footer and title page
+\def\mydate{15 Feb 2025}
+
+% Title metadata
+\title{A GUI for Magboltz}
+\subtitle{IFIN-HH (Romania)\\7th DRD1 Collaboration Meeting\\WG4 --- Modeling and Simulations}
+\author{Michele Renda\\\texttt{michele.renda@cern.ch}\\Dan Andrei Ciubotaru\\\texttt{andrei.ciubotaru@cern.ch}}
+
+\begin{document}
+
+% Slide 1 — Title
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% Slide 2 — Magboltz: Why It Matters
+\begin{frame}{Magboltz in Detector Physics}
+\begin{itemize}
+  \item Monte Carlo electron transport simulation
+  \item Fundamental tool for:
+    \begin{itemize}
+      \item Gas detector design
+      \item Drift properties
+      \item Diffusion
+      \item Townsend / attachment
+    \end{itemize}
+  \item Used across:
+    \begin{itemize}
+      \item MPGDs
+      \item TPCs
+      \item RPC studies
+      \item Simulation chains (Garfield++)
+    \end{itemize}
+\end{itemize}
+\vspace{0.3cm}
+\textbf{Magboltz remains a cornerstone of gas detector modeling.}
+\end{frame}
+
+% Slide 3 — Practical Problem
+\begin{frame}{The CLI Workflow Reality}
+\begin{itemize}
+  \item Text-based input cards
+  \item Text-based output parsing
+  \item Typical friction points:
+    \begin{itemize}
+      \item Input syntax errors
+      \item Iterative parameter tuning
+      \item Manual data extraction
+      \item Ad-hoc plotting scripts
+      \item Student onboarding difficulty
+    \end{itemize}
+\end{itemize}
+\vspace{0.3cm}
+\textbf{Powerful physics engine, but workflow-heavy interface.}
+\end{frame}
+
+% Slide 4 — Introducing Magboltz GUI
+\begin{frame}{Magboltz GUI}
+\begin{columns}[T]
+  \column{0.48\textwidth}
+    \begin{itemize}
+      \item Python + PyQt6 application
+      \item Cross-platform
+      \item Designed as a workflow layer, not a replacement
+      \item Core functions:
+        \begin{itemize}
+          \item Input file creation \& editing
+          \item Magboltz execution wrapper
+          \item Output parsing $\rightarrow$ structured model
+          \item Data export $\rightarrow$ CSV / JSON / XML
+          \item Built-in plotting tools
+        \end{itemize}
+    \end{itemize}
+  \column{0.52\textwidth}
+    \includegraphics[width=\textwidth]{main_window.png}
+\end{columns}
+\end{frame}
+
+% Slide 5 — Input Configuration & Mixture Handling
+\begin{frame}{Simulation \& Gas Configuration}
+\begin{columns}[T]
+  \column{0.48\textwidth}
+    \begin{itemize}
+      \item Editable simulation parameters
+      \item Gas mixture editor
+      \item Ratio $\rightarrow$ automatic normalization
+      \item Visual mixture representation
+      \item Reduced input mistakes during iteration
+    \end{itemize}
+  \column{0.52\textwidth}
+    \includegraphics[width=\textwidth]{main_window.png}
+\end{columns}
+\end{frame}
+
+% Slide 6 — Execution & Output Handling
+\begin{frame}{Execution Workflow}
+\begin{columns}[T]
+  \column{0.48\textwidth}
+    \begin{itemize}
+      \item Direct Magboltz invocation
+      \item Command line transparency
+      \item Live stdout/stderr streaming
+      \item Run/Stop controls
+      \item Raw output persistence
+      \item Reopen previous runs
+    \end{itemize}
+  \column{0.52\textwidth}
+    \includegraphics[width=\textwidth]{execution_tab_running_output.png}
+\end{columns}
+\end{frame}
+
+% Slide 7 — Structured Parsing & Exports
+\begin{frame}{From Text Output $\rightarrow$ Structured Data}
+\begin{columns}[T]
+  \column{0.48\textwidth}
+    \begin{itemize}
+      \item Canonical RunResult model
+      \item Extracted:
+        \begin{itemize}
+          \item Transport coefficients
+          \item Collision frequencies
+          \item Convergence tables
+          \item Energy distributions
+        \end{itemize}
+      \item Export formats:
+        \begin{itemize}
+          \item CSV
+          \item JSON
+          \item XML
+        \end{itemize}
+      \item Reproducible analysis pipelines
+    \end{itemize}
+  \column{0.52\textwidth}
+    \includegraphics[width=\textwidth]{export_window.png}
+\end{columns}
+\end{frame}
+
+% Slide 8 — Plotting & Rapid Exploration (1/2)
+\begin{frame}{Built-in Plotting Tools}
+\vspace{-0.2cm}
+\begin{center}
+\makebox[\textwidth][c]{%
+  \includegraphics[width=0.48\textwidth,height=0.55\textheight,keepaspectratio]{plots_energy_distribution_bars.png}\hspace{0.02\textwidth}%
+  \includegraphics[width=0.48\textwidth,height=0.55\textheight,keepaspectratio]{plots_convergence.png}%
+}
+\end{center}
+\vspace{-0.05cm}
+\textbf{Immediate visual feedback without external scripts.}
+\end{frame}
+
+% Slide 9 — Plotting & Rapid Exploration (2/2)
+\begin{frame}{Built-in Plotting Tools (cont.)}
+\vspace{-0.2cm}
+\begin{center}
+\makebox[\textwidth][c]{%
+  \includegraphics[width=0.48\textwidth,height=0.55\textheight,keepaspectratio]{plots_collision_frequencies.png}\hspace{0.02\textwidth}%
+  \includegraphics[width=0.48\textwidth,height=0.55\textheight,keepaspectratio]{plots_diffusion_summary.png}%
+}
+\end{center}
+\vspace{-0.05cm}
+\textbf{Immediate visual feedback without external scripts.}
+\end{frame}
+
+% Slide 9 — Availability & License
+\begin{frame}{Availability \& License}
+\textbf{Project repository}
+\vspace{0.2cm}
+
+\begin{itemize}
+  \item GitLab: \texttt{https://gitlab.com/micrenda/magboltz-gui/}
+  \item License: MIT
+  \item Documentation: README in the repository
+\end{itemize}
+\end{frame}
+
+% Slide 10 — Setup (pip + bundled Qt)
+\begin{frame}[fragile]{Setup: pip (bundled Qt)}
+\textbf{Recommended when you want Qt bundled with the app.}
+\vspace{0.3cm}
+
+\begin{itemize}
+  \item Python environment
+  \item Magboltz binary available in PATH
+\end{itemize}
+
+\textbf{Commands:}
+\begin{verbatim}
+pip install "magboltz-gui[qt]"
+magboltz-gui
+\end{verbatim}
+\end{frame}
+
+% Slide 11 — Setup (pip + system Qt)
+\begin{frame}[fragile]{Setup: pip (system Qt)}
+\textbf{Recommended on Linux when using system PyQt6.}
+\vspace{0.3cm}
+
+\begin{itemize}
+  \item Install system Qt bindings
+  \item Magboltz binary available in PATH
+\end{itemize}
+
+\textbf{Commands (Debian/Ubuntu):}
+\begin{verbatim}
+sudo apt install python3-pyqt6
+pip install magboltz-gui
+magboltz-gui
+\end{verbatim}
+\end{frame}
+
+% Slide 12 — Tribute
+\begin{frame}{In Memoriam}
+\vspace{0.3cm}
+\begin{center}
+\large
+\textbf{Stephen F. Biagi}\\
+{\footnotesize (1949--2025)}\\
+\vspace{0.25cm}
+We dedicate this work to his memory.\\
+\vspace{0.25cm}
+His pioneering contributions to modeling\\
+electron transport in gases profoundly shaped\\
+detector physics.\\
+\vspace{0.35cm}
+\normalsize
+This interface is a modest tribute to his legacy.
+\end{center}
+\end{frame}
+
+\end{document}

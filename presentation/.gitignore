@@ -1,0 +1,15 @@
+# LaTeX/Beamer build artifacts (keep PDF)
+*.aux
+*.bbl
+*.blg
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.vrb
+*.synctex.gz
+
+# latexmk
+*.fdb_latexmk
+*.fls
