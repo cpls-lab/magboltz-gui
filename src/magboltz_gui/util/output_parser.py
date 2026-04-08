@@ -1,3 +1,5 @@
+"""Parse raw Magboltz stdout into the structured run-result model."""
+
 from __future__ import annotations
 
 import re
@@ -61,6 +63,7 @@ def _floats_in_line(line: str) -> List[float]:
 
 
 def parse_magboltz_output(stdout_text: str, input_text: Optional[str] = None, input_path: Optional[str] = None) -> RunResult:
+    """Extract transport quantities, tables, and metadata from one Magboltz run."""
     warnings: List[str] = []
     lines = stdout_text.splitlines()
 

@@ -11,6 +11,7 @@ uv.lock
 
 # Generated files
 src/magboltz_gui/generated/
+docs/_build/
 
 # Virtual environments
 .venv

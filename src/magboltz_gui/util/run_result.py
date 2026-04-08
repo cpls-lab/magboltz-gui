@@ -1,3 +1,5 @@
+"""Structured result model for parsed Magboltz runs and exports."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -6,6 +8,7 @@ from typing import Optional, List, Dict, Any, cast
 
 @dataclass
 class RunMeta:
+    """Metadata describing the tool version and capture time."""
     tool_name: str = "magboltz"
     tool_version: Optional[str] = None
     timestamp_utc: Optional[str] = None
@@ -15,12 +18,14 @@ class RunMeta:
 
 @dataclass
 class RunInput:
+    """Original input text and filesystem origin of one run."""
     input_text: Optional[str] = None
     input_path: Optional[str] = None
 
 
 @dataclass
 class RunIntegration:
+    """Energy integration settings reported by Magboltz."""
     E_min_eV: Optional[float] = None
     E_max_eV: Optional[float] = None
     n_steps: Optional[int] = None
@@ -28,6 +33,7 @@ class RunIntegration:
 
 @dataclass
 class RunFlags:
+    """Boolean and integer flags affecting the simulation model."""
     penning_included: Optional[bool] = None
     thermal_motion_included: Optional[bool] = None
     anisotropic_scattering_type: Optional[int] = None
@@ -36,6 +42,7 @@ class RunFlags:
 
 @dataclass
 class RunConditions:
+    """Physical and numerical conditions used for one run."""
     gas_temperature_C: Optional[float] = None
     gas_pressure_torr: Optional[float] = None
     electric_field_V_cm: Optional[float] = None
@@ -49,6 +56,7 @@ class RunConditions:
 
 @dataclass
 class MixtureGas:
+    """One gas entry reconstructed from the run summary."""
     name: str
     model_tag: Optional[str]
     fraction_percent: Optional[float]
@@ -56,6 +64,7 @@ class MixtureGas:
 
 @dataclass
 class RunCounts:
+    """Collision counters and related summary values."""
     total_real_collisions: Optional[int] = None
     num_null_collisions: Optional[int] = None
     calculated_max_collision_time_ps: Optional[float] = None
@@ -64,24 +73,28 @@ class RunCounts:
 
 @dataclass
 class DriftVelocity:
+    """One drift-velocity component with its uncertainty."""
     v_um_ns: Optional[float] = None
     err_pct: Optional[float] = None
 
 
 @dataclass
 class DiffusionComponent:
+    """One diffusion observable with an uncertainty percentage."""
     value: Optional[float] = None
     err_pct: Optional[float] = None
 
 
 @dataclass
 class RunDiffusion:
+    """Grouped transverse and longitudinal diffusion quantities."""
     transverse: Dict[str, DiffusionComponent] = field(default_factory=dict)
     longitudinal: Dict[str, DiffusionComponent] = field(default_factory=dict)
 
 
 @dataclass
 class RunTransport:
+    """Transport observables extracted from the output."""
     vx_um_ns: Optional[DriftVelocity] = None
     vy_um_ns: Optional[DriftVelocity] = None
     vz_um_ns: Optional[DriftVelocity] = None
@@ -96,6 +109,7 @@ class RunTransport:
 
 @dataclass
 class RunFrequenciesTotal:
+    """Global collision-frequency summary from the run output."""
     total_coll_freq_1e12_s: Optional[float] = None
     elastic_coll_freq_1e12_s: Optional[float] = None
     inelastic_coll_freq_1e12_s: Optional[float] = None
@@ -105,6 +119,7 @@ class RunFrequenciesTotal:
 
 @dataclass
 class CollisionProcess:
+    """One process contribution in the per-gas collision-frequency tables."""
     label: str
     eloss_eV: Optional[float]
     freq_1e12_s: Optional[float]
@@ -114,12 +129,14 @@ class CollisionProcess:
 
 @dataclass
 class GasFrequencies:
+    """Collision-frequency breakdown for one gas species."""
     gas_name: str
     processes: List[CollisionProcess] = field(default_factory=list)
 
 
 @dataclass
 class ConvergenceRow:
+    """One row of the Magboltz convergence table."""
     vel: float
     pos: float
     time: float
@@ -132,6 +149,7 @@ class ConvergenceRow:
 
 @dataclass
 class EnergyRow:
+    """One row of the energy-distribution table."""
     E_eV: float
     spec: float
     bin_width_eV: Optional[float] = None
@@ -139,6 +157,7 @@ class EnergyRow:
 
 @dataclass
 class RunTables:
+    """Tabular output sections captured from the run."""
     convergence_table: List[ConvergenceRow] = field(default_factory=list)
     energy_distribution: List[EnergyRow] = field(default_factory=list)
     units: Dict[str, str] = field(default_factory=dict)
@@ -146,12 +165,14 @@ class RunTables:
 
 @dataclass
 class RunRaw:
+    """Raw stdout plus parser warnings kept for debugging and export."""
     stdout_text: Optional[str] = None
     parser_warnings: List[str] = field(default_factory=list)
 
 
 @dataclass
 class RunResult:
+    """Top-level result object used across plotting and export code."""
     meta: RunMeta = field(default_factory=RunMeta)
     input: RunInput = field(default_factory=RunInput)
     conditions: RunConditions = field(default_factory=RunConditions)
@@ -164,6 +185,7 @@ class RunResult:
     raw: RunRaw = field(default_factory=RunRaw)
 
     def to_dict(self) -> Dict[str, Any]:
+        """Recursively convert the result tree into plain Python containers."""
         def _serialize(obj: Any) -> Any:
             if hasattr(obj, "__dict__"):
                 return {k: _serialize(v) for k, v in obj.__dict__.items()}

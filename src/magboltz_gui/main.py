@@ -1,3 +1,5 @@
+"""Qt application entry point for Magboltz-GUI."""
+
 from __future__ import annotations
 
 import os
@@ -15,6 +17,7 @@ from magboltz_gui.util.icon_theme import ensure_icon_theme
 
 
 def main() -> None:
+    """Create the application, show the main window, and enter the event loop."""
 
     # Best-effort platform theme/style setup (Linux) without overriding user choices.
     set_linux_platform_theme_env_if_available()
@@ -54,6 +57,7 @@ def main() -> None:
 
 
 def _sigint_handler(*_: Any) -> None:
+    """Terminate the Qt application cleanly on Ctrl-C."""
     from PyQt6.QtWidgets import QApplication
 
     QApplication.quit()

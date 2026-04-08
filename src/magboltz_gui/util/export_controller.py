@@ -1,3 +1,5 @@
+"""Export parsed run results to CSV, JSON, and XML representations."""
+
 from __future__ import annotations
 
 import json
@@ -90,6 +92,7 @@ def _summary_dict(run: RunResult) -> Dict[str, Any]:
 
 
 def available_export_types(run: RunResult) -> List[ExportType]:
+    """Return the export modes that make sense for the current result."""
     types = [ExportType.SUMMARY]
     if run.tables.convergence_table:
         types.append(ExportType.CONVERGENCE_TABLE)
@@ -182,6 +185,7 @@ def _csv_rows_collfreq(run: RunResult, opts: CsvOptions) -> Tuple[List[str], Lis
 
 
 def export_csv(run: RunResult, export_type: ExportType, path: Path, opts: CsvOptions) -> None:
+    """Write one export view to CSV."""
     if export_type == ExportType.SUMMARY:
         headers, rows = _csv_rows_summary(run, opts)
     elif export_type == ExportType.CONVERGENCE_TABLE:
@@ -235,6 +239,7 @@ def _filter_run_for_export(run: RunResult, export_type: ExportType, opts: JsonOp
 
 
 def export_json(run: RunResult, export_type: ExportType, path: Path, opts: JsonOptions) -> None:
+    """Write one export view to JSON."""
     payload = {
         "schema_version": "1.0",
         "export_type": export_type.value,
@@ -268,6 +273,7 @@ def _xml_append(parent: ET.Element, key: str, value: Any) -> None:
 
 
 def export_xml(run: RunResult, export_type: ExportType, path: Path, opts: XmlOptions) -> None:
+    """Write one export view to XML."""
     root = ET.Element("magboltz_export", schema_version="1.0", export_type=export_type.value)
     data = _filter_run_for_export(run, export_type, opts)
     _xml_append(root, "data", data)
@@ -288,6 +294,7 @@ def export_to_file(
     json_options: Optional[JsonOptions] = None,
     xml_options: Optional[XmlOptions] = None,
 ) -> None:
+    """Dispatch one export request to the format-specific writer."""
     if export_type == ExportType.CONVERGENCE_TABLE and not run.tables.convergence_table:
         raise ValueError("Selected dataset missing: convergence table")
     if export_type == ExportType.ENERGY_DISTRIBUTION and not run.tables.energy_distribution:
@@ -308,6 +315,7 @@ def export_to_file(
 
 
 def default_filename(run: RunResult, export_type: ExportType, ext: str) -> str:
+    """Build a default filename for one exported artefact."""
     mix = "_".join([f"{g.name}{int(g.fraction_percent or 0)}" for g in run.mixture]) or "run"
     field = run.conditions.electric_field_V_cm
     field_str = f"E{int(field)}" if field is not None else "E"

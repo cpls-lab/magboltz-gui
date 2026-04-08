@@ -1,9 +1,12 @@
+"""Typed representation of the Magboltz input-card format."""
+
 from dataclasses import dataclass, field
 from typing import List, Optional
 
 
 @dataclass
 class InputGas:
+    """One gas component in the current mixture."""
 
     gas_id: int
     # NGAS etc.: gas number identifiers (between 1 and 80) see gas list below for identifying numbers.
@@ -14,9 +17,11 @@ class InputGas:
 
 @dataclass
 class InputCards:
+    """Editable subset of the Magboltz input cards exposed by the GUI."""
 
     @property
     def number_of_gases(self) -> int:
+        """Return the current number of gas components."""
         # NGAS: number of gases in mixture
         return len(self.gases)
 

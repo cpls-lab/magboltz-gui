@@ -1,9 +1,12 @@
+"""Read and write Magboltz card files from the GUI data model."""
+
 from pathlib import Path
 
 from magboltz_gui.data.input_cards import InputCards, InputGas
 
 
 def load(filename: Path) -> InputCards:
+    """Parse one Magboltz card file into an :class:`InputCards` object."""
     with filename.open("r") as f:
         # Card 1
         line = f.readline()
@@ -50,6 +53,7 @@ def load(filename: Path) -> InputCards:
 
 
 def save(input_cards: InputCards, filename: Path) -> None:
+    """Serialize :class:`InputCards` back to the Magboltz card format."""
 
     gas_ids = [gas.gas_id for gas in input_cards.gases] + [80] * (6 - len(input_cards.gases))
     total = sum(gas.gas_frac for gas in input_cards.gases)

@@ -4,6 +4,24 @@ A lightweight, cross-platform Qt6 GUI for Magboltz.
 
 ---
 
+## Documentation
+
+Project documentation sources live in [`docs/`](docs/).
+
+To build the HTML documentation locally:
+
+```bash
+./scripts/build_docs.sh
+```
+
+The generated site is written to:
+
+```text
+docs/_build/html/index.html
+```
+
+---
+
 ## Installation
 
 ### With uv
@@ -104,6 +122,15 @@ pip install -e ".[dev]"
 ```
 
 Both install the same dev tools (black/mypy/stubs); use whichever matches your workflow.
+
+### Build the documentation
+
+If you prefer to install the documentation stack in a virtual environment:
+
+```bash
+uv pip install -e ".[docs]"
+./scripts/build_docs.sh
+```
 
 ---
 
