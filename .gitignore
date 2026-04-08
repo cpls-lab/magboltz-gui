@@ -8,7 +8,6 @@ wheels/
 .idea
 .mypy_cache/
 uv.lock
-.codex
 
 # Generated files
 src/magboltz_gui/generated/
