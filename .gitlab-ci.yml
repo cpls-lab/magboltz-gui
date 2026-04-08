@@ -1,0 +1,67 @@
+default:
+  image: python:3.12-slim
+
+stages:
+  - verify
+  - deploy
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - when: never
+
+variables:
+  GIT_DEPTH: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_NO_CACHE_DIR: "1"
+
+.install-verify-deps: &install_verify_deps
+  - python -m pip install --upgrade pip
+  - python -m pip install -e .
+
+.install-doc-deps: &install_doc_deps
+  - python -m pip install --upgrade pip
+  - python -m pip install -e ".[docs]"
+
+.rules-verify: &rules_verify
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+.rules-default-branch: &rules_default_branch
+  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+build-check:
+  stage: verify
+  before_script: *install_verify_deps
+  script:
+    - python -m compileall src
+  rules: *rules_verify
+  interruptible: true
+
+docs-build:
+  stage: verify
+  before_script: *install_doc_deps
+  script:
+    - bash scripts/build_docs.sh
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - docs/_build/html
+  rules: *rules_default_branch
+  interruptible: true
+
+pages:
+  stage: deploy
+  needs:
+    - job: docs-build
+      artifacts: true
+  script:
+    - mkdir -p public
+    - cp -a docs/_build/html/. public/
+  pages: true
+  artifacts:
+    paths:
+      - public
+  rules: *rules_default_branch
+  interruptible: false
