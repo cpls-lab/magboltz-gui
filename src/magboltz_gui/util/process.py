@@ -1,3 +1,5 @@
+"""Manage one live Magboltz subprocess connected to the GUI."""
+
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
@@ -8,12 +10,14 @@ if TYPE_CHECKING:
 
 
 class ProcessManager:
+    """Own one ``QProcess`` and bridge it with the main window state."""
 
     def __init__(self, main_window: MagboltzGUI):
         self.main_window = main_window
         self._stdout_buffer: list[str] = []
 
     def run(self) -> None:
+        """Create the process, wire its signals, and launch it."""
 
         self.process = QProcess(self.main_window)
 
@@ -25,6 +29,7 @@ class ProcessManager:
         self.run_process()
 
     def stop(self) -> None:
+        """Attempt a graceful stop, then fall back to killing the process."""
         try:
             self.process.terminate()
         except Exception:
@@ -34,6 +39,7 @@ class ProcessManager:
                 pass
 
     def run_process(self) -> None:
+        """Start ``magboltz`` and stream the current input card to stdin."""
 
         if self.main_window._currentInputFile is None:
             self.main_window.show_error("Error", "You have to open an input file first")
@@ -53,17 +59,20 @@ class ProcessManager:
                 self.process.write(f"{line}\n".encode("utf-8"))
 
     def handle_stdout(self) -> None:
+        """Append standard output to the console view and capture buffer."""
         data = self.process.readAllStandardOutput().data()
         text = data.decode("utf-8")
         self._stdout_buffer.append(text)
         self.main_window.consoleOutput.append(text)
 
     def handle_stderr(self) -> None:
+        """Append standard error to the console view."""
         data = self.process.readAllStandardError().data()
         text = data.decode("utf-8")
         self.main_window.consoleOutput.append(f"<span style='color:red;'>{text}</span>")
 
     def process_finished(self) -> None:
+        """Parse the finished run and update export/plot availability."""
         self.main_window.consoleOutput.append("")
         self.main_window.consoleOutput.append("Process finished.")
         stdout_text = "".join(self._stdout_buffer)

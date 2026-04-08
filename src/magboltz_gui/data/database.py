@@ -1,3 +1,5 @@
+"""Static gas catalogue used by the mixture editor."""
+
 from csv import DictReader
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -6,6 +8,7 @@ from typing import List, Optional
 
 @dataclass
 class GasItem:
+    """One gas entry loaded from the bundled CSV catalogue."""
 
     id: int
     name: str
@@ -29,9 +32,12 @@ class GasItem:
 
 @dataclass
 class GasDatabase:
+    """In-memory lookup table for gas definitions."""
+
     content: List[GasItem] = field(default_factory=list)
 
     def load(self, filepath: Path) -> None:
+        """Load gas definitions from a CSV file."""
         with open(filepath, newline="", encoding="utf-8") as csvfile:
             reader = DictReader(csvfile)
             for row in reader:
@@ -46,6 +52,7 @@ class GasDatabase:
                 self.content.append(gas)
 
     def get(self, id: int) -> GasItem:
+        """Return one gas definition by numeric Magboltz id."""
 
         for item in self.content:
             if item.id == id:
