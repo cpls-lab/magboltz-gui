@@ -8,7 +8,7 @@ A lightweight, cross-platform Qt6 GUI for Magboltz.
 
 Published documentation:
 
-- https://gasp-lab.gitlab.io/magboltz-gui/
+- https://cpls.gitlab.io/magboltz-gui/
 
 Project documentation sources live in [`docs/`](docs/).
 
