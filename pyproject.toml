@@ -82,7 +82,7 @@ magboltz-gui = "magboltz_gui.main:main"
 gen-ui = "magboltz_gui.tool.gen_ui:main"
 
 [project.urls]
-Homepage = "https://gitlab.com/gasp-lab/magboltz-gui"
-Documentation = "https://gasp-lab.gitlab.io/magboltz-gui/"
-Source = "https://gitlab.com/gasp-lab/magboltz-gui"
-Tracker = "https://gitlab.com/gasp-lab/magboltz-gui/issues"
+Homepage = "https://gitlab.com/cpls/magboltz-gui"
+Documentation = "https://cpls.gitlab.io/magboltz-gui/"
+Source = "https://gitlab.com/cpls/magboltz-gui"
+Tracker = "https://gitlab.com/cpls/magboltz-gui/issues"
