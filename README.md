@@ -160,4 +160,4 @@ Citation is not legally required by the license but is encouraged to support rep
 ## License
 
 Released under the **MIT License**.  
-See [`LICENSE`](./LICENSE.md) for details.
+See [`LICENSE`](./LICENSE.txt) for details.
