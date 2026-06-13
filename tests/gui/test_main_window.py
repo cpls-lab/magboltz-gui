@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QMessageBox,
     QSizePolicy,
+    QSplitter,
     QStyleOptionViewItem,
 )
 
@@ -337,6 +338,19 @@ def test_campaign_tab_previews_product_sweep(qtbot) -> None:
     assert campaign.previewTable.rowCount() == 5
     assert campaign.previewTable.item(0, 0).text() == "run_0001"
     assert campaign.previewTable.item(0, 1).text() == "100.0"
+
+
+def test_campaign_tab_uses_splitter_between_sweeps_and_preview(qtbot) -> None:
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+
+    splitter = window.campaignTab.campaignSplitter
+    assert isinstance(splitter, QSplitter)
+    assert splitter.orientation() == Qt.Orientation.Vertical
+    assert splitter.count() == 2
+    assert splitter.widget(0).objectName() == "campaignSweepParametersGroup"
+    assert splitter.widget(1).objectName() == "campaignPreviewGroup"
 
 
 def test_campaign_tab_generates_input_cards(qtbot, monkeypatch, tmp_path: Path) -> None:

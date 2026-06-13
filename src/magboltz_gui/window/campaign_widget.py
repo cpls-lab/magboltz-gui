@@ -16,7 +16,6 @@ from PyQt6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFileDialog,
-    QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QHeaderView,
@@ -24,6 +23,7 @@ from PyQt6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
+    QSplitter,
     QTableWidget,
     QTableWidgetItem,
     QToolButton,
@@ -134,9 +134,10 @@ class CampaignWidget(QWidget):
         self.use_current_input()
 
     def _build_ui(self) -> None:
-        layout = QGridLayout(self)
+        layout = QVBoxLayout(self)
 
         sweep_group = QGroupBox("Sweep parameters")
+        sweep_group.setObjectName("campaignSweepParametersGroup")
         sweep_layout = QVBoxLayout(sweep_group)
         self.sweepTable = QTableWidget(0, 9)
         self.sweepTable.setHorizontalHeaderLabels(
@@ -177,6 +178,7 @@ class CampaignWidget(QWidget):
         sweep_layout.addLayout(sweep_buttons)
 
         preview_group = QGroupBox("Campaign preview")
+        preview_group.setObjectName("campaignPreviewGroup")
         preview_layout = QVBoxLayout(preview_group)
         self.previewSummary = QLabel("Runs: 0")
         self.matrixSummary = QLabel("Independent rows: 0, coupled rows: 0")
@@ -219,11 +221,14 @@ class CampaignWidget(QWidget):
         results_layout.addWidget(self.resultsTable)
         execution_layout.addWidget(results_group)
 
-        layout.addWidget(sweep_group, 0, 0)
-        layout.addWidget(preview_group, 1, 0)
-        layout.setColumnStretch(0, 1)
-        layout.setRowStretch(0, 3)
-        layout.setRowStretch(1, 2)
+        self.campaignSplitter = QSplitter(Qt.Orientation.Vertical)
+        self.campaignSplitter.setObjectName("campaignSplitter")
+        self.campaignSplitter.addWidget(sweep_group)
+        self.campaignSplitter.addWidget(preview_group)
+        self.campaignSplitter.setStretchFactor(0, 3)
+        self.campaignSplitter.setStretchFactor(1, 2)
+        self.campaignSplitter.setSizes([600, 350])
+        layout.addWidget(self.campaignSplitter)
 
         self.add_default_sweep_row()
 
