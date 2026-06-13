@@ -212,15 +212,20 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.mainToolBar.addWidget(self.modeSelectorWidget)
 
     def _on_mode_selector_changed(self, mode: str) -> None:
+        self.mainTab.blockSignals(True)
         self._apply_mode_tab_visibility(mode)
         if mode == "Campaign":
             self.mainTab.setCurrentWidget(self.campaignTab)
         else:
             self.mainTab.setCurrentWidget(self.tabConfiguration)
+        self.mainTab.blockSignals(False)
 
     def _sync_mode_selector_from_tab(self) -> None:
+        current_widget = self.mainTab.currentWidget()
+        if current_widget == self.tabConfiguration:
+            return
         campaign_widgets = {self.campaignTab, self.executionCampaignTab}
-        mode = "Campaign" if self.mainTab.currentWidget() in campaign_widgets else "Single"
+        mode = "Campaign" if current_widget in campaign_widgets else "Single"
         if self.modeSelectorCombo.currentText() == mode:
             return
         self.modeSelectorCombo.blockSignals(True)

@@ -97,6 +97,13 @@ def test_main_window_mode_selector_tracks_single_and_campaign_tabs(qtbot) -> Non
     assert window.modeSelectorCombo.currentText() == "Campaign"
 
     window.mainTab.setCurrentWidget(window.tabConfiguration)
+    assert window.modeSelectorCombo.currentText() == "Campaign"
+
+    window.modeSelectorCombo.setCurrentText("Single")
+    window.mainTab.setCurrentWidget(window.tabConfiguration)
+    assert window.modeSelectorCombo.currentText() == "Single"
+
+    window.mainTab.setCurrentWidget(window.tabConfiguration)
     assert window.modeSelectorCombo.currentText() == "Single"
 
 
