@@ -81,7 +81,7 @@ def test_main_window_mode_selector_tracks_single_and_campaign_tabs(qtbot) -> Non
     window.show()
 
     window.modeSelectorCombo.setCurrentText("Campaign")
-    assert window.mainTab.currentWidget() == window.campaignTab
+    assert window.mainTab.currentWidget() == window.tabConfiguration
     assert window.mainTab.isTabVisible(window.mainTab.indexOf(window.tabConfiguration))
     assert not window.mainTab.isTabVisible(window.mainTab.indexOf(window.executionSingleTab))
     assert window.mainTab.isTabVisible(window.mainTab.indexOf(window.campaignTab))
@@ -719,6 +719,7 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
     window.modeSelectorCombo.setCurrentText("Campaign")
     window.actionRun.trigger()
 
+    assert window.mainTab.currentWidget() == window.executionCampaignTab
     qtbot.waitUntil(lambda: not window.actionRun.isVisible(), timeout=3000)
     assert window.actionStop.isVisible()
     qtbot.waitUntil(lambda: bool(messages), timeout=3000)

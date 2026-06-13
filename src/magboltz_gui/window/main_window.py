@@ -207,10 +207,6 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
     def _on_mode_selector_changed(self, mode: str) -> None:
         self.mainTab.blockSignals(True)
         self._apply_mode_tab_visibility(mode)
-        if mode == "Campaign":
-            self.mainTab.setCurrentWidget(self.campaignTab)
-        else:
-            self.mainTab.setCurrentWidget(self.tabConfiguration)
         self.mainTab.blockSignals(False)
 
     def _sync_mode_selector_from_tab(self) -> None:
@@ -393,6 +389,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
     def runDocument(self) -> None:
         if self._is_campaign_mode():
+            self.mainTab.setCurrentWidget(self.executionCampaignTab)
             self.campaignTab.run_campaign()
         else:
             self.run()
