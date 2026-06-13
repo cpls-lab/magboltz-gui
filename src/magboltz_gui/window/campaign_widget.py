@@ -107,6 +107,8 @@ class CampaignRunWorker(QObject):
 class CampaignWidget(QWidget):
     """First campaign GUI slice: preview and generate sweep input cards."""
 
+    runningChanged = pyqtSignal(bool)
+
     def __init__(
         self,
         get_current_cards: Callable[[], InputCards],
@@ -186,16 +188,9 @@ class CampaignWidget(QWidget):
         self.executableLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self._refresh_executable_label()
         self.btnPreview = QPushButton("Preview runs")
-        self.btnRun = QPushButton("Run campaign...")
-        self.btnCancel = QPushButton("Stop campaign")
-        self.btnCancel.setEnabled(False)
         self.btnPreview.clicked.connect(self.preview_runs)
-        self.btnRun.clicked.connect(self.run_campaign)
-        self.btnCancel.clicked.connect(self.cancel_campaign)
         action_buttons = QHBoxLayout()
         action_buttons.addWidget(self.btnPreview)
-        action_buttons.addWidget(self.btnRun)
-        action_buttons.addWidget(self.btnCancel)
         action_buttons.addStretch(1)
         preview_layout.addWidget(self.previewSummary)
         preview_layout.addWidget(self.matrixSummary)
@@ -480,7 +475,6 @@ class CampaignWidget(QWidget):
         if self._campaign_worker is None:
             return
         self._campaign_worker.cancel()
-        self.btnCancel.setEnabled(False)
         self.progressBar.setFormat("Stopping campaign...")
         self.resultsSummary.setText("Results: stopping campaign")
 
@@ -523,10 +517,9 @@ class CampaignWidget(QWidget):
             self.progressBar.setMaximum(max(self.progressBar.maximum(), 1))
             self.progressBar.setValue(self.progressBar.maximum())
             self.progressBar.setFormat("Campaign idle")
-        self.btnRun.setEnabled(not running)
         self.btnPreview.setEnabled(not running)
-        self.btnCancel.setEnabled(running)
         self.sweepTable.setEnabled(not running)
+        self.runningChanged.emit(running)
 
     def _select_output_directory(self, title: str) -> tuple[CampaignPlan, Path] | None:
         try:

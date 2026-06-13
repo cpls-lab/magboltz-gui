@@ -54,6 +54,8 @@ def test_main_window_initializes_default_input_card(qtbot) -> None:
     assert window.campaignTab.executableLabel.text().startswith("Magboltz executable: ")
     assert not hasattr(window.campaignTab, "btnOpen")
     assert not hasattr(window.campaignTab, "btnGenerate")
+    assert not hasattr(window.campaignTab, "btnRun")
+    assert not hasattr(window.campaignTab, "btnCancel")
     assert window.modeSelectorLabel.text() == "Mode"
     assert [window.modeSelectorCombo.itemText(i) for i in range(window.modeSelectorCombo.count())] == [
         "Single",
@@ -117,32 +119,44 @@ def test_main_window_file_actions_dispatch_by_mode(qtbot, monkeypatch) -> None:
     monkeypatch.setattr(window, "fileOpen", lambda: calls.append("single-open"))
     monkeypatch.setattr(window, "fileSave", lambda: calls.append("single-save"))
     monkeypatch.setattr(window, "fileSaveAs", lambda: calls.append("single-save-as"))
+    monkeypatch.setattr(window, "run", lambda: calls.append("single-run"))
+    monkeypatch.setattr(window, "stopRun", lambda: calls.append("single-stop"))
     monkeypatch.setattr(window.campaignTab, "new_campaign", lambda: calls.append("campaign-new"))
     monkeypatch.setattr(window.campaignTab, "open_campaign", lambda: calls.append("campaign-open"))
     monkeypatch.setattr(window.campaignTab, "save_campaign", lambda: calls.append("campaign-save"))
     monkeypatch.setattr(window.campaignTab, "save_campaign_as", lambda: calls.append("campaign-save-as"))
+    monkeypatch.setattr(window.campaignTab, "run_campaign", lambda: calls.append("campaign-run"))
+    monkeypatch.setattr(window.campaignTab, "cancel_campaign", lambda: calls.append("campaign-stop"))
 
     window.modeSelectorCombo.setCurrentText("Single")
     window.actionNew.trigger()
     window.actionOpen.trigger()
     window.actionSave.trigger()
     window.actionSaveAs.trigger()
+    window.actionRun.trigger()
+    window.actionStop.trigger()
 
     window.modeSelectorCombo.setCurrentText("Campaign")
     window.actionNew.trigger()
     window.actionOpen.trigger()
     window.actionSave.trigger()
     window.actionSaveAs.trigger()
+    window.actionRun.trigger()
+    window.actionStop.trigger()
 
     assert calls == [
         "single-new",
         "single-open",
         "single-save",
         "single-save-as",
+        "single-run",
+        "single-stop",
         "campaign-new",
         "campaign-open",
         "campaign-save",
         "campaign-save-as",
+        "campaign-run",
+        "campaign-stop",
     ]
 
 
@@ -702,10 +716,11 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
         values="100",
     )
 
-    campaign.run_campaign()
+    window.modeSelectorCombo.setCurrentText("Campaign")
+    window.actionRun.trigger()
 
-    assert not campaign.btnRun.isEnabled()
-    assert campaign.btnCancel.isEnabled()
+    qtbot.waitUntil(lambda: not window.actionRun.isVisible(), timeout=3000)
+    assert window.actionStop.isVisible()
     qtbot.waitUntil(lambda: bool(messages), timeout=3000)
 
     assert (tmp_path / "run_0001" / "stdout.txt").is_file()
@@ -713,9 +728,8 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
     assert "Executed 2 runs" in messages[0][1]
     assert "OK: 1" in messages[0][1]
     assert "Failed: 1" in messages[0][1]
-    qtbot.waitUntil(campaign.btnRun.isEnabled, timeout=3000)
-    assert campaign.btnRun.isEnabled()
-    assert not campaign.btnCancel.isEnabled()
+    qtbot.waitUntil(window.actionRun.isVisible, timeout=3000)
+    assert not window.actionStop.isVisible()
     assert campaign.resultsSummary.text() == "Results: 1 runs; done: 1; failed: 0; pending: 0"
     assert campaign.resultsTable.item(0, 0).text() == "run_0001"
     assert campaign.resultsTable.item(0, 1).text() == "done"

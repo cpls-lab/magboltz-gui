@@ -85,8 +85,8 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.actionSave.triggered.connect(self.saveDocument)
         self.actionSaveAs.triggered.connect(self.saveDocumentAs)
         self.actionClose.triggered.connect(self.fileClose)
-        self.actionRun.triggered.connect(self.run)
-        self.actionStop.triggered.connect(self.stopRun)
+        self.actionRun.triggered.connect(self.runDocument)
+        self.actionStop.triggered.connect(self.stopDocument)
         self.actionGasAdd.triggered.connect(self.gasAdd)
         self.actionGasRemove.triggered.connect(self.gasRemove)
         self.actionCmdCopyToClipboard.triggered.connect(self.cmdCopyToClipboard)
@@ -120,6 +120,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.mainTab.addTab(self.executionCampaignTab, "Execution")
         self._install_result_actions()
         self._install_mode_selector()
+        self.campaignTab.runningChanged.connect(self._set_running_state)
         self.mainTab.currentChanged.connect(self._sync_mode_selector_from_tab)
         self._apply_mode_tab_visibility("Single")
 
@@ -389,6 +390,18 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self.campaignTab.save_campaign_as()
         else:
             self.fileSaveAs()
+
+    def runDocument(self) -> None:
+        if self._is_campaign_mode():
+            self.campaignTab.run_campaign()
+        else:
+            self.run()
+
+    def stopDocument(self) -> None:
+        if self._is_campaign_mode():
+            self.campaignTab.cancel_campaign()
+        else:
+            self.stopRun()
 
     def fileNew(self) -> None:
         self._currentCards = InputCards()
