@@ -50,10 +50,10 @@ def test_main_window_initializes_default_input_card(qtbot) -> None:
     assert window.executionCampaignTab.objectName() == "executionCampaignTab"
     assert window.mainTab.tabText(window.mainTab.indexOf(window.campaignExecutionTab)) == "Execution"
     assert window.campaignExecutionTab is window.campaignTab.executionTab
-    assert window.actionCampaignOpen.text() == "Open Campaign..."
-    assert window.actionCampaignSave.text() == "Save Campaign..."
     assert window.actionPreferences.text() == "Preferences..."
     assert window.campaignTab.executableLabel.text().startswith("Magboltz executable: ")
+    assert not hasattr(window.campaignTab, "btnOpen")
+    assert not hasattr(window.campaignTab, "btnGenerate")
     assert window.modeSelectorLabel.text() == "Mode"
     assert [window.modeSelectorCombo.itemText(i) for i in range(window.modeSelectorCombo.count())] == [
         "Single",
@@ -68,8 +68,8 @@ def test_main_window_initializes_default_input_card(qtbot) -> None:
     run_menu_actions = [action.text() for action in window.menuRun.actions()]
     edit_menu_actions = [action.text() for action in window.menu_Edit.actions()]
     assert "Open Result" in run_menu_actions
-    assert "Open Campaign..." in run_menu_actions
-    assert "Save Campaign..." in run_menu_actions
+    assert "Open Campaign..." not in run_menu_actions
+    assert "Save Campaign..." not in run_menu_actions
     assert "Preferences..." in edit_menu_actions
 
 
@@ -105,6 +105,45 @@ def test_main_window_mode_selector_tracks_single_and_campaign_tabs(qtbot) -> Non
 
     window.mainTab.setCurrentWidget(window.tabConfiguration)
     assert window.modeSelectorCombo.currentText() == "Single"
+
+
+def test_main_window_file_actions_dispatch_by_mode(qtbot, monkeypatch) -> None:
+    calls: list[str] = []
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+
+    monkeypatch.setattr(window, "fileNew", lambda: calls.append("single-new"))
+    monkeypatch.setattr(window, "fileOpen", lambda: calls.append("single-open"))
+    monkeypatch.setattr(window, "fileSave", lambda: calls.append("single-save"))
+    monkeypatch.setattr(window, "fileSaveAs", lambda: calls.append("single-save-as"))
+    monkeypatch.setattr(window.campaignTab, "new_campaign", lambda: calls.append("campaign-new"))
+    monkeypatch.setattr(window.campaignTab, "open_campaign", lambda: calls.append("campaign-open"))
+    monkeypatch.setattr(window.campaignTab, "save_campaign", lambda: calls.append("campaign-save"))
+    monkeypatch.setattr(window.campaignTab, "save_campaign_as", lambda: calls.append("campaign-save-as"))
+
+    window.modeSelectorCombo.setCurrentText("Single")
+    window.actionNew.trigger()
+    window.actionOpen.trigger()
+    window.actionSave.trigger()
+    window.actionSaveAs.trigger()
+
+    window.modeSelectorCombo.setCurrentText("Campaign")
+    window.actionNew.trigger()
+    window.actionOpen.trigger()
+    window.actionSave.trigger()
+    window.actionSaveAs.trigger()
+
+    assert calls == [
+        "single-new",
+        "single-open",
+        "single-save",
+        "single-save-as",
+        "campaign-new",
+        "campaign-open",
+        "campaign-save",
+        "campaign-save-as",
+    ]
 
 
 def test_main_window_gas_buttons_update_model_and_table(qtbot) -> None:
@@ -302,6 +341,29 @@ def test_campaign_tab_generates_input_cards(qtbot, monkeypatch, tmp_path: Path) 
     assert (tmp_path / "summary.csv").is_file()
     assert messages and messages[0][0] == "Campaign generated"
     assert window.campaignTab.resultsSummary.text() == "Results: input cards generated, not run"
+
+
+def test_campaign_tab_save_reuses_current_campaign_directory(qtbot, monkeypatch, tmp_path: Path) -> None:
+    messages: list[tuple[str, str]] = []
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
+    monkeypatch.setattr(campaign, "_show_info", lambda title, message: messages.append((title, message)))
+
+    campaign.save_campaign_as()
+    assert campaign._current_campaign_dir == tmp_path
+
+    def fail_if_prompted(*args, **kwargs):
+        raise AssertionError("Save should reuse the current campaign directory")
+
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", fail_if_prompted)
+    campaign.save_campaign()
+
+    assert (tmp_path / "campaign.json").is_file()
+    assert len(messages) == 2
+    assert all(title == "Campaign generated" for title, _message in messages)
 
 
 def test_campaign_tab_opens_saved_campaign_and_restores_base_input(qtbot, monkeypatch, tmp_path: Path) -> None:

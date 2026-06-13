@@ -123,6 +123,7 @@ class CampaignWidget(QWidget):
         self._show_info = show_info
         self._show_error = show_error
         self._base_cards: InputCards | None = None
+        self._current_campaign_dir: Path | None = None
         self._updating_sweep_table = False
         self._campaign_thread: QThread | None = None
         self._campaign_worker: CampaignRunWorker | None = None
@@ -185,20 +186,14 @@ class CampaignWidget(QWidget):
         self.executableLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self._refresh_executable_label()
         self.btnPreview = QPushButton("Preview runs")
-        self.btnOpen = QPushButton("Open campaign...")
-        self.btnGenerate = QPushButton("Generate input cards...")
         self.btnRun = QPushButton("Run campaign...")
         self.btnCancel = QPushButton("Stop campaign")
         self.btnCancel.setEnabled(False)
         self.btnPreview.clicked.connect(self.preview_runs)
-        self.btnOpen.clicked.connect(self.open_campaign)
-        self.btnGenerate.clicked.connect(self.generate_input_cards)
         self.btnRun.clicked.connect(self.run_campaign)
         self.btnCancel.clicked.connect(self.cancel_campaign)
         action_buttons = QHBoxLayout()
         action_buttons.addWidget(self.btnPreview)
-        action_buttons.addWidget(self.btnOpen)
-        action_buttons.addWidget(self.btnGenerate)
         action_buttons.addWidget(self.btnRun)
         action_buttons.addWidget(self.btnCancel)
         action_buttons.addStretch(1)
@@ -240,6 +235,18 @@ class CampaignWidget(QWidget):
     def use_current_input(self) -> None:
         """Snapshot the current GUI input card as campaign base."""
         self._base_cards = deepcopy(self._get_current_cards())
+
+    def new_campaign(self) -> None:
+        """Reset campaign sweeps while keeping the current input card as base."""
+        self._current_campaign_dir = None
+        self.use_current_input()
+        self.sweepTable.setRowCount(0)
+        self.add_default_sweep_row()
+        self.previewTable.setColumnCount(0)
+        self.previewTable.setRowCount(0)
+        self.previewSummary.setText("Runs: 0")
+        self.matrixSummary.setText("Independent rows: 0, coupled rows: 0")
+        self._clear_results()
 
     def add_default_sweep_row(self) -> None:
         """Append an editable sweep row with a useful electric-field default."""
@@ -386,15 +393,34 @@ class CampaignWidget(QWidget):
             return
         self._populate_preview(runs, plan)
 
-    def generate_input_cards(self) -> None:
+    def save_campaign(self) -> None:
+        """Write campaign input cards to the current campaign directory."""
+        if self._current_campaign_dir is None:
+            self.save_campaign_as()
+            return
+        self._save_campaign_to(self._current_campaign_dir)
+
+    def save_campaign_as(self) -> None:
         """Write campaign input cards to a user-selected directory."""
         self._refresh_executable_label()
         selection = self._select_output_directory("Select campaign output directory")
         if selection is None:
             return
-        plan, directory = selection
+        _plan, directory = selection
+        self._save_campaign_to(directory)
 
+    def generate_input_cards(self) -> None:
+        """Backward-compatible alias for Save Campaign As."""
+        self.save_campaign_as()
+
+    def _save_campaign_to(self, directory: Path) -> None:
+        try:
+            plan = self._build_plan()
+        except Exception as exc:
+            self._show_error("Invalid campaign", str(exc))
+            return
         runs = SerialCampaignRunner().prepare(plan, directory)
+        self._current_campaign_dir = directory
         self._populate_preview(runs, plan)
         self._clear_results("Results: input cards generated, not run")
         self._show_info("Campaign generated", f"Generated {len(runs)} input cards in:\n{directory}")
@@ -411,6 +437,7 @@ class CampaignWidget(QWidget):
         except Exception as exc:
             self._show_error("Open campaign failed", str(exc))
             return
+        self._current_campaign_dir = Path(directory)
         self._populate_preview(runs, plan)
         self._populate_results_from_directory(Path(directory))
         self._show_info("Campaign opened", f"Loaded {len(runs)} runs from:\n{directory}")
@@ -425,6 +452,7 @@ class CampaignWidget(QWidget):
         if selection is None:
             return
         plan, directory = selection
+        self._current_campaign_dir = directory
 
         self._set_campaign_running(True)
         self.resultsSummary.setText(f"Results: running campaign in {directory}")
@@ -496,8 +524,6 @@ class CampaignWidget(QWidget):
             self.progressBar.setValue(self.progressBar.maximum())
             self.progressBar.setFormat("Campaign idle")
         self.btnRun.setEnabled(not running)
-        self.btnGenerate.setEnabled(not running)
-        self.btnOpen.setEnabled(not running)
         self.btnPreview.setEnabled(not running)
         self.btnCancel.setEnabled(running)
         self.sweepTable.setEnabled(not running)

@@ -80,10 +80,10 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.btnGasDown.setDefaultAction(self.actionGasMoveDown)
 
         # Associating actions to methods
-        self.actionNew.triggered.connect(self.fileNew)
-        self.actionOpen.triggered.connect(self.fileOpen)
-        self.actionSave.triggered.connect(self.fileSave)
-        self.actionSaveAs.triggered.connect(self.fileSaveAs)
+        self.actionNew.triggered.connect(self.newDocument)
+        self.actionOpen.triggered.connect(self.openDocument)
+        self.actionSave.triggered.connect(self.saveDocument)
+        self.actionSaveAs.triggered.connect(self.saveDocumentAs)
         self.actionClose.triggered.connect(self.fileClose)
         self.actionRun.triggered.connect(self.run)
         self.actionStop.triggered.connect(self.stopRun)
@@ -118,7 +118,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.executionCampaignTab.setObjectName("executionCampaignTab")
         self.campaignExecutionTab = self.executionCampaignTab
         self.mainTab.addTab(self.executionCampaignTab, "Execution")
-        self._install_campaign_actions()
+        self._install_result_actions()
         self._install_mode_selector()
         self.mainTab.currentChanged.connect(self._sync_mode_selector_from_tab)
         self._apply_mode_tab_visibility("Single")
@@ -172,17 +172,9 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.btnResultPlots.setEnabled(False)
         self.actionStop.setVisible(False)
 
-    def _install_campaign_actions(self) -> None:
-        self.actionCampaignOpen = QAction(QIcon.fromTheme("document-open"), "Open Campaign...", self)
-        self.actionCampaignOpen.triggered.connect(self.campaignTab.open_campaign)
-        self.actionCampaignSave = QAction(QIcon.fromTheme("document-save-as"), "Save Campaign...", self)
-        self.actionCampaignSave.triggered.connect(self.campaignTab.generate_input_cards)
-
+    def _install_result_actions(self) -> None:
         before_action = self.actionResultSave
-        self.menuRun.insertSeparator(before_action)
         self.menuRun.insertAction(before_action, self.actionResultOpen)
-        self.menuRun.insertAction(before_action, self.actionCampaignOpen)
-        self.menuRun.insertAction(before_action, self.actionCampaignSave)
 
     def _install_preferences_action(self) -> None:
         self.actionPreferences = QAction(QIcon.fromTheme("preferences-system"), "Preferences...", self)
@@ -362,8 +354,6 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self.actionResultSave: QStyle.StandardPixmap.SP_DialogSaveButton,
             self.actionResultOpen: QStyle.StandardPixmap.SP_DialogOpenButton,
             self.actionPreferences: QStyle.StandardPixmap.SP_FileDialogDetailedView,
-            self.actionCampaignOpen: QStyle.StandardPixmap.SP_DialogOpenButton,
-            self.actionCampaignSave: QStyle.StandardPixmap.SP_DialogSaveButton,
             self.actionResultExport: QStyle.StandardPixmap.SP_DialogSaveButton,
             self.actionShowPlots: QStyle.StandardPixmap.SP_FileDialogDetailedView,
             self.actionGraphSave: QStyle.StandardPixmap.SP_DialogSaveButton,
@@ -372,6 +362,33 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         for action, sp in mapping.items():
             if action.icon().isNull():
                 action.setIcon(style.standardIcon(sp))
+
+    def _is_campaign_mode(self) -> bool:
+        return self.modeSelectorCombo.currentText() == "Campaign"
+
+    def newDocument(self) -> None:
+        if self._is_campaign_mode():
+            self.campaignTab.new_campaign()
+        else:
+            self.fileNew()
+
+    def openDocument(self) -> None:
+        if self._is_campaign_mode():
+            self.campaignTab.open_campaign()
+        else:
+            self.fileOpen()
+
+    def saveDocument(self) -> None:
+        if self._is_campaign_mode():
+            self.campaignTab.save_campaign()
+        else:
+            self.fileSave()
+
+    def saveDocumentAs(self) -> None:
+        if self._is_campaign_mode():
+            self.campaignTab.save_campaign_as()
+        else:
+            self.fileSaveAs()
 
     def fileNew(self) -> None:
         self._currentCards = InputCards()
