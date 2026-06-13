@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from importlib.resources import files
 from pathlib import Path
 from typing import Callable
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QSize
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
@@ -20,6 +22,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QTableWidget,
     QTableWidgetItem,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -70,15 +73,6 @@ class CampaignWidget(QWidget):
     def _build_ui(self) -> None:
         layout = QGridLayout(self)
 
-        base_group = QGroupBox("Base case")
-        base_layout = QVBoxLayout(base_group)
-        self.baseSummary = QLabel()
-        self.baseSummary.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        self.btnUseCurrent = QPushButton("Use current input as base")
-        self.btnUseCurrent.clicked.connect(self.use_current_input)
-        base_layout.addWidget(self.baseSummary)
-        base_layout.addWidget(self.btnUseCurrent)
-
         sweep_group = QGroupBox("Sweep parameters")
         sweep_layout = QVBoxLayout(sweep_group)
         self.sweepTable = QTableWidget(0, 8)
@@ -99,8 +93,16 @@ class CampaignWidget(QWidget):
         header.setSectionResizeMode(7, QHeaderView.ResizeMode.ResizeToContents)
 
         sweep_buttons = QHBoxLayout()
-        self.btnAddSweep = QPushButton("Add sweep")
-        self.btnRemoveSweep = QPushButton("Remove selected")
+        self.btnAddSweep = QToolButton()
+        self.btnAddSweep.setIcon(_sweep_icon("add"))
+        self.btnAddSweep.setIconSize(QSize(20, 20))
+        self.btnAddSweep.setToolTip("Add sweep")
+        self.btnAddSweep.setText("Add sweep")
+        self.btnRemoveSweep = QToolButton()
+        self.btnRemoveSweep.setIcon(_sweep_icon("remove"))
+        self.btnRemoveSweep.setIconSize(QSize(20, 20))
+        self.btnRemoveSweep.setToolTip("Remove selected sweep")
+        self.btnRemoveSweep.setText("Remove selected")
         self.btnAddSweep.clicked.connect(self.add_default_sweep_row)
         self.btnRemoveSweep.clicked.connect(self.remove_selected_sweep)
         sweep_buttons.addWidget(self.btnAddSweep)
@@ -125,11 +127,10 @@ class CampaignWidget(QWidget):
         preview_layout.addWidget(self.btnPreview)
         preview_layout.addWidget(self.btnGenerate)
 
-        layout.addWidget(base_group, 0, 0)
-        layout.addWidget(sweep_group, 0, 1)
-        layout.addWidget(preview_group, 1, 0, 1, 2)
+        layout.addWidget(sweep_group, 0, 0)
+        layout.addWidget(preview_group, 1, 0)
         layout.setColumnStretch(0, 1)
-        layout.setColumnStretch(1, 3)
+        layout.setRowStretch(0, 3)
         layout.setRowStretch(1, 2)
 
         self.add_default_sweep_row()
@@ -137,7 +138,6 @@ class CampaignWidget(QWidget):
     def use_current_input(self) -> None:
         """Snapshot the current GUI input card as campaign base."""
         self._base_cards = deepcopy(self._get_current_cards())
-        self.baseSummary.setText(_summarize_cards(self._base_cards))
 
     def add_default_sweep_row(self) -> None:
         """Append an editable sweep row with a useful electric-field default."""
@@ -221,8 +221,9 @@ class CampaignWidget(QWidget):
         return generate_runs(self._build_plan())
 
     def _build_plan(self) -> CampaignPlan:
+        self.use_current_input()
         if self._base_cards is None:
-            raise ValueError("No base input card selected")
+            raise ValueError("No input card selected")
         parameters = self._read_parameters()
         return CampaignPlan(base_cards=self._base_cards, parameters=parameters)
 
@@ -299,11 +300,13 @@ def _parse_values(text: str) -> list[float | int | bool | str]:
     return values
 
 
-def _summarize_cards(cards: InputCards) -> str:
-    gas_parts = [f"{gas.gas_id}:{gas.gas_frac:g}%" for gas in cards.gases]
-    gases = ", ".join(gas_parts) if gas_parts else "(no gases)"
-    return (
-        f"Gases: {gases}\n"
-        f"E: {cards.electric_field:g} V/cm, B: {cards.magnetic_field:g} kG, angle: {cards.angle:g} deg\n"
-        f"P: {cards.gas_pressure:g} Torr, T: {cards.gas_temperature:g} C"
-    )
+def _sweep_icon(kind: str) -> QIcon:
+    icon_names = {
+        "add": ("addition-color-icon.svg", "list-add"),
+        "remove": ("subtract-color-icon.svg", "list-remove"),
+    }
+    bundled_name, theme_name = icon_names[kind]
+    icon_path = files("magboltz_gui.icons").joinpath("linux_icons", bundled_name)
+    if icon_path.is_file():
+        return QIcon(str(icon_path))
+    return QIcon.fromTheme(theme_name)
