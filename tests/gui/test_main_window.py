@@ -490,3 +490,34 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
     assert "Executed 2 runs" in messages[0][1]
     assert "OK: 1" in messages[0][1]
     assert "Failed: 1" in messages[0][1]
+
+
+def test_campaign_tab_reports_missing_magboltz_executable(qtbot, monkeypatch, tmp_path: Path) -> None:
+    errors: list[tuple[str, str]] = []
+
+    class MissingMagboltzRunner:
+        def run(self, plan, output_dir: Path):
+            output_dir.mkdir(parents=True, exist_ok=True)
+            raise FileNotFoundError(2, "No such file or directory", "magboltz")
+
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
+    monkeypatch.setattr(campaign, "_show_error", lambda title, message: errors.append((title, message)))
+    monkeypatch.setattr(campaign_widget, "SerialCampaignRunner", MissingMagboltzRunner)
+
+    campaign.add_sweep_row(
+        parameter_path="electric_field",
+        sweep_type="values",
+        values="100",
+    )
+
+    campaign.run_campaign()
+
+    assert errors
+    assert errors[0][0] == "Campaign run failed"
+    assert "Could not start `magboltz`" in errors[0][1]
+    assert "available in PATH" in errors[0][1]

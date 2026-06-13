@@ -312,7 +312,19 @@ class CampaignWidget(QWidget):
             return
         plan, directory = selection
 
-        results = SerialCampaignRunner().run(plan, directory)
+        try:
+            results = SerialCampaignRunner().run(plan, directory)
+        except FileNotFoundError as exc:
+            executable = exc.filename or "magboltz"
+            self._show_error(
+                "Campaign run failed",
+                (
+                    f"Could not start `{executable}`.\n\n"
+                    "Install Magboltz or make sure the executable is available in PATH before running a campaign.\n"
+                    f"Input cards may already have been generated in:\n{directory}"
+                ),
+            )
+            return
         runs = self._generate_runs(plan)
         self._populate_preview(runs, plan)
         ok_count = sum(result.ok for result in results)
