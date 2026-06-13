@@ -310,3 +310,62 @@ def test_campaign_tab_updates_editable_sweep_cells_by_type(qtbot) -> None:
     assert start_item.flags() & Qt.ItemFlag.ItemIsEditable
     assert stop_item.flags() & Qt.ItemFlag.ItemIsEditable
     assert points_item.flags() & Qt.ItemFlag.ItemIsEditable
+
+
+def test_campaign_tab_reports_contextual_validation_errors(qtbot, monkeypatch) -> None:
+    errors: list[tuple[str, str]] = []
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+    monkeypatch.setattr(campaign, "_show_error", lambda title, message: errors.append((title, message)))
+
+    campaign.add_sweep_row(
+        parameter_path="electric_field",
+        sweep_type="linear",
+        values="",
+        stop="100",
+        points="1",
+    )
+    campaign.add_sweep_row(
+        parameter_path="gases[0].gas_frac",
+        sweep_type="values",
+        values="70, 80",
+    )
+
+    campaign.preview_runs()
+
+    assert errors
+    assert errors[0][0] == "Invalid campaign"
+    assert "Fix campaign sweep rows:" in errors[0][1]
+    assert "Row 1 (Electric field): Start is required" in errors[0][1]
+    assert "Row 2 (Gas 1 fraction): Coupled mode requires at least two enabled coupled rows" in errors[0][1]
+
+
+def test_campaign_tab_reports_coupled_point_mismatch_before_core(qtbot, monkeypatch) -> None:
+    errors: list[tuple[str, str]] = []
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+    monkeypatch.setattr(campaign, "_show_error", lambda title, message: errors.append((title, message)))
+
+    campaign.add_sweep_row(
+        parameter_path="gases[0].gas_frac",
+        sweep_type="values",
+        values="70, 80",
+    )
+    campaign.add_sweep_row(
+        parameter_path="gases[1].gas_frac",
+        sweep_type="values",
+        values="30",
+    )
+
+    campaign.preview_runs()
+
+    assert errors
+    assert "Coupled rows must have the same number of points" in errors[0][1]
+    assert "row 1 Gas 1 fraction=2" in errors[0][1]
+    assert "row 2 Gas 2 fraction=1" in errors[0][1]

@@ -265,7 +265,7 @@ class CampaignWidget(QWidget):
 
     def _update_explicit_points(self, row: int) -> None:
         values_text = self._cell_text(row, 4)
-        count = len([value for value in values_text.replace("\n", ",").split(",") if value.strip()])
+        count = len(_value_tokens(values_text))
         points_item = self.sweepTable.item(row, 7)
         if points_item is None:
             points_item = QTableWidgetItem("")
@@ -315,6 +315,8 @@ class CampaignWidget(QWidget):
 
     def _read_parameters(self) -> list[SweepParameter]:
         parameters: list[SweepParameter] = []
+        errors: list[str] = []
+        coupled_rows: list[tuple[int, str, int]] = []
         for row in range(self.sweepTable.rowCount()):
             enabled = self.sweepTable.cellWidget(row, 0)
             if isinstance(enabled, QCheckBox) and not enabled.isChecked():
@@ -328,6 +330,7 @@ class CampaignWidget(QWidget):
                 or not isinstance(mode_combo, QComboBox)
                 or not isinstance(sweep_combo, QComboBox)
             ):
+                errors.append(f"Row {row + 1}: internal sweep controls are incomplete")
                 continue
 
             path = str(parameter_combo.currentData())
@@ -338,19 +341,45 @@ class CampaignWidget(QWidget):
             stop = self._cell_text(row, 6)
             points = self._cell_text(row, 7)
             label = self._cell_text(row, 8) or None
+            row_context = f"Row {row + 1} ({parameter_combo.currentText()})"
 
-            if sweep_type == "values":
-                sweep = ExplicitSweep(_parse_values(values))
-            elif sweep_type == "linear":
-                sweep = LinearSweep(float(start), float(stop), int(points))
-            elif sweep_type == "logspace":
-                sweep = LogSweep(float(start), float(stop), int(points))
-            else:
-                raise ValueError(f"Unsupported sweep type: {sweep_type}")
+            try:
+                if sweep_type == "values":
+                    sweep = ExplicitSweep(_parse_values(values))
+                elif sweep_type == "linear":
+                    sweep = LinearSweep(
+                        _required_float(start, "Start"),
+                        _required_float(stop, "Stop"),
+                        _required_points(points),
+                    )
+                elif sweep_type == "logspace":
+                    start_value = _required_float(start, "Start")
+                    stop_value = _required_float(stop, "Stop")
+                    if start_value <= 0 or stop_value <= 0:
+                        raise ValueError("Start and Stop must be positive for logspace sweeps")
+                    sweep = LogSweep(start_value, stop_value, _required_points(points))
+                else:
+                    raise ValueError(f"Unsupported sweep type: {sweep_type}")
+            except ValueError as exc:
+                errors.append(f"{row_context}: {exc}")
+                continue
+
             parameters.append(SweepParameter(path=path, sweep=sweep, label=label, mode=mode))
+            if mode == SweepMode.COUPLED:
+                display_label = label or parameter_combo.currentText()
+                coupled_rows.append((row + 1, display_label, len(sweep.values())))
 
         if not parameters:
-            raise ValueError("Add at least one enabled sweep parameter")
+            errors.append("Add at least one enabled sweep parameter")
+        if len(coupled_rows) == 1:
+            row_number, label, _points = coupled_rows[0]
+            errors.append(f"Row {row_number} ({label}): Coupled mode requires at least two enabled coupled rows")
+        coupled_point_counts = {points for _row, _label, points in coupled_rows}
+        if len(coupled_point_counts) > 1:
+            details = ", ".join(f"row {row} {label}={points}" for row, label, points in coupled_rows)
+            errors.append(f"Coupled rows must have the same number of points ({details})")
+        if errors:
+            raise ValueError("Fix campaign sweep rows:\n- " + "\n- ".join(errors))
         return parameters
 
     def _cell_text(self, row: int, column: int) -> str:
@@ -370,11 +399,11 @@ class CampaignWidget(QWidget):
 
 
 def _parse_values(text: str) -> list[float | int | bool | str]:
-    if not text:
+    tokens = _value_tokens(text)
+    if not tokens:
         raise ValueError("Explicit sweep values cannot be empty")
     values: list[float | int | bool | str] = []
-    for raw in text.split(","):
-        token = raw.strip()
+    for token in tokens:
         if token.lower() in {"true", "false"}:
             values.append(token.lower() == "true")
             continue
@@ -385,6 +414,31 @@ def _parse_values(text: str) -> list[float | int | bool | str]:
         else:
             values.append(int(number) if number.is_integer() else number)
     return values
+
+
+def _value_tokens(text: str) -> list[str]:
+    return [value.strip() for value in text.replace("\n", ",").split(",") if value.strip()]
+
+
+def _required_float(text: str, field_name: str) -> float:
+    if not text:
+        raise ValueError(f"{field_name} is required")
+    try:
+        return float(text)
+    except ValueError as exc:
+        raise ValueError(f"{field_name} must be numeric") from exc
+
+
+def _required_points(text: str) -> int:
+    if not text:
+        raise ValueError("Points is required")
+    try:
+        points = int(text)
+    except ValueError as exc:
+        raise ValueError("Points must be an integer") from exc
+    if points < 2:
+        raise ValueError("Points must be at least 2")
+    return points
 
 
 def _is_gas_fraction_path(path: str) -> bool:
