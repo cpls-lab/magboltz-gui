@@ -6,7 +6,16 @@ from pathlib import Path
 
 import pytest
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication, QComboBox, QDialog, QDoubleSpinBox, QFileDialog, QMessageBox, QStyleOptionViewItem
+from PyQt6.QtWidgets import (
+    QApplication,
+    QComboBox,
+    QDialog,
+    QDoubleSpinBox,
+    QFileDialog,
+    QMessageBox,
+    QSizePolicy,
+    QStyleOptionViewItem,
+)
 
 pytest.importorskip("matplotlib", reason="Main window embeds matplotlib canvases")
 
@@ -42,12 +51,37 @@ def test_main_window_initializes_default_input_card(qtbot) -> None:
     assert window.actionCampaignSave.text() == "Save Campaign..."
     assert window.actionPreferences.text() == "Preferences..."
     assert window.campaignTab.executableLabel.text().startswith("Magboltz executable: ")
+    assert window.modeSelectorLabel.text() == "Mode"
+    assert [window.modeSelectorCombo.itemText(i) for i in range(window.modeSelectorCombo.count())] == [
+        "Single",
+        "Campaign",
+    ]
+    assert window.modeSelectorCombo.currentText() == "Single"
+    assert window.modeSelectorSpacer.sizePolicy().horizontalPolicy() == QSizePolicy.Policy.Expanding
     run_menu_actions = [action.text() for action in window.menuRun.actions()]
     edit_menu_actions = [action.text() for action in window.menu_Edit.actions()]
     assert "Open Result" in run_menu_actions
     assert "Open Campaign..." in run_menu_actions
     assert "Save Campaign..." in run_menu_actions
     assert "Preferences..." in edit_menu_actions
+
+
+def test_main_window_mode_selector_tracks_single_and_campaign_tabs(qtbot) -> None:
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+
+    window.modeSelectorCombo.setCurrentText("Campaign")
+    assert window.mainTab.currentWidget() == window.campaignTab
+
+    window.modeSelectorCombo.setCurrentText("Single")
+    assert window.mainTab.currentWidget() == window.tabConfiguration
+
+    window.mainTab.setCurrentWidget(window.campaignExecutionTab)
+    assert window.modeSelectorCombo.currentText() == "Campaign"
+
+    window.mainTab.setCurrentWidget(window.tabConfiguration)
+    assert window.modeSelectorCombo.currentText() == "Single"
 
 
 def test_main_window_gas_buttons_update_model_and_table(qtbot) -> None:

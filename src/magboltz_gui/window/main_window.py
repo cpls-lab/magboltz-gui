@@ -12,11 +12,16 @@ from PyQt6.QtWidgets import (
     QDialog,
     QFileDialog,
     QMessageBox,
+    QSizePolicy,
     QTableWidgetItem,
     QHeaderView,
     QTableWidget,
     QApplication,
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
     QVBoxLayout,
+    QWidget,
 )
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.colors import ListedColormap
@@ -110,6 +115,8 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.campaignExecutionTab = self.campaignTab.executionTab
         self.mainTab.addTab(self.campaignExecutionTab, "Execution")
         self._install_campaign_actions()
+        self._install_mode_selector()
+        self.mainTab.currentChanged.connect(self._sync_mode_selector_from_tab)
 
         self.fillColorMap()
 
@@ -177,6 +184,42 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.actionPreferences.triggered.connect(self.openPreferences)
         self.menu_Edit.addSeparator()
         self.menu_Edit.addAction(self.actionPreferences)
+
+    def _install_mode_selector(self) -> None:
+        self.modeSelectorWidget = QWidget(self)
+        layout = QHBoxLayout(self.modeSelectorWidget)
+        layout.setContentsMargins(8, 0, 0, 0)
+        layout.setSpacing(4)
+
+        self.modeSelectorLabel = QLabel("Mode", self.modeSelectorWidget)
+        self.modeSelectorCombo = QComboBox(self.modeSelectorWidget)
+        self.modeSelectorCombo.addItems(["Single", "Campaign"])
+        self.modeSelectorCombo.setToolTip("Choose whether the toolbar actions target a single run or a campaign workflow.")
+        self.modeSelectorCombo.currentTextChanged.connect(self._on_mode_selector_changed)
+
+        layout.addWidget(self.modeSelectorLabel)
+        layout.addWidget(self.modeSelectorCombo)
+
+        self.modeSelectorSpacer = QWidget(self)
+        self.modeSelectorSpacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.mainToolBar.addWidget(self.modeSelectorSpacer)
+        self.mainToolBar.addSeparator()
+        self.mainToolBar.addWidget(self.modeSelectorWidget)
+
+    def _on_mode_selector_changed(self, mode: str) -> None:
+        if mode == "Campaign":
+            self.mainTab.setCurrentWidget(self.campaignTab)
+        else:
+            self.mainTab.setCurrentWidget(self.tabConfiguration)
+
+    def _sync_mode_selector_from_tab(self) -> None:
+        campaign_widgets = {self.campaignTab, self.campaignExecutionTab}
+        mode = "Campaign" if self.mainTab.currentWidget() in campaign_widgets else "Single"
+        if self.modeSelectorCombo.currentText() == mode:
+            return
+        self.modeSelectorCombo.blockSignals(True)
+        self.modeSelectorCombo.setCurrentText(mode)
+        self.modeSelectorCombo.blockSignals(False)
 
     def createPieChart(self) -> None:
         fig = Figure(figsize=(3, 3))
