@@ -580,12 +580,16 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
 
     campaign.run_campaign()
 
+    assert not campaign.btnRun.isEnabled()
+    qtbot.waitUntil(lambda: bool(messages), timeout=3000)
+
     assert (tmp_path / "run_0001" / "stdout.txt").is_file()
-    assert messages
     assert messages[0][0] == "Campaign run finished"
     assert "Executed 2 runs" in messages[0][1]
     assert "OK: 1" in messages[0][1]
     assert "Failed: 1" in messages[0][1]
+    qtbot.waitUntil(campaign.btnRun.isEnabled, timeout=3000)
+    assert campaign.btnRun.isEnabled()
     assert campaign.resultsSummary.text() == "Results: 1 runs; done: 1; failed: 0; pending: 0"
     assert campaign.resultsTable.item(0, 0).text() == "run_0001"
     assert campaign.resultsTable.item(0, 1).text() == "done"
@@ -652,6 +656,8 @@ def test_campaign_tab_reports_missing_magboltz_executable(qtbot, monkeypatch, tm
     )
 
     campaign.run_campaign()
+
+    qtbot.waitUntil(lambda: bool(errors), timeout=3000)
 
     assert errors
     assert errors[0][0] == "Campaign run failed"

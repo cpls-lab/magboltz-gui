@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 from typing import Callable
 
-from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtCore import QObject, QThread, QSize, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QAbstractItemView,
@@ -58,6 +58,38 @@ PREVIEW_ROW_LIMIT = 100
 LARGE_CAMPAIGN_RUNS = 1000
 
 
+class CampaignRunWorker(QObject):
+    """Run a serial campaign off the GUI thread."""
+
+    finished = pyqtSignal(object, object, object)
+    failed = pyqtSignal(str, str)
+
+    def __init__(self, plan: CampaignPlan, directory: Path, executable: str) -> None:
+        super().__init__()
+        self._plan = plan
+        self._directory = directory
+        self._executable = executable
+
+    @pyqtSlot()
+    def run(self) -> None:
+        try:
+            results = SerialCampaignRunner(executable=self._executable).run(self._plan, self._directory)
+        except FileNotFoundError as exc:
+            executable = exc.filename or self._executable
+            self.failed.emit(
+                "Campaign run failed",
+                (
+                    f"Could not start `{executable}`.\n\n"
+                    "Install Magboltz or make sure the executable is available in PATH before running a campaign.\n"
+                    f"Input cards may already have been generated in:\n{self._directory}"
+                ),
+            )
+        except Exception as exc:
+            self.failed.emit("Campaign run failed", str(exc))
+        else:
+            self.finished.emit(self._plan, self._directory, results)
+
+
 class CampaignWidget(QWidget):
     """First campaign GUI slice: preview and generate sweep input cards."""
 
@@ -78,6 +110,8 @@ class CampaignWidget(QWidget):
         self._show_error = show_error
         self._base_cards: InputCards | None = None
         self._updating_sweep_table = False
+        self._campaign_thread: QThread | None = None
+        self._campaign_worker: CampaignRunWorker | None = None
 
         self._build_ui()
         self.use_current_input()
@@ -358,25 +392,34 @@ class CampaignWidget(QWidget):
 
     def run_campaign(self) -> None:
         """Write and execute campaign input cards serially."""
+        if self._campaign_thread is not None:
+            self._show_error("Campaign already running", "Wait for the current campaign run to finish.")
+            return
         self._refresh_executable_label()
         selection = self._select_output_directory("Select campaign run directory")
         if selection is None:
             return
         plan, directory = selection
 
-        try:
-            results = SerialCampaignRunner(executable=self._get_magboltz_executable()).run(plan, directory)
-        except FileNotFoundError as exc:
-            executable = exc.filename or "magboltz"
-            self._show_error(
-                "Campaign run failed",
-                (
-                    f"Could not start `{executable}`.\n\n"
-                    "Install Magboltz or make sure the executable is available in PATH before running a campaign.\n"
-                    f"Input cards may already have been generated in:\n{directory}"
-                ),
-            )
-            return
+        self._set_campaign_running(True)
+        self.resultsSummary.setText(f"Results: running campaign in {directory}")
+        thread = QThread(self)
+        worker = CampaignRunWorker(plan, directory, self._get_magboltz_executable())
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.finished.connect(self._on_campaign_run_finished)
+        worker.failed.connect(self._on_campaign_run_failed)
+        worker.finished.connect(thread.quit)
+        worker.failed.connect(thread.quit)
+        worker.finished.connect(worker.deleteLater)
+        worker.failed.connect(worker.deleteLater)
+        thread.finished.connect(thread.deleteLater)
+        thread.finished.connect(self._clear_campaign_worker)
+        self._campaign_thread = thread
+        self._campaign_worker = worker
+        thread.start()
+
+    def _on_campaign_run_finished(self, plan: CampaignPlan, directory: Path, results) -> None:
         runs = self._generate_runs(plan)
         self._populate_preview(runs, plan)
         self._populate_results_from_execution(results, directory)
@@ -386,6 +429,21 @@ class CampaignWidget(QWidget):
             "Campaign run finished",
             f"Executed {len(results)} runs in:\n{directory}\n\nOK: {ok_count}\nFailed: {failed_count}",
         )
+
+    def _on_campaign_run_failed(self, title: str, message: str) -> None:
+        self._show_error(title, message)
+
+    def _clear_campaign_worker(self) -> None:
+        self._campaign_thread = None
+        self._campaign_worker = None
+        self._set_campaign_running(False)
+
+    def _set_campaign_running(self, running: bool) -> None:
+        self.btnRun.setEnabled(not running)
+        self.btnGenerate.setEnabled(not running)
+        self.btnOpen.setEnabled(not running)
+        self.btnPreview.setEnabled(not running)
+        self.sweepTable.setEnabled(not running)
 
     def _select_output_directory(self, title: str) -> tuple[CampaignPlan, Path] | None:
         try:
