@@ -12,7 +12,7 @@ sys.path.insert(0, str(SRC))
 
 project = "Magboltz-GUI"
 author = "Michele Renda, Dan Andrei Ciubotaru"
-release = "0.3.0"
+release = "0.3.1"
 
 extensions = [
     "myst_parser",
