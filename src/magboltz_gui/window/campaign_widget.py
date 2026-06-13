@@ -64,6 +64,7 @@ class CampaignWidget(QWidget):
     def __init__(
         self,
         get_current_cards: Callable[[], InputCards],
+        get_magboltz_executable: Callable[[], str],
         set_current_cards: Callable[[InputCards], None] | None,
         show_info: Callable[[str, str], None],
         show_error: Callable[[str, str], None],
@@ -71,6 +72,7 @@ class CampaignWidget(QWidget):
     ) -> None:
         super().__init__(parent)
         self._get_current_cards = get_current_cards
+        self._get_magboltz_executable = get_magboltz_executable
         self._set_current_cards = set_current_cards
         self._show_info = show_info
         self._show_error = show_error
@@ -131,6 +133,9 @@ class CampaignWidget(QWidget):
         preview_header = self.previewTable.horizontalHeader()
         assert preview_header is not None
         preview_header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.executableLabel = QLabel()
+        self.executableLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        self._refresh_executable_label()
         self.btnPreview = QPushButton("Preview runs")
         self.btnOpen = QPushButton("Open campaign...")
         self.btnGenerate = QPushButton("Generate input cards...")
@@ -139,13 +144,17 @@ class CampaignWidget(QWidget):
         self.btnOpen.clicked.connect(self.open_campaign)
         self.btnGenerate.clicked.connect(self.generate_input_cards)
         self.btnRun.clicked.connect(self.run_campaign)
+        action_buttons = QHBoxLayout()
+        action_buttons.addWidget(self.btnPreview)
+        action_buttons.addWidget(self.btnOpen)
+        action_buttons.addWidget(self.btnGenerate)
+        action_buttons.addWidget(self.btnRun)
+        action_buttons.addStretch(1)
         preview_layout.addWidget(self.previewSummary)
         preview_layout.addWidget(self.matrixSummary)
+        preview_layout.addWidget(self.executableLabel)
         preview_layout.addWidget(self.previewTable)
-        preview_layout.addWidget(self.btnPreview)
-        preview_layout.addWidget(self.btnOpen)
-        preview_layout.addWidget(self.btnGenerate)
-        preview_layout.addWidget(self.btnRun)
+        preview_layout.addLayout(action_buttons)
 
         results_group = QGroupBox("Campaign results")
         results_layout = QVBoxLayout(results_group)
@@ -309,6 +318,7 @@ class CampaignWidget(QWidget):
 
     def preview_runs(self) -> None:
         """Render the generated run matrix without writing files."""
+        self._refresh_executable_label()
         try:
             plan = self._build_plan()
             runs = self._generate_runs(plan)
@@ -319,6 +329,7 @@ class CampaignWidget(QWidget):
 
     def generate_input_cards(self) -> None:
         """Write campaign input cards to a user-selected directory."""
+        self._refresh_executable_label()
         selection = self._select_output_directory("Select campaign output directory")
         if selection is None:
             return
@@ -331,6 +342,7 @@ class CampaignWidget(QWidget):
 
     def open_campaign(self) -> None:
         """Load a previously generated campaign directory."""
+        self._refresh_executable_label()
         directory = QFileDialog.getExistingDirectory(self, "Select campaign directory")
         if not directory:
             return
@@ -346,13 +358,14 @@ class CampaignWidget(QWidget):
 
     def run_campaign(self) -> None:
         """Write and execute campaign input cards serially."""
+        self._refresh_executable_label()
         selection = self._select_output_directory("Select campaign run directory")
         if selection is None:
             return
         plan, directory = selection
 
         try:
-            results = SerialCampaignRunner().run(plan, directory)
+            results = SerialCampaignRunner(executable=self._get_magboltz_executable()).run(plan, directory)
         except FileNotFoundError as exc:
             executable = exc.filename or "magboltz"
             self._show_error(
@@ -407,6 +420,13 @@ class CampaignWidget(QWidget):
             self._set_current_cards(deepcopy(base_cards))
         self._load_sweep_rows(manifest)
         return CampaignPlan(base_cards=base_cards, parameters=self._read_parameters())
+
+    def _refresh_executable_label(self) -> None:
+        executable = self._get_magboltz_executable()
+        self.executableLabel.setText(f"Magboltz executable: {executable}")
+        self.executableLabel.setToolTip(
+            "Executable used by Run campaign. It matches the main Magboltz command path."
+        )
 
     def _load_sweep_rows(self, manifest: dict) -> None:
         sweeps = manifest.get("sweeps")

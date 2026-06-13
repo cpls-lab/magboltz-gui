@@ -57,6 +57,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self._currentCards: InputCards = InputCards()
         self._currentModified: bool = False
         self._last_run_result: Optional[RunResult] = None
+        self.magboltzPath: Optional[Path] = None
 
         # Associating button to actions
         self.btnGasAdd.setDefaultAction(self.actionGasAdd)
@@ -96,6 +97,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.mainTab.setCurrentWidget(self.tabConfiguration)
         self.campaignTab = CampaignWidget(
             get_current_cards=lambda: self._currentCards,
+            get_magboltz_executable=lambda: str(self.magboltzPath or "magboltz"),
             set_current_cards=self._set_current_cards_from_campaign,
             show_info=self.show_info,
             show_error=self.show_error,
@@ -128,7 +130,6 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.database = GasDatabase()
         self.database.load(Path(str(files("magboltz_gui.database").joinpath("database.csv"))))
 
-        self.magboltzPath: Optional[Path] = None
         self.processes: List[ProcessManager] = []
         # Gas normalize button is obsolete with amount/percent split.
         self.btnGasNormalize.setVisible(False)

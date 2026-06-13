@@ -36,6 +36,7 @@ def test_main_window_initializes_default_input_card(qtbot) -> None:
     assert window.mainTab.indexOf(window.campaignTab) >= 0
     assert window.actionCampaignOpen.text() == "Open Campaign..."
     assert window.actionCampaignSave.text() == "Save Campaign..."
+    assert window.campaignTab.executableLabel.text() == "Magboltz executable: magboltz"
     run_menu_actions = [action.text() for action in window.menuRun.actions()]
     assert "Open Result" in run_menu_actions
     assert "Open Campaign..." in run_menu_actions
@@ -516,6 +517,9 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
             self.ok = ok
 
     class FakeRunner:
+        def __init__(self, *args, **kwargs) -> None:
+            pass
+
         def run(self, plan, output_dir: Path):
             output_dir.mkdir(parents=True, exist_ok=True)
             (output_dir / "summary.csv").write_text("run_id,electric_field\nrun_0001,100\n", encoding="utf-8")
@@ -590,6 +594,9 @@ def test_campaign_tab_reports_missing_magboltz_executable(qtbot, monkeypatch, tm
     errors: list[tuple[str, str]] = []
 
     class MissingMagboltzRunner:
+        def __init__(self, *args, **kwargs) -> None:
+            pass
+
         def run(self, plan, output_dir: Path):
             output_dir.mkdir(parents=True, exist_ok=True)
             raise FileNotFoundError(2, "No such file or directory", "magboltz")
