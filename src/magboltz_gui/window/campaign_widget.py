@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 from copy import deepcopy
 from importlib.resources import files
 import json
@@ -33,6 +34,7 @@ from magboltz_gui.campaign import CampaignPlan, ExplicitSweep, LinearSweep, LogS
 from magboltz_gui.campaign.sweep import SweepParameter
 from magboltz_gui.data.input_cards import InputCards
 from magboltz_gui.util import parser
+from magboltz_gui.util.output_parser import parse_magboltz_output
 
 
 PARAMETER_CHOICES: tuple[tuple[str, str], ...] = (
@@ -145,11 +147,25 @@ class CampaignWidget(QWidget):
         preview_layout.addWidget(self.btnGenerate)
         preview_layout.addWidget(self.btnRun)
 
+        results_group = QGroupBox("Campaign results")
+        results_layout = QVBoxLayout(results_group)
+        self.resultsSummary = QLabel("Results: not run")
+        self.resultsTable = QTableWidget(0, 0)
+        results_header = self.resultsTable.horizontalHeader()
+        assert results_header is not None
+        results_header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.resultsTable.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.resultsTable.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        results_layout.addWidget(self.resultsSummary)
+        results_layout.addWidget(self.resultsTable)
+
         layout.addWidget(sweep_group, 0, 0)
         layout.addWidget(preview_group, 1, 0)
+        layout.addWidget(results_group, 2, 0)
         layout.setColumnStretch(0, 1)
         layout.setRowStretch(0, 3)
         layout.setRowStretch(1, 2)
+        layout.setRowStretch(2, 2)
 
         self.add_default_sweep_row()
 
@@ -310,6 +326,7 @@ class CampaignWidget(QWidget):
 
         runs = SerialCampaignRunner().prepare(plan, directory)
         self._populate_preview(runs, plan)
+        self._clear_results("Results: input cards generated, not run")
         self._show_info("Campaign generated", f"Generated {len(runs)} input cards in:\n{directory}")
 
     def open_campaign(self) -> None:
@@ -324,6 +341,7 @@ class CampaignWidget(QWidget):
             self._show_error("Open campaign failed", str(exc))
             return
         self._populate_preview(runs, plan)
+        self._populate_results_from_directory(Path(directory))
         self._show_info("Campaign opened", f"Loaded {len(runs)} runs from:\n{directory}")
 
     def run_campaign(self) -> None:
@@ -348,6 +366,7 @@ class CampaignWidget(QWidget):
             return
         runs = self._generate_runs(plan)
         self._populate_preview(runs, plan)
+        self._populate_results_from_execution(results, directory)
         ok_count = sum(result.ok for result in results)
         failed_count = len(results) - ok_count
         self._show_info(
@@ -533,6 +552,95 @@ class CampaignWidget(QWidget):
         self.previewSummary.setText(_preview_summary_text(len(runs), len(visible_runs)))
         self.matrixSummary.setText(_matrix_summary_text(plan))
 
+    def _clear_results(self, summary: str = "Results: not run") -> None:
+        self.resultsSummary.setText(summary)
+        self.resultsTable.setColumnCount(0)
+        self.resultsTable.setRowCount(0)
+
+    def _populate_results_from_execution(self, results, directory: Path) -> None:
+        summary_rows = _read_csv_dicts(directory / "summary.csv")
+        status_by_run = {}
+        for index, result in enumerate(results):
+            run_id = getattr(result, "run_id", "")
+            if not run_id and index < len(summary_rows):
+                run_id = summary_rows[index].get("run_id", "")
+            if not run_id:
+                continue
+            status_by_run[run_id] = {
+                "status": "done" if result.ok else "failed",
+                "returncode": str(getattr(result, "returncode", "")),
+                "stdout": getattr(result, "stdout_path", directory / run_id / "stdout.txt").as_posix(),
+                "stderr": getattr(result, "stderr_path", directory / run_id / "stderr.txt").as_posix(),
+            }
+        self._populate_results_table(summary_rows, status_by_run, directory)
+
+    def _populate_results_from_directory(self, directory: Path) -> None:
+        summary_rows = _read_csv_dicts(directory / "summary.csv")
+        if not summary_rows:
+            self._clear_results("Results: no summary.csv found")
+            return
+        status_rows = _read_csv_dicts(directory / "run_status.csv")
+        status_by_run = {row.get("run_id", ""): row for row in status_rows if row.get("run_id")}
+        self._populate_results_table(summary_rows, status_by_run, directory)
+
+    def _populate_results_table(
+        self,
+        summary_rows: list[dict[str, str]],
+        status_by_run: dict[str, dict[str, str]],
+        directory: Path,
+    ) -> None:
+        if not summary_rows:
+            self._clear_results("Results: no runs")
+            return
+        parameter_columns = [column for column in summary_rows[0] if column != "run_id"]
+        columns = [
+            "run_id",
+            "status",
+            "returncode",
+            *parameter_columns,
+            "vz_um_ns",
+            "mean_energy_eV",
+            "stdout",
+            "stderr",
+        ]
+        self.resultsTable.setColumnCount(len(columns))
+        self.resultsTable.setHorizontalHeaderLabels(columns)
+        self.resultsTable.setRowCount(len(summary_rows))
+
+        ok_count = 0
+        failed_count = 0
+        pending_count = 0
+        for row_index, summary in enumerate(summary_rows):
+            run_id = summary.get("run_id", "")
+            status_row = status_by_run.get(run_id, {})
+            status = status_row.get("status") or _infer_run_status(directory, run_id)
+            if status == "done":
+                ok_count += 1
+            elif status == "failed":
+                failed_count += 1
+            else:
+                pending_count += 1
+
+            stdout_path = _result_path(directory, status_row.get("stdout"), run_id, "stdout.txt")
+            stderr_path = _result_path(directory, status_row.get("stderr"), run_id, "stderr.txt")
+            parsed = _parse_result_values(stdout_path, _result_path(directory, None, run_id, "input.in"))
+            values = {
+                "run_id": run_id,
+                "status": status,
+                "returncode": status_row.get("returncode", ""),
+                **{column: summary.get(column, "") for column in parameter_columns},
+                "vz_um_ns": parsed.get("vz_um_ns", ""),
+                "mean_energy_eV": parsed.get("mean_energy_eV", ""),
+                "stdout": stdout_path.as_posix() if stdout_path.is_file() else "",
+                "stderr": stderr_path.as_posix() if stderr_path.is_file() else "",
+            }
+            for column_index, column in enumerate(columns):
+                self.resultsTable.setItem(row_index, column_index, QTableWidgetItem(str(values[column])))
+
+        self.resultsSummary.setText(
+            f"Results: {len(summary_rows)} runs; done: {ok_count}; failed: {failed_count}; pending: {pending_count}"
+        )
+
 
 def _parse_values(text: str) -> list[float | int | bool | str]:
     tokens = _value_tokens(text)
@@ -588,6 +696,49 @@ def _format_manifest_values(values: object) -> str:
     if not isinstance(values, list):
         raise ValueError("Campaign manifest values sweep is missing `values`")
     return ", ".join(str(value) for value in values)
+
+
+def _read_csv_dicts(path: Path) -> list[dict[str, str]]:
+    if not path.is_file():
+        return []
+    with path.open(newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle))
+
+
+def _result_path(directory: Path, raw_path: str | None, run_id: str, filename: str) -> Path:
+    if raw_path:
+        path = Path(raw_path)
+        return path if path.is_absolute() else directory / path
+    return directory / run_id / filename
+
+
+def _infer_run_status(directory: Path, run_id: str) -> str:
+    run_dir = directory / run_id
+    stdout_path = run_dir / "stdout.txt"
+    stderr_path = run_dir / "stderr.txt"
+    if stdout_path.is_file() or stderr_path.is_file():
+        return "done"
+    if run_dir.is_dir():
+        return "pending"
+    return "missing"
+
+
+def _parse_result_values(stdout_path: Path, input_path: Path) -> dict[str, str]:
+    if not stdout_path.is_file():
+        return {}
+    try:
+        stdout_text = stdout_path.read_text(encoding="utf-8")
+        input_text = input_path.read_text(encoding="utf-8") if input_path.is_file() else None
+        result = parse_magboltz_output(stdout_text, input_text=input_text, input_path=input_path.as_posix())
+    except Exception:
+        return {}
+
+    values: dict[str, str] = {}
+    if result.transport.vz_um_ns is not None and result.transport.vz_um_ns.v_um_ns is not None:
+        values["vz_um_ns"] = str(result.transport.vz_um_ns.v_um_ns)
+    if result.transport.mean_electron_energy_eV is not None:
+        values["mean_energy_eV"] = str(result.transport.mean_electron_energy_eV)
+    return values
 
 
 def _is_gas_fraction_path(path: str) -> bool:

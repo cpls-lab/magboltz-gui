@@ -205,6 +205,7 @@ def test_campaign_tab_generates_input_cards(qtbot, monkeypatch, tmp_path: Path) 
     assert (tmp_path / "run_0001" / "parameters.json").is_file()
     assert (tmp_path / "summary.csv").is_file()
     assert messages and messages[0][0] == "Campaign generated"
+    assert window.campaignTab.resultsSummary.text() == "Results: input cards generated, not run"
 
 
 def test_campaign_tab_opens_saved_campaign_and_restores_base_input(qtbot, monkeypatch, tmp_path: Path) -> None:
@@ -252,6 +253,7 @@ def test_campaign_tab_opens_saved_campaign_and_restores_base_input(qtbot, monkey
     assert campaign.sweepTable.item(0, 7).text() == "2"
     assert campaign.sweepTable.item(1, 4).text() == "70, 80"
     assert campaign.previewSummary.text() == "Runs: 4"
+    assert campaign.resultsSummary.text() == "Results: 4 runs; done: 0; failed: 0; pending: 4"
     assert messages and messages[0][0] == "Campaign opened"
 
 
@@ -545,6 +547,43 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
     assert "Executed 2 runs" in messages[0][1]
     assert "OK: 1" in messages[0][1]
     assert "Failed: 1" in messages[0][1]
+    assert campaign.resultsSummary.text() == "Results: 1 runs; done: 1; failed: 0; pending: 0"
+    assert campaign.resultsTable.item(0, 0).text() == "run_0001"
+    assert campaign.resultsTable.item(0, 1).text() == "done"
+    assert campaign.resultsTable.item(0, 3).text() == "100"
+
+
+def test_campaign_tab_opens_saved_campaign_results(qtbot, monkeypatch, tmp_path: Path) -> None:
+    messages: list[tuple[str, str]] = []
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
+    monkeypatch.setattr(campaign, "_show_info", lambda title, message: messages.append((title, message)))
+
+    campaign.add_sweep_row(
+        parameter_path="electric_field",
+        sweep_type="values",
+        values="100",
+    )
+    campaign.generate_input_cards()
+    (tmp_path / "run_status.csv").write_text(
+        "run_id,status,returncode,input,stdout,stderr\n"
+        f"run_0001,failed,1,{tmp_path / 'run_0001' / 'input.in'},{tmp_path / 'run_0001' / 'stdout.txt'},{tmp_path / 'run_0001' / 'stderr.txt'}\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "run_0001" / "stdout.txt").write_text("", encoding="utf-8")
+    (tmp_path / "run_0001" / "stderr.txt").write_text("failed\n", encoding="utf-8")
+
+    messages.clear()
+    campaign.open_campaign()
+
+    assert campaign.resultsSummary.text() == "Results: 1 runs; done: 0; failed: 1; pending: 0"
+    assert campaign.resultsTable.item(0, 0).text() == "run_0001"
+    assert campaign.resultsTable.item(0, 1).text() == "failed"
+    assert campaign.resultsTable.item(0, 2).text() == "1"
 
 
 def test_campaign_tab_reports_missing_magboltz_executable(qtbot, monkeypatch, tmp_path: Path) -> None:

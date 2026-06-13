@@ -199,3 +199,6 @@ def test_serial_runner_executes_each_input_card(tmp_path: Path) -> None:
 
     assert results[0].ok
     assert "received-lines" in results[0].stdout_path.read_text(encoding="utf-8")
+    status = (tmp_path / "campaign" / "run_status.csv").read_text(encoding="utf-8")
+    assert "run_id,status,returncode,input,stdout,stderr" in status
+    assert "run_0001,done,0" in status

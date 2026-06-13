@@ -79,6 +79,7 @@ class SerialCampaignRunner:
                     stderr_path=stderr_path,
                 )
             )
+        self._write_status(output_dir / "run_status.csv", results)
         return results
 
     def _write_summary(self, path: Path, runs: list[CampaignRun]) -> None:
@@ -88,6 +89,25 @@ class SerialCampaignRunner:
             writer.writeheader()
             for run in runs:
                 writer.writerow({"run_id": run.run_id, **run.parameter_values})
+
+    def _write_status(self, path: Path, results: list[CampaignExecutionResult]) -> None:
+        with path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(
+                handle,
+                fieldnames=["run_id", "status", "returncode", "input", "stdout", "stderr"],
+            )
+            writer.writeheader()
+            for result in results:
+                writer.writerow(
+                    {
+                        "run_id": result.run_id,
+                        "status": "done" if result.ok else "failed",
+                        "returncode": result.returncode,
+                        "input": result.input_path.as_posix(),
+                        "stdout": result.stdout_path.as_posix(),
+                        "stderr": result.stderr_path.as_posix(),
+                    }
+                )
 
     def _write_manifest(self, path: Path, plan: CampaignPlan, runs: list[CampaignRun]) -> None:
         manifest = {
