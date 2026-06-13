@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication, QDoubleSpinBox, QFileDialog, QStyleOptionViewItem
+from PyQt6.QtWidgets import QApplication, QComboBox, QDoubleSpinBox, QFileDialog, QStyleOptionViewItem
 
 pytest.importorskip("matplotlib", reason="Main window embeds matplotlib canvases")
 
@@ -237,3 +237,38 @@ def test_campaign_tab_previews_mixed_product_and_coupled_sweep(qtbot) -> None:
     assert campaign.previewTable.item(3, 1).text() == "200"
     assert campaign.previewTable.item(3, 2).text() == "80"
     assert campaign.previewTable.item(3, 3).text() == "20"
+
+
+def test_campaign_tab_forces_gas_fraction_sweeps_to_coupled(qtbot) -> None:
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+
+    campaign.add_sweep_row(
+        parameter_path="gases[0].gas_frac",
+        sweep_type="values",
+        values="70, 80",
+        mode=SweepMode.PRODUCT,
+    )
+    mode_combo = campaign.sweepTable.cellWidget(0, 2)
+    assert isinstance(mode_combo, QComboBox)
+    assert mode_combo.currentData() == SweepMode.COUPLED.value
+    assert not mode_combo.isEnabled()
+
+    campaign.add_sweep_row(
+        parameter_path="electric_field",
+        sweep_type="values",
+        values="100, 200",
+    )
+    parameter_combo = campaign.sweepTable.cellWidget(1, 1)
+    mode_combo = campaign.sweepTable.cellWidget(1, 2)
+    assert isinstance(parameter_combo, QComboBox)
+    assert isinstance(mode_combo, QComboBox)
+    assert mode_combo.isEnabled()
+
+    parameter_combo.setCurrentIndex(parameter_combo.findData("gases[1].gas_frac"))
+
+    assert mode_combo.currentData() == SweepMode.COUPLED.value
+    assert not mode_combo.isEnabled()

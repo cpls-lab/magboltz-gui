@@ -179,6 +179,12 @@ class CampaignWidget(QWidget):
         mode_combo.addItem("Coupled", SweepMode.COUPLED.value)
         mode_combo.setCurrentIndex(mode_combo.findData(mode.value))
         self.sweepTable.setCellWidget(row, 2, mode_combo)
+        self._apply_mode_constraints(parameter_combo, mode_combo)
+        parameter_combo.currentIndexChanged.connect(
+            lambda _index, parameter=parameter_combo, mode_selector=mode_combo: self._apply_mode_constraints(
+                parameter, mode_selector
+            )
+        )
 
         sweep_combo = QComboBox()
         sweep_combo.addItems(SWEEP_TYPES)
@@ -193,6 +199,19 @@ class CampaignWidget(QWidget):
         row = self.sweepTable.currentRow()
         if row >= 0:
             self.sweepTable.removeRow(row)
+
+    def _apply_mode_constraints(self, parameter_combo: QComboBox, mode_combo: QComboBox) -> None:
+        path = str(parameter_combo.currentData())
+        if _is_gas_fraction_path(path):
+            mode_combo.setCurrentIndex(mode_combo.findData(SweepMode.COUPLED.value))
+            mode_combo.setEnabled(False)
+            mode_combo.setToolTip("Gas fractions are always coupled to prevent invalid Cartesian mixtures.")
+        else:
+            mode_combo.setEnabled(True)
+            mode_combo.setToolTip(
+                "Independent rows are combined with all other independent rows. "
+                "Coupled rows form one group and advance point-by-point together."
+            )
 
     def preview_runs(self) -> None:
         """Render the generated run matrix without writing files."""
@@ -302,6 +321,10 @@ def _parse_values(text: str) -> list[float | int | bool | str]:
         else:
             values.append(int(number) if number.is_integer() else number)
     return values
+
+
+def _is_gas_fraction_path(path: str) -> bool:
+    return path.startswith("gases[") and path.endswith("].gas_frac")
 
 
 def _sweep_icon(kind: str) -> QIcon:
