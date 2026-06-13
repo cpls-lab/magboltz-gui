@@ -107,6 +107,28 @@ regression reference is based on `MAGBOLTZ 2 VERSION 11.19`.
 
 ## Developer notes
 
+### Campaign sweep core
+
+The first non-GUI campaign slice can generate reproducible parameter sweeps from
+an existing `InputCards` object and materialize one input card per run:
+
+```python
+from magboltz_gui.campaign import CampaignPlan, ExplicitSweep, SerialCampaignRunner, SweepParameter
+
+plan = CampaignPlan(
+    base_cards=cards,
+    parameters=[
+        SweepParameter("electric_field", ExplicitSweep([100.0, 200.0, 500.0])),
+    ],
+)
+
+SerialCampaignRunner().prepare(plan, output_dir)
+```
+
+Supported field paths include top-level fields such as `electric_field` and
+indexed gas-mixture fields such as `gases[0].gas_frac`. Execution is serial by
+design in this first slice.
+
 ### Regenerate Qt UI bindings
 
 The `.ui` files in `src/magboltz_gui/ui/` are the source of truth. The Python bindings
