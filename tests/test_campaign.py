@@ -134,6 +134,7 @@ def test_prepare_writes_input_cards_and_summary(tmp_path: Path) -> None:
     runs = SerialCampaignRunner().prepare(plan, tmp_path)
 
     assert [run.run_id for run in runs] == ["run_0001", "run_0002"]
+    assert parser.load(tmp_path / "base_input.in").electric_field == 1000.0
     assert parser.load(tmp_path / "run_0002" / "input.in").electric_field == 200.0
     summary = (tmp_path / "summary.csv").read_text(encoding="utf-8")
     assert "run_id,electric_field" in summary
@@ -154,6 +155,7 @@ def test_prepare_writes_campaign_manifest(tmp_path: Path) -> None:
 
     manifest = json.loads((tmp_path / "campaign.json").read_text(encoding="utf-8"))
     assert manifest["total_runs"] == 4
+    assert manifest["base_input"] == "base_input.in"
     assert manifest["matrix"] == {
         "independent_rows": 1,
         "product_size": 2,

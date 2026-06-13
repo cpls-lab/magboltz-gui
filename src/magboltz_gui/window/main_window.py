@@ -96,11 +96,13 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.mainTab.setCurrentWidget(self.tabConfiguration)
         self.campaignTab = CampaignWidget(
             get_current_cards=lambda: self._currentCards,
+            set_current_cards=self._set_current_cards_from_campaign,
             show_info=self.show_info,
             show_error=self.show_error,
             parent=self.mainTab,
         )
         self.mainTab.addTab(self.campaignTab, "Campaign")
+        self._install_campaign_actions()
 
         self.fillColorMap()
 
@@ -132,6 +134,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.btnGasNormalize.setVisible(False)
         self.actionGasNormalize.setEnabled(False)
         self.actionGasNormalize.setVisible(False)
+        self.actionNew.trigger()
         self.actionResultExport.setEnabled(False)
         self.btnResultExport.setEnabled(False)
         self.actionShowPlots.setEnabled(False)
@@ -139,7 +142,29 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.actionResultOpen.setEnabled(True)
         self.btnResultOpen.setEnabled(True)
         self.actionStop.setVisible(False)
-        self.actionNew.trigger()
+
+    def _set_current_cards_from_campaign(self, cards: InputCards) -> None:
+        self._currentCards = cards
+        self._currentInputFile = None
+        self._currentModified = True
+        self.connect()
+        self.actionResultExport.setEnabled(False)
+        self.btnResultExport.setEnabled(False)
+        self.actionShowPlots.setEnabled(False)
+        self.btnResultPlots.setEnabled(False)
+        self.actionStop.setVisible(False)
+
+    def _install_campaign_actions(self) -> None:
+        self.actionCampaignOpen = QAction(QIcon.fromTheme("document-open"), "Open Campaign...", self)
+        self.actionCampaignOpen.triggered.connect(self.campaignTab.open_campaign)
+        self.actionCampaignSave = QAction(QIcon.fromTheme("document-save-as"), "Save Campaign...", self)
+        self.actionCampaignSave.triggered.connect(self.campaignTab.generate_input_cards)
+
+        before_action = self.actionResultSave
+        self.menuRun.insertSeparator(before_action)
+        self.menuRun.insertAction(before_action, self.actionResultOpen)
+        self.menuRun.insertAction(before_action, self.actionCampaignOpen)
+        self.menuRun.insertAction(before_action, self.actionCampaignSave)
 
     def createPieChart(self) -> None:
         fig = Figure(figsize=(3, 3))
@@ -257,6 +282,8 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self.actionResultClear: QStyle.StandardPixmap.SP_TrashIcon,
             self.actionResultSave: QStyle.StandardPixmap.SP_DialogSaveButton,
             self.actionResultOpen: QStyle.StandardPixmap.SP_DialogOpenButton,
+            self.actionCampaignOpen: QStyle.StandardPixmap.SP_DialogOpenButton,
+            self.actionCampaignSave: QStyle.StandardPixmap.SP_DialogSaveButton,
             self.actionResultExport: QStyle.StandardPixmap.SP_DialogSaveButton,
             self.actionShowPlots: QStyle.StandardPixmap.SP_FileDialogDetailedView,
             self.actionGraphSave: QStyle.StandardPixmap.SP_DialogSaveButton,

@@ -41,6 +41,7 @@ class SerialCampaignRunner:
         """Materialize campaign input cards and summary metadata without executing them."""
         runs = generate_runs(plan)
         output_dir.mkdir(parents=True, exist_ok=True)
+        parser.save(plan.base_cards, output_dir / "base_input.in")
         for run in runs:
             run_dir = output_dir / run.run_id
             run_dir.mkdir(parents=True, exist_ok=True)
@@ -92,6 +93,7 @@ class SerialCampaignRunner:
         manifest = {
             "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "total_runs": len(runs),
+            "base_input": "base_input.in",
             "matrix": _matrix_metadata(plan),
             "sweeps": [_sweep_metadata(parameter) for parameter in plan.parameters],
         }

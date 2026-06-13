@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from importlib.resources import files
+import json
 from pathlib import Path
 from typing import Callable
 
@@ -31,6 +32,7 @@ from PyQt6.QtWidgets import (
 from magboltz_gui.campaign import CampaignPlan, ExplicitSweep, LinearSweep, LogSweep, SerialCampaignRunner, SweepMode
 from magboltz_gui.campaign.sweep import SweepParameter
 from magboltz_gui.data.input_cards import InputCards
+from magboltz_gui.util import parser
 
 
 PARAMETER_CHOICES: tuple[tuple[str, str], ...] = (
@@ -60,12 +62,14 @@ class CampaignWidget(QWidget):
     def __init__(
         self,
         get_current_cards: Callable[[], InputCards],
+        set_current_cards: Callable[[InputCards], None] | None,
         show_info: Callable[[str, str], None],
         show_error: Callable[[str, str], None],
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._get_current_cards = get_current_cards
+        self._set_current_cards = set_current_cards
         self._show_info = show_info
         self._show_error = show_error
         self._base_cards: InputCards | None = None
@@ -126,15 +130,18 @@ class CampaignWidget(QWidget):
         assert preview_header is not None
         preview_header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.btnPreview = QPushButton("Preview runs")
+        self.btnOpen = QPushButton("Open campaign...")
         self.btnGenerate = QPushButton("Generate input cards...")
         self.btnRun = QPushButton("Run campaign...")
         self.btnPreview.clicked.connect(self.preview_runs)
+        self.btnOpen.clicked.connect(self.open_campaign)
         self.btnGenerate.clicked.connect(self.generate_input_cards)
         self.btnRun.clicked.connect(self.run_campaign)
         preview_layout.addWidget(self.previewSummary)
         preview_layout.addWidget(self.matrixSummary)
         preview_layout.addWidget(self.previewTable)
         preview_layout.addWidget(self.btnPreview)
+        preview_layout.addWidget(self.btnOpen)
         preview_layout.addWidget(self.btnGenerate)
         preview_layout.addWidget(self.btnRun)
 
@@ -305,6 +312,20 @@ class CampaignWidget(QWidget):
         self._populate_preview(runs, plan)
         self._show_info("Campaign generated", f"Generated {len(runs)} input cards in:\n{directory}")
 
+    def open_campaign(self) -> None:
+        """Load a previously generated campaign directory."""
+        directory = QFileDialog.getExistingDirectory(self, "Select campaign directory")
+        if not directory:
+            return
+        try:
+            plan = self._load_campaign(Path(directory))
+            runs = self._generate_runs(plan)
+        except Exception as exc:
+            self._show_error("Open campaign failed", str(exc))
+            return
+        self._populate_preview(runs, plan)
+        self._show_info("Campaign opened", f"Loaded {len(runs)} runs from:\n{directory}")
+
     def run_campaign(self) -> None:
         """Write and execute campaign input cards serially."""
         selection = self._select_output_directory("Select campaign run directory")
@@ -348,6 +369,57 @@ class CampaignWidget(QWidget):
         if not directory:
             return None
         return plan, Path(directory)
+
+    def _load_campaign(self, directory: Path) -> CampaignPlan:
+        manifest_path = directory / "campaign.json"
+        if not manifest_path.is_file():
+            raise ValueError(f"Missing campaign manifest:\n{manifest_path}")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        base_input = manifest.get("base_input")
+        if not isinstance(base_input, str) or not base_input:
+            raise ValueError("Campaign manifest does not declare base_input")
+        base_path = directory / base_input
+        if not base_path.is_file():
+            raise ValueError(f"Missing base input card:\n{base_path}")
+
+        base_cards = parser.load(base_path)
+        self._base_cards = deepcopy(base_cards)
+        if self._set_current_cards is not None:
+            self._set_current_cards(deepcopy(base_cards))
+        self._load_sweep_rows(manifest)
+        return CampaignPlan(base_cards=base_cards, parameters=self._read_parameters())
+
+    def _load_sweep_rows(self, manifest: dict) -> None:
+        sweeps = manifest.get("sweeps")
+        if not isinstance(sweeps, list) or not sweeps:
+            raise ValueError("Campaign manifest does not contain sweep rows")
+        self.sweepTable.setRowCount(0)
+        for sweep in sweeps:
+            if not isinstance(sweep, dict):
+                raise ValueError("Campaign manifest contains an invalid sweep row")
+            parameter_path = _required_manifest_string(sweep, "path")
+            sweep_type = _required_manifest_string(sweep, "sweep_type")
+            mode = SweepMode(_required_manifest_string(sweep, "mode"))
+            label = sweep.get("label") or ""
+            if sweep_type == "values":
+                values = _format_manifest_values(sweep.get("values"))
+                stop = ""
+                points = str(sweep.get("points", ""))
+            elif sweep_type in {"linear", "logspace"}:
+                values = str(sweep.get("start", ""))
+                stop = str(sweep.get("stop", ""))
+                points = str(sweep.get("points", ""))
+            else:
+                raise ValueError(f"Unsupported sweep type in manifest: {sweep_type}")
+            self.add_sweep_row(
+                parameter_path=parameter_path,
+                sweep_type=sweep_type,
+                values=values,
+                stop=stop,
+                points=points,
+                label=str(label),
+                mode=mode,
+            )
 
     def _generate_runs(self, plan: CampaignPlan):
         from magboltz_gui.campaign import generate_runs
@@ -503,6 +575,19 @@ def _required_points(text: str) -> int:
     if points < 2:
         raise ValueError("Points must be at least 2")
     return points
+
+
+def _required_manifest_string(mapping: dict, key: str) -> str:
+    value = mapping.get(key)
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"Campaign manifest sweep row is missing `{key}`")
+    return value
+
+
+def _format_manifest_values(values: object) -> str:
+    if not isinstance(values, list):
+        raise ValueError("Campaign manifest values sweep is missing `values`")
+    return ", ".join(str(value) for value in values)
 
 
 def _is_gas_fraction_path(path: str) -> bool:

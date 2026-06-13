@@ -34,6 +34,12 @@ def test_main_window_initializes_default_input_card(qtbot) -> None:
     assert not window.btnResultExport.isEnabled()
     assert not window.btnResultPlots.isEnabled()
     assert window.mainTab.indexOf(window.campaignTab) >= 0
+    assert window.actionCampaignOpen.text() == "Open Campaign..."
+    assert window.actionCampaignSave.text() == "Save Campaign..."
+    run_menu_actions = [action.text() for action in window.menuRun.actions()]
+    assert "Open Result" in run_menu_actions
+    assert "Open Campaign..." in run_menu_actions
+    assert "Save Campaign..." in run_menu_actions
 
 
 def test_main_window_gas_buttons_update_model_and_table(qtbot) -> None:
@@ -195,9 +201,58 @@ def test_campaign_tab_generates_input_cards(qtbot, monkeypatch, tmp_path: Path) 
     window.campaignTab.generate_input_cards()
 
     assert (tmp_path / "run_0001" / "input.in").is_file()
+    assert (tmp_path / "base_input.in").is_file()
     assert (tmp_path / "run_0001" / "parameters.json").is_file()
     assert (tmp_path / "summary.csv").is_file()
     assert messages and messages[0][0] == "Campaign generated"
+
+
+def test_campaign_tab_opens_saved_campaign_and_restores_base_input(qtbot, monkeypatch, tmp_path: Path) -> None:
+    messages: list[tuple[str, str]] = []
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    window._currentCards.electric_field = 1234.0
+    window._currentCards.gases = [InputGas(gas_id=2, gas_frac=70.0), InputGas(gas_id=12, gas_frac=30.0)]
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+    campaign.add_sweep_row(
+        parameter_path="electric_field",
+        sweep_type="linear",
+        values="100",
+        stop="200",
+        points="2",
+    )
+    campaign.add_sweep_row(
+        parameter_path="gases[0].gas_frac",
+        sweep_type="values",
+        values="70, 80",
+        label="Ar",
+    )
+    campaign.add_sweep_row(
+        parameter_path="gases[1].gas_frac",
+        sweep_type="values",
+        values="30, 20",
+        label="CO2",
+    )
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
+    monkeypatch.setattr(campaign, "_show_info", lambda title, message: messages.append((title, message)))
+    campaign.generate_input_cards()
+
+    window._currentCards.electric_field = 42.0
+    campaign.sweepTable.setRowCount(0)
+    messages.clear()
+
+    campaign.open_campaign()
+
+    assert window._currentCards.electric_field == pytest.approx(1234.0)
+    assert campaign.sweepTable.rowCount() == 3
+    assert campaign.sweepTable.item(0, 5).text() == "100.0"
+    assert campaign.sweepTable.item(0, 6).text() == "200.0"
+    assert campaign.sweepTable.item(0, 7).text() == "2"
+    assert campaign.sweepTable.item(1, 4).text() == "70, 80"
+    assert campaign.previewSummary.text() == "Runs: 4"
+    assert messages and messages[0][0] == "Campaign opened"
 
 
 def test_campaign_tab_previews_mixed_product_and_coupled_sweep(qtbot) -> None:
