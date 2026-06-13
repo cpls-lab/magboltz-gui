@@ -12,6 +12,7 @@ pytest.importorskip("matplotlib", reason="Main window embeds matplotlib canvases
 
 from magboltz_gui.window.delegates import AmountDelegate
 from magboltz_gui.window.main_window import MagboltzGUI
+import magboltz_gui.window.campaign_widget as campaign_widget
 from magboltz_gui.campaign import SweepMode
 from magboltz_gui.data.input_cards import InputGas
 
@@ -448,3 +449,44 @@ def test_campaign_tab_generates_large_campaign_after_confirmation(qtbot, monkeyp
     assert (tmp_path / "summary.csv").is_file()
     assert (tmp_path / "campaign.json").is_file()
     assert messages and "Generated 1000 input cards" in messages[0][1]
+
+
+def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_path: Path) -> None:
+    messages: list[tuple[str, str]] = []
+
+    class FakeResult:
+        def __init__(self, ok: bool) -> None:
+            self.ok = ok
+
+    class FakeRunner:
+        def run(self, plan, output_dir: Path):
+            output_dir.mkdir(parents=True, exist_ok=True)
+            (output_dir / "summary.csv").write_text("run_id,electric_field\nrun_0001,100\n", encoding="utf-8")
+            (output_dir / "run_0001").mkdir()
+            (output_dir / "run_0001" / "stdout.txt").write_text("ok\n", encoding="utf-8")
+            (output_dir / "run_0001" / "stderr.txt").write_text("", encoding="utf-8")
+            return [FakeResult(True), FakeResult(False)]
+
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
+    monkeypatch.setattr(campaign, "_show_info", lambda title, message: messages.append((title, message)))
+    monkeypatch.setattr(campaign_widget, "SerialCampaignRunner", FakeRunner)
+
+    campaign.add_sweep_row(
+        parameter_path="electric_field",
+        sweep_type="values",
+        values="100",
+    )
+
+    campaign.run_campaign()
+
+    assert (tmp_path / "run_0001" / "stdout.txt").is_file()
+    assert messages
+    assert messages[0][0] == "Campaign run finished"
+    assert "Executed 2 runs" in messages[0][1]
+    assert "OK: 1" in messages[0][1]
+    assert "Failed: 1" in messages[0][1]

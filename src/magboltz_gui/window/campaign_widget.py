@@ -127,13 +127,16 @@ class CampaignWidget(QWidget):
         preview_header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.btnPreview = QPushButton("Preview runs")
         self.btnGenerate = QPushButton("Generate input cards...")
+        self.btnRun = QPushButton("Run campaign...")
         self.btnPreview.clicked.connect(self.preview_runs)
         self.btnGenerate.clicked.connect(self.generate_input_cards)
+        self.btnRun.clicked.connect(self.run_campaign)
         preview_layout.addWidget(self.previewSummary)
         preview_layout.addWidget(self.matrixSummary)
         preview_layout.addWidget(self.previewTable)
         preview_layout.addWidget(self.btnPreview)
         preview_layout.addWidget(self.btnGenerate)
+        preview_layout.addWidget(self.btnRun)
 
         layout.addWidget(sweep_group, 0, 0)
         layout.addWidget(preview_group, 1, 0)
@@ -293,22 +296,46 @@ class CampaignWidget(QWidget):
 
     def generate_input_cards(self) -> None:
         """Write campaign input cards to a user-selected directory."""
+        selection = self._select_output_directory("Select campaign output directory")
+        if selection is None:
+            return
+        plan, directory = selection
+
+        runs = SerialCampaignRunner().prepare(plan, directory)
+        self._populate_preview(runs, plan)
+        self._show_info("Campaign generated", f"Generated {len(runs)} input cards in:\n{directory}")
+
+    def run_campaign(self) -> None:
+        """Write and execute campaign input cards serially."""
+        selection = self._select_output_directory("Select campaign run directory")
+        if selection is None:
+            return
+        plan, directory = selection
+
+        results = SerialCampaignRunner().run(plan, directory)
+        runs = self._generate_runs(plan)
+        self._populate_preview(runs, plan)
+        ok_count = sum(result.ok for result in results)
+        failed_count = len(results) - ok_count
+        self._show_info(
+            "Campaign run finished",
+            f"Executed {len(results)} runs in:\n{directory}\n\nOK: {ok_count}\nFailed: {failed_count}",
+        )
+
+    def _select_output_directory(self, title: str) -> tuple[CampaignPlan, Path] | None:
         try:
             plan = self._build_plan()
         except Exception as exc:
             self._show_error("Invalid campaign", str(exc))
-            return
+            return None
         total_runs = _campaign_size(plan)
         if total_runs >= LARGE_CAMPAIGN_RUNS and not self._confirm_large_generate(plan, total_runs):
-            return
+            return None
 
-        directory = QFileDialog.getExistingDirectory(self, "Select campaign output directory")
+        directory = QFileDialog.getExistingDirectory(self, title)
         if not directory:
-            return
-
-        runs = SerialCampaignRunner().prepare(plan, Path(directory))
-        self._populate_preview(runs, plan)
-        self._show_info("Campaign generated", f"Generated {len(runs)} input cards in:\n{directory}")
+            return None
+        return plan, Path(directory)
 
     def _generate_runs(self, plan: CampaignPlan):
         from magboltz_gui.campaign import generate_runs
