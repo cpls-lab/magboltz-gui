@@ -12,6 +12,8 @@ pytest.importorskip("matplotlib", reason="Main window embeds matplotlib canvases
 
 from magboltz_gui.window.delegates import AmountDelegate
 from magboltz_gui.window.main_window import MagboltzGUI
+from magboltz_gui.campaign import SweepMode
+from magboltz_gui.data.input_cards import InputGas
 
 
 pytestmark = pytest.mark.gui
@@ -195,3 +197,43 @@ def test_campaign_tab_generates_input_cards(qtbot, monkeypatch, tmp_path: Path) 
     assert (tmp_path / "run_0001" / "parameters.json").is_file()
     assert (tmp_path / "summary.csv").is_file()
     assert messages and messages[0][0] == "Campaign generated"
+
+
+def test_campaign_tab_previews_mixed_product_and_coupled_sweep(qtbot) -> None:
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    window._currentCards.gases = [InputGas(gas_id=2, gas_frac=70.0), InputGas(gas_id=12, gas_frac=30.0)]
+    campaign = window.campaignTab
+    campaign.use_current_input()
+    campaign.sweepTable.setRowCount(0)
+    campaign.add_sweep_row(
+        parameter_path="electric_field",
+        sweep_type="values",
+        values="100, 200",
+    )
+    campaign.add_sweep_row(
+        parameter_path="gases[0].gas_frac",
+        sweep_type="values",
+        values="70, 80",
+        label="Ar",
+        mode=SweepMode.COUPLED,
+    )
+    campaign.add_sweep_row(
+        parameter_path="gases[1].gas_frac",
+        sweep_type="values",
+        values="30, 20",
+        label="CO2",
+        mode=SweepMode.COUPLED,
+    )
+
+    campaign.preview_runs()
+
+    assert campaign.previewSummary.text() == "Runs: 4"
+    assert campaign.previewTable.columnCount() == 4
+    assert campaign.previewTable.item(0, 1).text() == "100"
+    assert campaign.previewTable.item(0, 2).text() == "70"
+    assert campaign.previewTable.item(0, 3).text() == "30"
+    assert campaign.previewTable.item(3, 1).text() == "200"
+    assert campaign.previewTable.item(3, 2).text() == "80"
+    assert campaign.previewTable.item(3, 3).text() == "20"

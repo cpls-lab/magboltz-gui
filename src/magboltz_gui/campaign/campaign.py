@@ -4,21 +4,16 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
-from enum import StrEnum
 from itertools import product
 import re
 from typing import Any
 
 from magboltz_gui.data.input_cards import InputCards
 
-from magboltz_gui.campaign.sweep import SweepParameter
+from magboltz_gui.campaign.sweep import SweepMode, SweepParameter
 
-
-class CampaignMode(StrEnum):
-    """How multiple sweep parameters are combined."""
-
-    PRODUCT = "product"
-    COUPLED = "coupled"
+Value = float | int | bool | str
+ValueRow = dict[str, Value]
 
 
 @dataclass(frozen=True)
@@ -27,19 +22,16 @@ class CampaignPlan:
 
     base_cards: InputCards
     parameters: tuple[SweepParameter, ...]
-    mode: CampaignMode = CampaignMode.PRODUCT
 
     def __init__(
         self,
         base_cards: InputCards,
         parameters: list[SweepParameter] | tuple[SweepParameter, ...],
-        mode: CampaignMode = CampaignMode.PRODUCT,
     ) -> None:
         if not parameters:
             raise ValueError("CampaignPlan requires at least one sweep parameter")
         object.__setattr__(self, "base_cards", base_cards)
         object.__setattr__(self, "parameters", tuple(parameters))
-        object.__setattr__(self, "mode", mode)
 
 
 @dataclass(frozen=True)
@@ -49,26 +41,16 @@ class CampaignRun:
     index: int
     run_id: str
     input_cards: InputCards
-    parameter_values: dict[str, float | int | bool | str]
+    parameter_values: ValueRow
 
 
 def generate_runs(plan: CampaignPlan) -> list[CampaignRun]:
     """Expand a campaign plan into concrete input-card runs."""
-    parameter_values = {parameter.display_label: parameter.sweep.values() for parameter in plan.parameters}
-
-    if plan.mode == CampaignMode.PRODUCT:
-        labels = list(parameter_values)
-        value_rows = [dict(zip(labels, values)) for values in product(*(parameter_values[label] for label in labels))]
-    elif plan.mode == CampaignMode.COUPLED:
-        lengths = {len(values) for values in parameter_values.values()}
-        if len(lengths) != 1:
-            raise ValueError("Coupled campaign parameters must have the same number of values")
-        labels = list(parameter_values)
-        value_rows = [
-            {label: parameter_values[label][row_index] for label in labels} for row_index in range(next(iter(lengths)))
-        ]
-    else:
-        raise ValueError(f"Unsupported campaign mode: {plan.mode}")
+    product_rows, coupled_rows = _parameter_rows(plan.parameters)
+    value_rows = [
+        _merge_value_rows(rows)
+        for rows in product(*product_rows, coupled_rows)
+    ]
 
     runs: list[CampaignRun] = []
     path_by_label = {parameter.display_label: parameter.path for parameter in plan.parameters}
@@ -87,7 +69,49 @@ def generate_runs(plan: CampaignPlan) -> list[CampaignRun]:
     return runs
 
 
-def apply_input_card_value(cards: InputCards, path: str, value: float | int | bool | str) -> None:
+def _parameter_rows(parameters: tuple[SweepParameter, ...]) -> tuple[list[list[ValueRow]], list[ValueRow]]:
+    product_rows: list[list[ValueRow]] = []
+    coupled_parameters: list[SweepParameter] = []
+
+    for parameter in parameters:
+        values = parameter.sweep.values()
+        if parameter.mode == SweepMode.PRODUCT:
+            product_rows.append([{parameter.display_label: value} for value in values])
+        elif parameter.mode == SweepMode.COUPLED:
+            coupled_parameters.append(parameter)
+        else:
+            raise ValueError(f"Unsupported sweep mode: {parameter.mode}")
+
+    if not product_rows:
+        product_rows.append([{}])
+
+    coupled_rows = _coupled_rows(coupled_parameters)
+    return product_rows, coupled_rows
+
+
+def _coupled_rows(parameters: list[SweepParameter]) -> list[ValueRow]:
+    if not parameters:
+        return [{}]
+    if len(parameters) == 1:
+        raise ValueError("Coupled mode requires at least two sweep parameters")
+
+    parameter_values = {parameter.display_label: parameter.sweep.values() for parameter in parameters}
+    lengths = {len(values) for values in parameter_values.values()}
+    if len(lengths) != 1:
+        raise ValueError("Coupled sweep parameters must have the same number of values")
+
+    labels = list(parameter_values)
+    return [{label: parameter_values[label][row_index] for label in labels} for row_index in range(next(iter(lengths)))]
+
+
+def _merge_value_rows(rows: tuple[ValueRow, ...]) -> ValueRow:
+    merged: ValueRow = {}
+    for row in rows:
+        merged.update(row)
+    return merged
+
+
+def apply_input_card_value(cards: InputCards, path: str, value: Value) -> None:
     """Assign a value to an ``InputCards`` field using a small path syntax."""
     target, attr = _resolve_parent(cards, path)
     if not hasattr(target, attr):

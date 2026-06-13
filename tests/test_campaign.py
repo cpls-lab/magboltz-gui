@@ -8,12 +8,12 @@ import os
 import pytest
 
 from magboltz_gui.campaign import (
-    CampaignMode,
     CampaignPlan,
     ExplicitSweep,
     LinearSweep,
     LogSweep,
     SerialCampaignRunner,
+    SweepMode,
     SweepParameter,
     generate_runs,
 )
@@ -63,13 +63,12 @@ def test_product_campaign_generates_all_combinations_without_mutating_base() -> 
     assert base.gas_pressure == 760.0
 
 
-def test_coupled_campaign_varies_rows_together() -> None:
+def test_coupled_parameters_vary_rows_together() -> None:
     plan = CampaignPlan(
         base_cards=_base_cards(),
-        mode=CampaignMode.COUPLED,
         parameters=[
-            SweepParameter("gases[0].gas_frac", ExplicitSweep([70.0, 80.0]), label="Ar"),
-            SweepParameter("gases[1].gas_frac", ExplicitSweep([30.0, 20.0]), label="CO2"),
+            SweepParameter("gases[0].gas_frac", ExplicitSweep([70.0, 80.0]), label="Ar", mode=SweepMode.COUPLED),
+            SweepParameter("gases[1].gas_frac", ExplicitSweep([30.0, 20.0]), label="CO2", mode=SweepMode.COUPLED),
         ],
     )
 
@@ -79,13 +78,45 @@ def test_coupled_campaign_varies_rows_together() -> None:
     assert runs[1].parameter_values == {"Ar": 80.0, "CO2": 20.0}
 
 
-def test_coupled_campaign_rejects_mismatched_lengths() -> None:
+def test_mixed_product_and_coupled_parameters_generate_product_of_coupled_block() -> None:
     plan = CampaignPlan(
         base_cards=_base_cards(),
-        mode=CampaignMode.COUPLED,
         parameters=[
             SweepParameter("electric_field", ExplicitSweep([100.0, 200.0])),
-            SweepParameter("gas_pressure", ExplicitSweep([760.0])),
+            SweepParameter("gases[0].gas_frac", ExplicitSweep([70.0, 80.0]), label="Ar", mode=SweepMode.COUPLED),
+            SweepParameter("gases[1].gas_frac", ExplicitSweep([30.0, 20.0]), label="CO2", mode=SweepMode.COUPLED),
+        ],
+    )
+
+    runs = generate_runs(plan)
+
+    assert len(runs) == 4
+    assert [(run.input_cards.electric_field, run.input_cards.gases[0].gas_frac, run.input_cards.gases[1].gas_frac) for run in runs] == [
+        (100.0, 70.0, 30.0),
+        (100.0, 80.0, 20.0),
+        (200.0, 70.0, 30.0),
+        (200.0, 80.0, 20.0),
+    ]
+
+
+def test_coupled_parameters_reject_single_row() -> None:
+    plan = CampaignPlan(
+        base_cards=_base_cards(),
+        parameters=[
+            SweepParameter("gases[0].gas_frac", ExplicitSweep([70.0, 80.0]), label="Ar", mode=SweepMode.COUPLED),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="at least two"):
+        generate_runs(plan)
+
+
+def test_coupled_parameters_reject_mismatched_lengths() -> None:
+    plan = CampaignPlan(
+        base_cards=_base_cards(),
+        parameters=[
+            SweepParameter("gases[0].gas_frac", ExplicitSweep([70.0, 80.0]), label="Ar", mode=SweepMode.COUPLED),
+            SweepParameter("gases[1].gas_frac", ExplicitSweep([30.0]), label="CO2", mode=SweepMode.COUPLED),
         ],
     )
 

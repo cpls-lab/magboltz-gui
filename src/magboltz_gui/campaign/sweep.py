@@ -3,8 +3,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 from math import log10
 from typing import Protocol
+
+
+class SweepMode(StrEnum):
+    """How one parameter participates in campaign expansion."""
+
+    PRODUCT = "product"
+    COUPLED = "coupled"
 
 
 class Sweep(Protocol):
@@ -85,6 +93,7 @@ class SweepParameter:
     path: str
     sweep: Sweep
     label: str | None = None
+    mode: SweepMode = SweepMode.PRODUCT
 
     @property
     def display_label(self) -> str:

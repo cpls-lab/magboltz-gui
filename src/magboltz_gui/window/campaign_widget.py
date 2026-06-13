@@ -24,7 +24,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from magboltz_gui.campaign import CampaignMode, CampaignPlan, ExplicitSweep, LinearSweep, LogSweep, SerialCampaignRunner
+from magboltz_gui.campaign import CampaignPlan, ExplicitSweep, LinearSweep, LogSweep, SerialCampaignRunner, SweepMode
 from magboltz_gui.campaign.sweep import SweepParameter
 from magboltz_gui.data.input_cards import InputCards
 
@@ -81,9 +81,9 @@ class CampaignWidget(QWidget):
 
         sweep_group = QGroupBox("Sweep parameters")
         sweep_layout = QVBoxLayout(sweep_group)
-        self.sweepTable = QTableWidget(0, 7)
+        self.sweepTable = QTableWidget(0, 8)
         self.sweepTable.setHorizontalHeaderLabels(
-            ["Enabled", "Parameter", "Sweep", "Values / start", "Stop", "Points", "Label"]
+            ["Enabled", "Parameter", "Mode", "Sweep", "Values / start", "Stop", "Points", "Label"]
         )
         self.sweepTable.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.sweepTable.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
@@ -92,10 +92,11 @@ class CampaignWidget(QWidget):
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(7, QHeaderView.ResizeMode.ResizeToContents)
 
         sweep_buttons = QHBoxLayout()
         self.btnAddSweep = QPushButton("Add sweep")
@@ -110,13 +111,6 @@ class CampaignWidget(QWidget):
 
         preview_group = QGroupBox("Campaign preview")
         preview_layout = QVBoxLayout(preview_group)
-        mode_layout = QHBoxLayout()
-        mode_layout.addWidget(QLabel("Mode:"))
-        self.modeCombo = QComboBox()
-        self.modeCombo.addItem("Product grid", CampaignMode.PRODUCT.value)
-        self.modeCombo.addItem("Coupled rows", CampaignMode.COUPLED.value)
-        mode_layout.addWidget(self.modeCombo)
-        mode_layout.addStretch(1)
         self.previewSummary = QLabel("Runs: 0")
         self.previewTable = QTableWidget(0, 0)
         preview_header = self.previewTable.horizontalHeader()
@@ -126,7 +120,6 @@ class CampaignWidget(QWidget):
         self.btnGenerate = QPushButton("Generate input cards...")
         self.btnPreview.clicked.connect(self.preview_runs)
         self.btnGenerate.clicked.connect(self.generate_input_cards)
-        preview_layout.addLayout(mode_layout)
         preview_layout.addWidget(self.previewSummary)
         preview_layout.addWidget(self.previewTable)
         preview_layout.addWidget(self.btnPreview)
@@ -158,6 +151,7 @@ class CampaignWidget(QWidget):
         stop: str = "",
         points: str = "",
         label: str = "",
+        mode: SweepMode = SweepMode.PRODUCT,
         enabled: bool = True,
     ) -> None:
         """Append a sweep row. Public to keep GUI tests simple."""
@@ -176,12 +170,18 @@ class CampaignWidget(QWidget):
         parameter_combo.setCurrentIndex(max(index, 0))
         self.sweepTable.setCellWidget(row, 1, parameter_combo)
 
+        mode_combo = QComboBox()
+        mode_combo.addItem("Product grid", SweepMode.PRODUCT.value)
+        mode_combo.addItem("Coupled rows", SweepMode.COUPLED.value)
+        mode_combo.setCurrentIndex(mode_combo.findData(mode.value))
+        self.sweepTable.setCellWidget(row, 2, mode_combo)
+
         sweep_combo = QComboBox()
         sweep_combo.addItems(SWEEP_TYPES)
         sweep_combo.setCurrentText(sweep_type)
-        self.sweepTable.setCellWidget(row, 2, sweep_combo)
+        self.sweepTable.setCellWidget(row, 3, sweep_combo)
 
-        for column, text in ((3, values), (4, stop), (5, points), (6, label)):
+        for column, text in ((4, values), (5, stop), (6, points), (7, label)):
             self.sweepTable.setItem(row, column, QTableWidgetItem(text))
 
     def remove_selected_sweep(self) -> None:
@@ -224,8 +224,7 @@ class CampaignWidget(QWidget):
         if self._base_cards is None:
             raise ValueError("No base input card selected")
         parameters = self._read_parameters()
-        mode = CampaignMode(self.modeCombo.currentData())
-        return CampaignPlan(base_cards=self._base_cards, parameters=parameters, mode=mode)
+        return CampaignPlan(base_cards=self._base_cards, parameters=parameters)
 
     def _read_parameters(self) -> list[SweepParameter]:
         parameters: list[SweepParameter] = []
@@ -235,16 +234,22 @@ class CampaignWidget(QWidget):
                 continue
 
             parameter_combo = self.sweepTable.cellWidget(row, 1)
-            sweep_combo = self.sweepTable.cellWidget(row, 2)
-            if not isinstance(parameter_combo, QComboBox) or not isinstance(sweep_combo, QComboBox):
+            mode_combo = self.sweepTable.cellWidget(row, 2)
+            sweep_combo = self.sweepTable.cellWidget(row, 3)
+            if (
+                not isinstance(parameter_combo, QComboBox)
+                or not isinstance(mode_combo, QComboBox)
+                or not isinstance(sweep_combo, QComboBox)
+            ):
                 continue
 
             path = str(parameter_combo.currentData())
+            mode = SweepMode(str(mode_combo.currentData()))
             sweep_type = sweep_combo.currentText()
-            first = self._cell_text(row, 3)
-            stop = self._cell_text(row, 4)
-            points = self._cell_text(row, 5)
-            label = self._cell_text(row, 6) or None
+            first = self._cell_text(row, 4)
+            stop = self._cell_text(row, 5)
+            points = self._cell_text(row, 6)
+            label = self._cell_text(row, 7) or None
 
             if sweep_type == "values":
                 sweep = ExplicitSweep(_parse_values(first))
@@ -254,7 +259,7 @@ class CampaignWidget(QWidget):
                 sweep = LogSweep(float(first), float(stop), int(points))
             else:
                 raise ValueError(f"Unsupported sweep type: {sweep_type}")
-            parameters.append(SweepParameter(path=path, sweep=sweep, label=label))
+            parameters.append(SweepParameter(path=path, sweep=sweep, label=label, mode=mode))
 
         if not parameters:
             raise ValueError("Add at least one enabled sweep parameter")

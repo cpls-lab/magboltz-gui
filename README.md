@@ -131,8 +131,11 @@ design in this first slice.
 
 The GUI includes an initial `Campaign` tab for this workflow. It can snapshot the
 current input card, define simple `values`, `linear`, and `logspace` sweeps,
-preview the generated run matrix, and generate one `input.in` file per run. It
-does not execute campaigns yet; execution remains a follow-up slice.
+preview the generated run matrix, and generate one `input.in` file per run. Each
+sweep row can be part of the product grid or the single coupled-rows group. This
+supports patterns such as a product sweep over field values while Ar/CO2
+fractions vary together. The GUI does not execute campaigns yet; execution
+remains a follow-up slice.
 
 ### Regenerate Qt UI bindings
 
