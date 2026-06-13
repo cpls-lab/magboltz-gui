@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
+    QMessageBox,
     QPushButton,
     QTableWidget,
     QTableWidgetItem,
@@ -297,6 +298,9 @@ class CampaignWidget(QWidget):
         except Exception as exc:
             self._show_error("Invalid campaign", str(exc))
             return
+        total_runs = _campaign_size(plan)
+        if total_runs >= LARGE_CAMPAIGN_RUNS and not self._confirm_large_generate(plan, total_runs):
+            return
 
         directory = QFileDialog.getExistingDirectory(self, "Select campaign output directory")
         if not directory:
@@ -310,6 +314,20 @@ class CampaignWidget(QWidget):
         from magboltz_gui.campaign import generate_runs
 
         return generate_runs(plan)
+
+    def _confirm_large_generate(self, plan: CampaignPlan, total_runs: int) -> bool:
+        response = QMessageBox.question(
+            self,
+            "Generate large campaign?",
+            (
+                f"This campaign will generate {total_runs} input-card directories.\n\n"
+                f"{_matrix_summary_text(plan)}\n\n"
+                "Continue?"
+            ),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        return response == QMessageBox.StandardButton.Yes
 
     def _build_plan(self) -> CampaignPlan:
         self.use_current_input()
@@ -477,6 +495,15 @@ def _matrix_summary_text(plan: CampaignPlan) -> str:
     if total_size >= LARGE_CAMPAIGN_RUNS:
         parts.append("warning: review before generating")
     return "; ".join(parts)
+
+
+def _campaign_size(plan: CampaignPlan) -> int:
+    return _product_size([len(parameter.sweep.values()) for parameter in plan.parameters if parameter.mode == SweepMode.PRODUCT]) * _coupled_size(plan)
+
+
+def _coupled_size(plan: CampaignPlan) -> int:
+    coupled = [parameter for parameter in plan.parameters if parameter.mode == SweepMode.COUPLED]
+    return len(coupled[0].sweep.values()) if coupled else 1
 
 
 def _product_size(sizes: list[int]) -> int:

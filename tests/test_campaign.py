@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import os
 
@@ -137,6 +138,41 @@ def test_prepare_writes_input_cards_and_summary(tmp_path: Path) -> None:
     summary = (tmp_path / "summary.csv").read_text(encoding="utf-8")
     assert "run_id,electric_field" in summary
     assert "run_0001,100.0" in summary
+
+
+def test_prepare_writes_campaign_manifest(tmp_path: Path) -> None:
+    plan = CampaignPlan(
+        base_cards=_base_cards(),
+        parameters=[
+            SweepParameter("electric_field", LinearSweep(100.0, 200.0, 2)),
+            SweepParameter("gases[0].gas_frac", ExplicitSweep([70.0, 80.0]), label="Ar", mode=SweepMode.COUPLED),
+            SweepParameter("gases[1].gas_frac", ExplicitSweep([30.0, 20.0]), label="CO2", mode=SweepMode.COUPLED),
+        ],
+    )
+
+    SerialCampaignRunner().prepare(plan, tmp_path)
+
+    manifest = json.loads((tmp_path / "campaign.json").read_text(encoding="utf-8"))
+    assert manifest["total_runs"] == 4
+    assert manifest["matrix"] == {
+        "independent_rows": 1,
+        "product_size": 2,
+        "coupled_rows": 2,
+        "coupled_size": 2,
+        "total": 4,
+    }
+    assert manifest["sweeps"][0] == {
+        "path": "electric_field",
+        "label": None,
+        "mode": "product",
+        "points": 2,
+        "sweep_type": "linear",
+        "start": 100.0,
+        "stop": 200.0,
+    }
+    assert manifest["sweeps"][1]["mode"] == "coupled"
+    assert manifest["sweeps"][1]["sweep_type"] == "values"
+    assert manifest["sweeps"][1]["values"] == [70.0, 80.0]
 
 
 def test_serial_runner_executes_each_input_card(tmp_path: Path) -> None:

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication, QComboBox, QDoubleSpinBox, QFileDialog, QStyleOptionViewItem
+from PyQt6.QtWidgets import QApplication, QComboBox, QDoubleSpinBox, QFileDialog, QMessageBox, QStyleOptionViewItem
 
 pytest.importorskip("matplotlib", reason="Main window embeds matplotlib canvases")
 
@@ -397,3 +397,54 @@ def test_campaign_tab_limits_large_preview_and_warns(qtbot) -> None:
         "total: 1000; warning: review before generating"
     )
     assert campaign.previewTable.rowCount() == 100
+
+
+def test_campaign_tab_requires_confirmation_before_generating_large_campaign(qtbot, monkeypatch, tmp_path: Path) -> None:
+    messages: list[tuple[str, str]] = []
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
+    monkeypatch.setattr(QMessageBox, "question", lambda *args, **kwargs: QMessageBox.StandardButton.No)
+    monkeypatch.setattr(campaign, "_show_info", lambda title, message: messages.append((title, message)))
+
+    campaign.add_sweep_row(
+        parameter_path="electric_field",
+        sweep_type="linear",
+        values="1",
+        stop="1000",
+        points="1000",
+    )
+
+    campaign.generate_input_cards()
+
+    assert not messages
+    assert not (tmp_path / "summary.csv").exists()
+
+
+def test_campaign_tab_generates_large_campaign_after_confirmation(qtbot, monkeypatch, tmp_path: Path) -> None:
+    messages: list[tuple[str, str]] = []
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
+    monkeypatch.setattr(QMessageBox, "question", lambda *args, **kwargs: QMessageBox.StandardButton.Yes)
+    monkeypatch.setattr(campaign, "_show_info", lambda title, message: messages.append((title, message)))
+
+    campaign.add_sweep_row(
+        parameter_path="electric_field",
+        sweep_type="linear",
+        values="1",
+        stop="1000",
+        points="1000",
+    )
+
+    campaign.generate_input_cards()
+
+    assert (tmp_path / "summary.csv").is_file()
+    assert (tmp_path / "campaign.json").is_file()
+    assert messages and "Generated 1000 input cards" in messages[0][1]
