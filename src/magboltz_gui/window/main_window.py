@@ -9,6 +9,7 @@ from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtWidgets import QStyle
 from PyQt6.QtWidgets import (
     QMainWindow,
+    QDialog,
     QFileDialog,
     QMessageBox,
     QTableWidgetItem,
@@ -32,6 +33,7 @@ from magboltz_gui.util.process import ProcessManager
 from magboltz_gui.util.run_result import RunResult
 from magboltz_gui.window.campaign_widget import CampaignWidget
 from magboltz_gui.window.export_window import ExportDialog
+from magboltz_gui.window.preferences_window import PreferencesDialog, load_magboltz_executable_setting
 from magboltz_gui.util.export_controller import export_to_file
 from magboltz_gui.util.export_types import ExportFormat, ExportType, CsvOptions, JsonOptions, XmlOptions
 
@@ -57,7 +59,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self._currentCards: InputCards = InputCards()
         self._currentModified: bool = False
         self._last_run_result: Optional[RunResult] = None
-        self.magboltzPath: Optional[Path] = None
+        self.magboltzPath: Optional[Path] = load_magboltz_executable_setting()
 
         # Associating button to actions
         self.btnGasAdd.setDefaultAction(self.actionGasAdd)
@@ -93,6 +95,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.actionGasMoveDown.triggered.connect(self.gasMoveDown)
         self.actionGraphSave.triggered.connect(self.graphSave)
         self.actionAbout.triggered.connect(self.show_about_dialog)
+        self._install_preferences_action()
 
         self.mainTab.setCurrentWidget(self.tabConfiguration)
         self.campaignTab = CampaignWidget(
@@ -166,6 +169,12 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.menuRun.insertAction(before_action, self.actionResultOpen)
         self.menuRun.insertAction(before_action, self.actionCampaignOpen)
         self.menuRun.insertAction(before_action, self.actionCampaignSave)
+
+    def _install_preferences_action(self) -> None:
+        self.actionPreferences = QAction(QIcon.fromTheme("preferences-system"), "Preferences...", self)
+        self.actionPreferences.triggered.connect(self.openPreferences)
+        self.menu_Edit.addSeparator()
+        self.menu_Edit.addAction(self.actionPreferences)
 
     def createPieChart(self) -> None:
         fig = Figure(figsize=(3, 3))
@@ -283,6 +292,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self.actionResultClear: QStyle.StandardPixmap.SP_TrashIcon,
             self.actionResultSave: QStyle.StandardPixmap.SP_DialogSaveButton,
             self.actionResultOpen: QStyle.StandardPixmap.SP_DialogOpenButton,
+            self.actionPreferences: QStyle.StandardPixmap.SP_FileDialogDetailedView,
             self.actionCampaignOpen: QStyle.StandardPixmap.SP_DialogOpenButton,
             self.actionCampaignSave: QStyle.StandardPixmap.SP_DialogSaveButton,
             self.actionResultExport: QStyle.StandardPixmap.SP_DialogSaveButton,
@@ -481,6 +491,15 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         window = PlotsWindow(self._last_run_result, self)
         window.show()
+
+    def openPreferences(self) -> None:
+        dialog = PreferencesDialog(self.magboltzPath, self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        dialog.save()
+        self.magboltzPath = dialog.magboltz_path()
+        self.updateCmdLine()
+        self.campaignTab.refresh_executable()
 
     def run(self) -> None:
 

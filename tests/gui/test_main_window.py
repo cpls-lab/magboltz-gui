@@ -6,12 +6,13 @@ from pathlib import Path
 
 import pytest
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication, QComboBox, QDoubleSpinBox, QFileDialog, QMessageBox, QStyleOptionViewItem
+from PyQt6.QtWidgets import QApplication, QComboBox, QDialog, QDoubleSpinBox, QFileDialog, QMessageBox, QStyleOptionViewItem
 
 pytest.importorskip("matplotlib", reason="Main window embeds matplotlib canvases")
 
 from magboltz_gui.window.delegates import AmountDelegate
 from magboltz_gui.window.main_window import MagboltzGUI
+import magboltz_gui.window.main_window as main_window
 import magboltz_gui.window.campaign_widget as campaign_widget
 from magboltz_gui.campaign import SweepMode
 from magboltz_gui.data.input_cards import InputGas
@@ -36,11 +37,14 @@ def test_main_window_initializes_default_input_card(qtbot) -> None:
     assert window.mainTab.indexOf(window.campaignTab) >= 0
     assert window.actionCampaignOpen.text() == "Open Campaign..."
     assert window.actionCampaignSave.text() == "Save Campaign..."
-    assert window.campaignTab.executableLabel.text() == "Magboltz executable: magboltz"
+    assert window.actionPreferences.text() == "Preferences..."
+    assert window.campaignTab.executableLabel.text().startswith("Magboltz executable: ")
     run_menu_actions = [action.text() for action in window.menuRun.actions()]
+    edit_menu_actions = [action.text() for action in window.menu_Edit.actions()]
     assert "Open Result" in run_menu_actions
     assert "Open Campaign..." in run_menu_actions
     assert "Save Campaign..." in run_menu_actions
+    assert "Preferences..." in edit_menu_actions
 
 
 def test_main_window_gas_buttons_update_model_and_table(qtbot) -> None:
@@ -90,7 +94,7 @@ def test_main_window_command_line_tracks_input_path(qtbot, tmp_path: Path) -> No
     window._currentInputFile = input_path
     window.updateCmdLine()
 
-    assert window.commandLine.text() == f"magboltz < {input_path}"
+    assert window.commandLine.text() == f"{window.magboltzPath or 'magboltz'} < {input_path}"
 
 
 def test_main_window_final_energy_auto_checkbox_updates_spinbox(qtbot) -> None:
@@ -120,7 +124,38 @@ def test_main_window_copies_command_line_to_clipboard(qtbot, tmp_path: Path) -> 
 
     clipboard = QApplication.clipboard()
     assert clipboard is not None
-    assert clipboard.text() == f"magboltz < {input_path}"
+    assert clipboard.text() == f"{window.magboltzPath or 'magboltz'} < {input_path}"
+
+
+def test_preferences_updates_magboltz_executable(qtbot, monkeypatch, tmp_path: Path) -> None:
+    executable = tmp_path / "magboltz-custom"
+    executable.write_text("#!/bin/sh\n", encoding="utf-8")
+
+    class FakePreferencesDialog:
+        def __init__(self, magboltz_path, parent=None) -> None:
+            self.initial_path = magboltz_path
+
+        def exec(self):
+            return QDialog.DialogCode.Accepted
+
+        def save(self) -> None:
+            pass
+
+        def magboltz_path(self) -> Path:
+            return executable
+
+    monkeypatch.setattr(main_window, "PreferencesDialog", FakePreferencesDialog)
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    input_path = tmp_path / "input.in"
+    window._currentInputFile = input_path
+
+    window.openPreferences()
+
+    assert window.magboltzPath == executable
+    assert window.commandLine.text() == f"{executable} < {input_path}"
+    assert window.campaignTab.executableLabel.text() == f"Magboltz executable: {executable}"
 
 
 def test_main_window_open_result_file_populates_parsed_result(qtbot, monkeypatch, reference_output_text: str, tmp_path: Path) -> None:

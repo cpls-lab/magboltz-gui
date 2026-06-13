@@ -428,6 +428,10 @@ class CampaignWidget(QWidget):
             "Executable used by Run campaign. It matches the main Magboltz command path."
         )
 
+    def refresh_executable(self) -> None:
+        """Refresh the displayed executable after preferences change."""
+        self._refresh_executable_label()
+
     def _load_sweep_rows(self, manifest: dict) -> None:
         sweeps = manifest.get("sweeps")
         if not isinstance(sweeps, list) or not sweeps:
