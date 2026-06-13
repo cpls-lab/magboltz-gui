@@ -208,6 +208,8 @@ class CampaignWidget(QWidget):
         preview_layout.addWidget(self.previewTable)
         preview_layout.addLayout(action_buttons)
 
+        self.executionTab = QWidget()
+        execution_layout = QVBoxLayout(self.executionTab)
         results_group = QGroupBox("Campaign results")
         results_layout = QVBoxLayout(results_group)
         self.resultsSummary = QLabel("Results: not run")
@@ -225,14 +227,13 @@ class CampaignWidget(QWidget):
         results_layout.addWidget(self.resultsSummary)
         results_layout.addWidget(self.progressBar)
         results_layout.addWidget(self.resultsTable)
+        execution_layout.addWidget(results_group)
 
         layout.addWidget(sweep_group, 0, 0)
         layout.addWidget(preview_group, 1, 0)
-        layout.addWidget(results_group, 2, 0)
         layout.setColumnStretch(0, 1)
         layout.setRowStretch(0, 3)
         layout.setRowStretch(1, 2)
-        layout.setRowStretch(2, 2)
 
         self.add_default_sweep_row()
 

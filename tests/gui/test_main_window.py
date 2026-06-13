@@ -35,6 +35,9 @@ def test_main_window_initializes_default_input_card(qtbot) -> None:
     assert not window.btnResultExport.isEnabled()
     assert not window.btnResultPlots.isEnabled()
     assert window.mainTab.indexOf(window.campaignTab) >= 0
+    assert window.mainTab.indexOf(window.campaignExecutionTab) >= 0
+    assert window.mainTab.tabText(window.mainTab.indexOf(window.campaignExecutionTab)) == "Execution"
+    assert window.campaignExecutionTab is window.campaignTab.executionTab
     assert window.actionCampaignOpen.text() == "Open Campaign..."
     assert window.actionCampaignSave.text() == "Save Campaign..."
     assert window.actionPreferences.text() == "Preferences..."

@@ -107,6 +107,8 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             parent=self.mainTab,
         )
         self.mainTab.addTab(self.campaignTab, "Campaign")
+        self.campaignExecutionTab = self.campaignTab.executionTab
+        self.mainTab.addTab(self.campaignExecutionTab, "Execution")
         self._install_campaign_actions()
 
         self.fillColorMap()
