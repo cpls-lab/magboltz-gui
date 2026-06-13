@@ -30,6 +30,7 @@ def test_main_window_initializes_default_input_card(qtbot) -> None:
     assert window.spinElectricField.value() == pytest.approx(window._currentCards.electric_field)
     assert not window.btnResultExport.isEnabled()
     assert not window.btnResultPlots.isEnabled()
+    assert window.mainTab.indexOf(window.campaignTab) >= 0
 
 
 def test_main_window_gas_buttons_update_model_and_table(qtbot) -> None:
@@ -164,3 +165,33 @@ def test_main_window_amount_delegate_updates_gas_ratio_model(qtbot) -> None:
 
     assert window._currentCards.gases[0].gas_frac == pytest.approx(42.5)
     assert window.gasListTable.item(0, 2).text() == "42.500"
+
+
+def test_campaign_tab_previews_product_sweep(qtbot) -> None:
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+
+    campaign = window.campaignTab
+    campaign.preview_runs()
+
+    assert campaign.previewSummary.text() == "Runs: 5"
+    assert campaign.previewTable.rowCount() == 5
+    assert campaign.previewTable.item(0, 0).text() == "run_0001"
+    assert campaign.previewTable.item(0, 1).text() == "100.0"
+
+
+def test_campaign_tab_generates_input_cards(qtbot, monkeypatch, tmp_path: Path) -> None:
+    messages: list[tuple[str, str]] = []
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
+    monkeypatch.setattr(window.campaignTab, "_show_info", lambda title, message: messages.append((title, message)))
+
+    window.campaignTab.generate_input_cards()
+
+    assert (tmp_path / "run_0001" / "input.in").is_file()
+    assert (tmp_path / "run_0001" / "parameters.json").is_file()
+    assert (tmp_path / "summary.csv").is_file()
+    assert messages and messages[0][0] == "Campaign generated"

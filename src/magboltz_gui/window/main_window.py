@@ -30,6 +30,7 @@ from magboltz_gui.util import parser
 from magboltz_gui.window.delegates import GasNameDelegate, AmountDelegate
 from magboltz_gui.util.process import ProcessManager
 from magboltz_gui.util.run_result import RunResult
+from magboltz_gui.window.campaign_widget import CampaignWidget
 from magboltz_gui.window.export_window import ExportDialog
 from magboltz_gui.util.export_controller import export_to_file
 from magboltz_gui.util.export_types import ExportFormat, ExportType, CsvOptions, JsonOptions, XmlOptions
@@ -93,6 +94,13 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.actionAbout.triggered.connect(self.show_about_dialog)
 
         self.mainTab.setCurrentWidget(self.tabConfiguration)
+        self.campaignTab = CampaignWidget(
+            get_current_cards=lambda: self._currentCards,
+            show_info=self.show_info,
+            show_error=self.show_error,
+            parent=self.mainTab,
+        )
+        self.mainTab.addTab(self.campaignTab, "Campaign")
 
         self.fillColorMap()
 

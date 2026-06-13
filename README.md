@@ -129,6 +129,11 @@ Supported field paths include top-level fields such as `electric_field` and
 indexed gas-mixture fields such as `gases[0].gas_frac`. Execution is serial by
 design in this first slice.
 
+The GUI includes an initial `Campaign` tab for this workflow. It can snapshot the
+current input card, define simple `values`, `linear`, and `logspace` sweeps,
+preview the generated run matrix, and generate one `input.in` file per run. It
+does not execute campaigns yet; execution remains a follow-up slice.
+
 ### Regenerate Qt UI bindings
 
 The `.ui` files in `src/magboltz_gui/ui/` are the source of truth. The Python bindings
