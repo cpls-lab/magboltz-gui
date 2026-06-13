@@ -102,6 +102,8 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.actionAbout.triggered.connect(self.show_about_dialog)
         self._install_preferences_action()
 
+        self.executionSingleTab = self.tabExecution
+        self.executionSingleTab.setObjectName("executionSingleTab")
         self.mainTab.setCurrentWidget(self.tabConfiguration)
         self.campaignTab = CampaignWidget(
             get_current_cards=lambda: self._currentCards,
@@ -112,11 +114,14 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             parent=self.mainTab,
         )
         self.mainTab.addTab(self.campaignTab, "Campaign")
-        self.campaignExecutionTab = self.campaignTab.executionTab
-        self.mainTab.addTab(self.campaignExecutionTab, "Execution")
+        self.executionCampaignTab = self.campaignTab.executionTab
+        self.executionCampaignTab.setObjectName("executionCampaignTab")
+        self.campaignExecutionTab = self.executionCampaignTab
+        self.mainTab.addTab(self.executionCampaignTab, "Execution")
         self._install_campaign_actions()
         self._install_mode_selector()
         self.mainTab.currentChanged.connect(self._sync_mode_selector_from_tab)
+        self._apply_mode_tab_visibility("Single")
 
         self.fillColorMap()
 
@@ -207,19 +212,33 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.mainToolBar.addWidget(self.modeSelectorWidget)
 
     def _on_mode_selector_changed(self, mode: str) -> None:
+        self._apply_mode_tab_visibility(mode)
         if mode == "Campaign":
             self.mainTab.setCurrentWidget(self.campaignTab)
         else:
             self.mainTab.setCurrentWidget(self.tabConfiguration)
 
     def _sync_mode_selector_from_tab(self) -> None:
-        campaign_widgets = {self.campaignTab, self.campaignExecutionTab}
+        campaign_widgets = {self.campaignTab, self.executionCampaignTab}
         mode = "Campaign" if self.mainTab.currentWidget() in campaign_widgets else "Single"
         if self.modeSelectorCombo.currentText() == mode:
             return
         self.modeSelectorCombo.blockSignals(True)
         self.modeSelectorCombo.setCurrentText(mode)
         self.modeSelectorCombo.blockSignals(False)
+        self._apply_mode_tab_visibility(mode)
+
+    def _apply_mode_tab_visibility(self, mode: str) -> None:
+        show_campaign = mode == "Campaign"
+        self._set_tab_visible(self.tabConfiguration, True)
+        self._set_tab_visible(self.executionSingleTab, not show_campaign)
+        self._set_tab_visible(self.campaignTab, show_campaign)
+        self._set_tab_visible(self.executionCampaignTab, show_campaign)
+
+    def _set_tab_visible(self, widget: QWidget, visible: bool) -> None:
+        index = self.mainTab.indexOf(widget)
+        if index >= 0:
+            self.mainTab.setTabVisible(index, visible)
 
     def createPieChart(self) -> None:
         fig = Figure(figsize=(3, 3))

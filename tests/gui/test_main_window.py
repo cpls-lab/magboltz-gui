@@ -45,6 +45,9 @@ def test_main_window_initializes_default_input_card(qtbot) -> None:
     assert not window.btnResultPlots.isEnabled()
     assert window.mainTab.indexOf(window.campaignTab) >= 0
     assert window.mainTab.indexOf(window.campaignExecutionTab) >= 0
+    assert window.executionSingleTab is window.tabExecution
+    assert window.executionSingleTab.objectName() == "executionSingleTab"
+    assert window.executionCampaignTab.objectName() == "executionCampaignTab"
     assert window.mainTab.tabText(window.mainTab.indexOf(window.campaignExecutionTab)) == "Execution"
     assert window.campaignExecutionTab is window.campaignTab.executionTab
     assert window.actionCampaignOpen.text() == "Open Campaign..."
@@ -58,6 +61,10 @@ def test_main_window_initializes_default_input_card(qtbot) -> None:
     ]
     assert window.modeSelectorCombo.currentText() == "Single"
     assert window.modeSelectorSpacer.sizePolicy().horizontalPolicy() == QSizePolicy.Policy.Expanding
+    assert window.mainTab.isTabVisible(window.mainTab.indexOf(window.tabConfiguration))
+    assert window.mainTab.isTabVisible(window.mainTab.indexOf(window.executionSingleTab))
+    assert not window.mainTab.isTabVisible(window.mainTab.indexOf(window.campaignTab))
+    assert not window.mainTab.isTabVisible(window.mainTab.indexOf(window.executionCampaignTab))
     run_menu_actions = [action.text() for action in window.menuRun.actions()]
     edit_menu_actions = [action.text() for action in window.menu_Edit.actions()]
     assert "Open Result" in run_menu_actions
@@ -73,10 +80,19 @@ def test_main_window_mode_selector_tracks_single_and_campaign_tabs(qtbot) -> Non
 
     window.modeSelectorCombo.setCurrentText("Campaign")
     assert window.mainTab.currentWidget() == window.campaignTab
+    assert window.mainTab.isTabVisible(window.mainTab.indexOf(window.tabConfiguration))
+    assert not window.mainTab.isTabVisible(window.mainTab.indexOf(window.executionSingleTab))
+    assert window.mainTab.isTabVisible(window.mainTab.indexOf(window.campaignTab))
+    assert window.mainTab.isTabVisible(window.mainTab.indexOf(window.executionCampaignTab))
 
     window.modeSelectorCombo.setCurrentText("Single")
     assert window.mainTab.currentWidget() == window.tabConfiguration
+    assert window.mainTab.isTabVisible(window.mainTab.indexOf(window.tabConfiguration))
+    assert window.mainTab.isTabVisible(window.mainTab.indexOf(window.executionSingleTab))
+    assert not window.mainTab.isTabVisible(window.mainTab.indexOf(window.campaignTab))
+    assert not window.mainTab.isTabVisible(window.mainTab.indexOf(window.executionCampaignTab))
 
+    window.modeSelectorCombo.setCurrentText("Campaign")
     window.mainTab.setCurrentWidget(window.campaignExecutionTab)
     assert window.modeSelectorCombo.currentText() == "Campaign"
 
