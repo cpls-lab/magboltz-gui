@@ -171,8 +171,12 @@ class CampaignWidget(QWidget):
         self.sweepTable.setCellWidget(row, 1, parameter_combo)
 
         mode_combo = QComboBox()
-        mode_combo.addItem("Product grid", SweepMode.PRODUCT.value)
-        mode_combo.addItem("Coupled rows", SweepMode.COUPLED.value)
+        mode_combo.setToolTip(
+            "Independent rows are combined with all other independent rows. "
+            "Coupled rows form one group and advance point-by-point together."
+        )
+        mode_combo.addItem("Independent", SweepMode.PRODUCT.value)
+        mode_combo.addItem("Coupled", SweepMode.COUPLED.value)
         mode_combo.setCurrentIndex(mode_combo.findData(mode.value))
         self.sweepTable.setCellWidget(row, 2, mode_combo)
 
