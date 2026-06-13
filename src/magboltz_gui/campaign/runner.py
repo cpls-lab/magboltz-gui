@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 import subprocess
+import time
+from typing import Callable
 
 from magboltz_gui.campaign.campaign import CampaignPlan, CampaignRun, generate_runs
 from magboltz_gui.campaign.sweep import ExplicitSweep, LinearSweep, LogSweep, SweepMode
@@ -28,6 +30,14 @@ class CampaignExecutionResult:
     def ok(self) -> bool:
         """Return whether the external command completed successfully."""
         return self.returncode == 0
+
+
+class CampaignCancelled(Exception):
+    """Raised when a campaign execution is cancelled by the caller."""
+
+    def __init__(self, results: list[CampaignExecutionResult]) -> None:
+        super().__init__("Campaign run cancelled")
+        self.results = results
 
 
 class SerialCampaignRunner:
@@ -51,36 +61,72 @@ class SerialCampaignRunner:
         self._write_manifest(output_dir / "campaign.json", plan, runs)
         return runs
 
-    def run(self, plan: CampaignPlan, output_dir: Path) -> list[CampaignExecutionResult]:
+    def run(
+        self,
+        plan: CampaignPlan,
+        output_dir: Path,
+        progress_callback: Callable[[int, int, str], None] | None = None,
+        cancel_callback: Callable[[], bool] | None = None,
+    ) -> list[CampaignExecutionResult]:
         """Materialize and execute all generated runs serially."""
         runs = self.prepare(plan, output_dir)
         results: list[CampaignExecutionResult] = []
+        total = len(runs)
         for run in runs:
+            if cancel_callback is not None and cancel_callback():
+                self._write_status(output_dir / "run_status.csv", results)
+                raise CampaignCancelled(results)
             run_dir = output_dir / run.run_id
             input_path = run_dir / "input.in"
             stdout_path = run_dir / "stdout.txt"
             stderr_path = run_dir / "stderr.txt"
-            completed = subprocess.run(
-                [self.executable],
-                input=input_path.read_text(encoding="utf-8"),
-                text=True,
-                capture_output=True,
-                timeout=self.timeout_seconds,
-                check=False,
-            )
-            stdout_path.write_text(completed.stdout, encoding="utf-8")
-            stderr_path.write_text(completed.stderr, encoding="utf-8")
+            returncode = self._run_one(input_path, stdout_path, stderr_path, cancel_callback)
             results.append(
                 CampaignExecutionResult(
                     run_id=run.run_id,
-                    returncode=completed.returncode,
+                    returncode=returncode,
                     input_path=input_path,
                     stdout_path=stdout_path,
                     stderr_path=stderr_path,
                 )
             )
+            if cancel_callback is not None and cancel_callback():
+                self._write_status(output_dir / "run_status.csv", results)
+                raise CampaignCancelled(results)
+            if progress_callback is not None:
+                progress_callback(len(results), total, run.run_id)
         self._write_status(output_dir / "run_status.csv", results)
         return results
+
+    def _run_one(
+        self,
+        input_path: Path,
+        stdout_path: Path,
+        stderr_path: Path,
+        cancel_callback: Callable[[], bool] | None,
+    ) -> int:
+        input_text = input_path.read_text(encoding="utf-8")
+        started_at = time.monotonic()
+        with stdout_path.open("w", encoding="utf-8") as stdout_handle, stderr_path.open("w", encoding="utf-8") as stderr_handle:
+            process = subprocess.Popen(
+                [self.executable],
+                stdin=subprocess.PIPE,
+                stdout=stdout_handle,
+                stderr=stderr_handle,
+                text=True,
+            )
+            assert process.stdin is not None
+            process.stdin.write(input_text)
+            process.stdin.close()
+            while process.poll() is None:
+                if cancel_callback is not None and cancel_callback():
+                    _terminate_process(process)
+                    return process.returncode if process.returncode is not None else -15
+                if self.timeout_seconds is not None and time.monotonic() - started_at > self.timeout_seconds:
+                    _terminate_process(process)
+                    raise subprocess.TimeoutExpired([self.executable], self.timeout_seconds)
+                time.sleep(0.1)
+            return process.returncode if process.returncode is not None else 0
 
     def _write_summary(self, path: Path, runs: list[CampaignRun]) -> None:
         labels = list(runs[0].parameter_values) if runs else []
@@ -158,3 +204,12 @@ def _product_size(sizes: list[int]) -> int:
     for size in sizes:
         total *= size
     return total
+
+
+def _terminate_process(process: subprocess.Popen) -> None:
+    process.terminate()
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5)

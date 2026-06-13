@@ -555,12 +555,14 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
         def __init__(self, *args, **kwargs) -> None:
             pass
 
-        def run(self, plan, output_dir: Path):
+        def run(self, plan, output_dir: Path, progress_callback=None, cancel_callback=None):
             output_dir.mkdir(parents=True, exist_ok=True)
             (output_dir / "summary.csv").write_text("run_id,electric_field\nrun_0001,100\n", encoding="utf-8")
             (output_dir / "run_0001").mkdir()
             (output_dir / "run_0001" / "stdout.txt").write_text("ok\n", encoding="utf-8")
             (output_dir / "run_0001" / "stderr.txt").write_text("", encoding="utf-8")
+            if progress_callback is not None:
+                progress_callback(1, 2, "run_0001")
             return [FakeResult(True), FakeResult(False)]
 
     window = MagboltzGUI()
@@ -581,6 +583,7 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
     campaign.run_campaign()
 
     assert not campaign.btnRun.isEnabled()
+    assert campaign.btnCancel.isEnabled()
     qtbot.waitUntil(lambda: bool(messages), timeout=3000)
 
     assert (tmp_path / "run_0001" / "stdout.txt").is_file()
@@ -590,6 +593,7 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
     assert "Failed: 1" in messages[0][1]
     qtbot.waitUntil(campaign.btnRun.isEnabled, timeout=3000)
     assert campaign.btnRun.isEnabled()
+    assert not campaign.btnCancel.isEnabled()
     assert campaign.resultsSummary.text() == "Results: 1 runs; done: 1; failed: 0; pending: 0"
     assert campaign.resultsTable.item(0, 0).text() == "run_0001"
     assert campaign.resultsTable.item(0, 1).text() == "done"
@@ -636,7 +640,7 @@ def test_campaign_tab_reports_missing_magboltz_executable(qtbot, monkeypatch, tm
         def __init__(self, *args, **kwargs) -> None:
             pass
 
-        def run(self, plan, output_dir: Path):
+        def run(self, plan, output_dir: Path, progress_callback=None, cancel_callback=None):
             output_dir.mkdir(parents=True, exist_ok=True)
             raise FileNotFoundError(2, "No such file or directory", "magboltz")
 

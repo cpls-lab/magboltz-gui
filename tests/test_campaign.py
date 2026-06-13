@@ -5,10 +5,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import os
+import time
 
 import pytest
 
 from magboltz_gui.campaign import (
+    CampaignCancelled,
     CampaignPlan,
     ExplicitSweep,
     LinearSweep,
@@ -202,3 +204,36 @@ def test_serial_runner_executes_each_input_card(tmp_path: Path) -> None:
     status = (tmp_path / "campaign" / "run_status.csv").read_text(encoding="utf-8")
     assert "run_id,status,returncode,input,stdout,stderr" in status
     assert "run_0001,done,0" in status
+
+
+def test_serial_runner_can_cancel_running_process(tmp_path: Path) -> None:
+    fake_magboltz = tmp_path / "slow_magboltz"
+    fake_magboltz.write_text(
+        "#!/usr/bin/env python3\n"
+        "import sys, time\n"
+        "sys.stdin.read()\n"
+        "print('started', flush=True)\n"
+        "time.sleep(30)\n",
+        encoding="utf-8",
+    )
+    os.chmod(fake_magboltz, 0o755)
+    plan = CampaignPlan(
+        base_cards=_base_cards(),
+        parameters=[SweepParameter("electric_field", ExplicitSweep([100.0]))],
+    )
+    started_at = time.monotonic()
+
+    def should_cancel() -> bool:
+        return time.monotonic() - started_at > 0.2
+
+    with pytest.raises(CampaignCancelled) as exc_info:
+        SerialCampaignRunner(executable=str(fake_magboltz)).run(
+            plan,
+            tmp_path / "campaign",
+            cancel_callback=should_cancel,
+        )
+
+    assert len(exc_info.value.results) == 1
+    assert not exc_info.value.results[0].ok
+    status = (tmp_path / "campaign" / "run_status.csv").read_text(encoding="utf-8")
+    assert "run_0001,failed" in status

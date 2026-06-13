@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import (
     QHeaderView,
     QLabel,
     QMessageBox,
+    QProgressBar,
     QPushButton,
     QTableWidget,
     QTableWidgetItem,
@@ -30,7 +31,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from magboltz_gui.campaign import CampaignPlan, ExplicitSweep, LinearSweep, LogSweep, SerialCampaignRunner, SweepMode
+from magboltz_gui.campaign import CampaignCancelled, CampaignPlan, ExplicitSweep, LinearSweep, LogSweep, SerialCampaignRunner, SweepMode
 from magboltz_gui.campaign.sweep import SweepParameter
 from magboltz_gui.data.input_cards import InputCards
 from magboltz_gui.util import parser
@@ -61,7 +62,9 @@ LARGE_CAMPAIGN_RUNS = 1000
 class CampaignRunWorker(QObject):
     """Run a serial campaign off the GUI thread."""
 
+    progress = pyqtSignal(int, int, str)
     finished = pyqtSignal(object, object, object)
+    cancelled = pyqtSignal(object, object, object)
     failed = pyqtSignal(str, str)
 
     def __init__(self, plan: CampaignPlan, directory: Path, executable: str) -> None:
@@ -69,11 +72,22 @@ class CampaignRunWorker(QObject):
         self._plan = plan
         self._directory = directory
         self._executable = executable
+        self._cancel_requested = False
+
+    def cancel(self) -> None:
+        self._cancel_requested = True
 
     @pyqtSlot()
     def run(self) -> None:
         try:
-            results = SerialCampaignRunner(executable=self._executable).run(self._plan, self._directory)
+            results = SerialCampaignRunner(executable=self._executable).run(
+                self._plan,
+                self._directory,
+                progress_callback=lambda completed, total, run_id: self.progress.emit(completed, total, run_id),
+                cancel_callback=lambda: self._cancel_requested,
+            )
+        except CampaignCancelled as exc:
+            self.cancelled.emit(self._plan, self._directory, exc.results)
         except FileNotFoundError as exc:
             executable = exc.filename or self._executable
             self.failed.emit(
@@ -174,15 +188,19 @@ class CampaignWidget(QWidget):
         self.btnOpen = QPushButton("Open campaign...")
         self.btnGenerate = QPushButton("Generate input cards...")
         self.btnRun = QPushButton("Run campaign...")
+        self.btnCancel = QPushButton("Stop campaign")
+        self.btnCancel.setEnabled(False)
         self.btnPreview.clicked.connect(self.preview_runs)
         self.btnOpen.clicked.connect(self.open_campaign)
         self.btnGenerate.clicked.connect(self.generate_input_cards)
         self.btnRun.clicked.connect(self.run_campaign)
+        self.btnCancel.clicked.connect(self.cancel_campaign)
         action_buttons = QHBoxLayout()
         action_buttons.addWidget(self.btnPreview)
         action_buttons.addWidget(self.btnOpen)
         action_buttons.addWidget(self.btnGenerate)
         action_buttons.addWidget(self.btnRun)
+        action_buttons.addWidget(self.btnCancel)
         action_buttons.addStretch(1)
         preview_layout.addWidget(self.previewSummary)
         preview_layout.addWidget(self.matrixSummary)
@@ -193,6 +211,11 @@ class CampaignWidget(QWidget):
         results_group = QGroupBox("Campaign results")
         results_layout = QVBoxLayout(results_group)
         self.resultsSummary = QLabel("Results: not run")
+        self.progressBar = QProgressBar()
+        self.progressBar.setMinimum(0)
+        self.progressBar.setMaximum(1)
+        self.progressBar.setValue(0)
+        self.progressBar.setFormat("Campaign idle")
         self.resultsTable = QTableWidget(0, 0)
         results_header = self.resultsTable.horizontalHeader()
         assert results_header is not None
@@ -200,6 +223,7 @@ class CampaignWidget(QWidget):
         self.resultsTable.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.resultsTable.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         results_layout.addWidget(self.resultsSummary)
+        results_layout.addWidget(self.progressBar)
         results_layout.addWidget(self.resultsTable)
 
         layout.addWidget(sweep_group, 0, 0)
@@ -407,17 +431,35 @@ class CampaignWidget(QWidget):
         worker = CampaignRunWorker(plan, directory, self._get_magboltz_executable())
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
+        worker.progress.connect(self._on_campaign_run_progress)
         worker.finished.connect(self._on_campaign_run_finished)
+        worker.cancelled.connect(self._on_campaign_run_cancelled)
         worker.failed.connect(self._on_campaign_run_failed)
         worker.finished.connect(thread.quit)
+        worker.cancelled.connect(thread.quit)
         worker.failed.connect(thread.quit)
         worker.finished.connect(worker.deleteLater)
+        worker.cancelled.connect(worker.deleteLater)
         worker.failed.connect(worker.deleteLater)
         thread.finished.connect(thread.deleteLater)
         thread.finished.connect(self._clear_campaign_worker)
         self._campaign_thread = thread
         self._campaign_worker = worker
         thread.start()
+
+    def cancel_campaign(self) -> None:
+        if self._campaign_worker is None:
+            return
+        self._campaign_worker.cancel()
+        self.btnCancel.setEnabled(False)
+        self.progressBar.setFormat("Stopping campaign...")
+        self.resultsSummary.setText("Results: stopping campaign")
+
+    def _on_campaign_run_progress(self, completed: int, total: int, run_id: str) -> None:
+        self.progressBar.setMaximum(max(total, 1))
+        self.progressBar.setValue(completed)
+        self.progressBar.setFormat(f"Completed {completed}/{total}: {run_id}")
+        self.resultsSummary.setText(f"Results: running campaign ({completed}/{total})")
 
     def _on_campaign_run_finished(self, plan: CampaignPlan, directory: Path, results) -> None:
         runs = self._generate_runs(plan)
@@ -430,6 +472,11 @@ class CampaignWidget(QWidget):
             f"Executed {len(results)} runs in:\n{directory}\n\nOK: {ok_count}\nFailed: {failed_count}",
         )
 
+    def _on_campaign_run_cancelled(self, _plan: CampaignPlan, directory: Path, results) -> None:
+        self._populate_results_from_execution(results, directory)
+        self.progressBar.setFormat(f"Campaign stopped after {len(results)} runs")
+        self._show_info("Campaign stopped", f"Stopped campaign in:\n{directory}\n\nCompleted runs: {len(results)}")
+
     def _on_campaign_run_failed(self, title: str, message: str) -> None:
         self._show_error(title, message)
 
@@ -439,10 +486,19 @@ class CampaignWidget(QWidget):
         self._set_campaign_running(False)
 
     def _set_campaign_running(self, running: bool) -> None:
+        if running:
+            self.progressBar.setMaximum(0)
+            self.progressBar.setValue(0)
+            self.progressBar.setFormat("Starting campaign...")
+        else:
+            self.progressBar.setMaximum(max(self.progressBar.maximum(), 1))
+            self.progressBar.setValue(self.progressBar.maximum())
+            self.progressBar.setFormat("Campaign idle")
         self.btnRun.setEnabled(not running)
         self.btnGenerate.setEnabled(not running)
         self.btnOpen.setEnabled(not running)
         self.btnPreview.setEnabled(not running)
+        self.btnCancel.setEnabled(running)
         self.sweepTable.setEnabled(not running)
 
     def _select_output_directory(self, title: str) -> tuple[CampaignPlan, Path] | None:
