@@ -72,8 +72,12 @@ def apply_linux_style_fallback(app: object) -> None:
         return
 
     style_now = app.style().objectName().lower()
+    if style_now != "fusion":
+        print(f"[magboltz-gui] Qt style remains: {style_now}", file=sys.stderr)
+        return
+
     available = [s.lower() for s in QStyleFactory.keys()]
-    for candidate in ("qt6ct-style", "gtk3", "fusion"):
+    for candidate in ("adwaita", "breeze"):
         if candidate in available and candidate != style_now:
             app.setStyle(candidate)
             print(f"[magboltz-gui] Qt style fallback: {style_now} -> {candidate}", file=sys.stderr)
