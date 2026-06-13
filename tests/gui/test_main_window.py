@@ -272,3 +272,41 @@ def test_campaign_tab_forces_gas_fraction_sweeps_to_coupled(qtbot) -> None:
 
     assert mode_combo.currentData() == SweepMode.COUPLED.value
     assert not mode_combo.isEnabled()
+
+
+def test_campaign_tab_updates_editable_sweep_cells_by_type(qtbot) -> None:
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+
+    campaign.add_sweep_row(
+        parameter_path="electric_field",
+        sweep_type="values",
+        values="100, 200, 300",
+    )
+    values_item = campaign.sweepTable.item(0, 4)
+    start_item = campaign.sweepTable.item(0, 5)
+    stop_item = campaign.sweepTable.item(0, 6)
+    points_item = campaign.sweepTable.item(0, 7)
+    sweep_combo = campaign.sweepTable.cellWidget(0, 3)
+    assert isinstance(sweep_combo, QComboBox)
+
+    assert values_item.flags() & Qt.ItemFlag.ItemIsEditable
+    assert not start_item.flags() & Qt.ItemFlag.ItemIsEnabled
+    assert not stop_item.flags() & Qt.ItemFlag.ItemIsEnabled
+    assert points_item.text() == "3"
+    assert points_item.flags() & Qt.ItemFlag.ItemIsEnabled
+    assert not points_item.flags() & Qt.ItemFlag.ItemIsEditable
+
+    values_item.setText("100, 200, 300, 400")
+
+    assert points_item.text() == "4"
+
+    sweep_combo.setCurrentText("linear")
+
+    assert not values_item.flags() & Qt.ItemFlag.ItemIsEnabled
+    assert start_item.flags() & Qt.ItemFlag.ItemIsEditable
+    assert stop_item.flags() & Qt.ItemFlag.ItemIsEditable
+    assert points_item.flags() & Qt.ItemFlag.ItemIsEditable

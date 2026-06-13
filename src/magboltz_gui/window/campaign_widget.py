@@ -7,7 +7,7 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Callable
 
-from PyQt6.QtCore import QSize
+from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QAbstractItemView,
@@ -66,6 +66,7 @@ class CampaignWidget(QWidget):
         self._show_info = show_info
         self._show_error = show_error
         self._base_cards: InputCards | None = None
+        self._updating_sweep_table = False
 
         self._build_ui()
         self.use_current_input()
@@ -75,12 +76,13 @@ class CampaignWidget(QWidget):
 
         sweep_group = QGroupBox("Sweep parameters")
         sweep_layout = QVBoxLayout(sweep_group)
-        self.sweepTable = QTableWidget(0, 8)
+        self.sweepTable = QTableWidget(0, 9)
         self.sweepTable.setHorizontalHeaderLabels(
-            ["Enabled", "Parameter", "Mode", "Sweep", "Values / start", "Stop", "Points", "Label"]
+            ["Enabled", "Parameter", "Mode", "Sweep", "Values", "Start", "Stop", "Points", "Label"]
         )
         self.sweepTable.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.sweepTable.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.sweepTable.itemChanged.connect(self._on_sweep_item_changed)
         header = self.sweepTable.horizontalHeader()
         assert header is not None
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
@@ -91,6 +93,7 @@ class CampaignWidget(QWidget):
         header.setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(7, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(8, QHeaderView.ResizeMode.ResizeToContents)
 
         sweep_buttons = QHBoxLayout()
         self.btnAddSweep = QToolButton()
@@ -190,9 +193,13 @@ class CampaignWidget(QWidget):
         sweep_combo.addItems(SWEEP_TYPES)
         sweep_combo.setCurrentText(sweep_type)
         self.sweepTable.setCellWidget(row, 3, sweep_combo)
+        sweep_combo.currentTextChanged.connect(lambda _text, sweep_row=row: self._apply_sweep_type_constraints(sweep_row))
 
-        for column, text in ((4, values), (5, stop), (6, points), (7, label)):
+        start = values if sweep_type != "values" else ""
+        explicit_values = values if sweep_type == "values" else ""
+        for column, text in ((4, explicit_values), (5, start), (6, stop), (7, points), (8, label)):
             self.sweepTable.setItem(row, column, QTableWidgetItem(text))
+        self._apply_sweep_type_constraints(row)
 
     def remove_selected_sweep(self) -> None:
         """Remove the selected sweep row."""
@@ -212,6 +219,62 @@ class CampaignWidget(QWidget):
                 "Independent rows are combined with all other independent rows. "
                 "Coupled rows form one group and advance point-by-point together."
             )
+
+    def _apply_sweep_type_constraints(self, row: int) -> None:
+        sweep_combo = self.sweepTable.cellWidget(row, 3)
+        if not isinstance(sweep_combo, QComboBox):
+            return
+        sweep_type = sweep_combo.currentText()
+        is_explicit = sweep_type == "values"
+        self._set_cell_enabled(row, 4, is_explicit, "Used by explicit value sweeps.")
+        self._set_cell_enabled(row, 5, not is_explicit, "Used by linear and logspace sweeps.")
+        self._set_cell_enabled(row, 6, not is_explicit, "Used by linear and logspace sweeps.")
+        if is_explicit:
+            self._set_cell_read_only(row, 7, "Automatically counted from comma-separated values.")
+            self._update_explicit_points(row)
+        else:
+            self._set_cell_enabled(row, 7, True, "Used by linear and logspace sweeps.")
+
+    def _set_cell_enabled(self, row: int, column: int, enabled: bool, enabled_tooltip: str) -> None:
+        item = self.sweepTable.item(row, column)
+        if item is None:
+            item = QTableWidgetItem("")
+            self.sweepTable.setItem(row, column, item)
+        flags = item.flags()
+        if enabled:
+            item.setFlags(flags | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsSelectable)
+            item.setToolTip(enabled_tooltip)
+        else:
+            item.setFlags(flags & ~Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable & ~Qt.ItemFlag.ItemIsSelectable)
+            item.setToolTip("Disabled for the selected sweep type.")
+
+    def _set_cell_read_only(self, row: int, column: int, tooltip: str) -> None:
+        item = self.sweepTable.item(row, column)
+        if item is None:
+            item = QTableWidgetItem("")
+            self.sweepTable.setItem(row, column, item)
+        item.setFlags((item.flags() | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable) & ~Qt.ItemFlag.ItemIsEditable)
+        item.setToolTip(tooltip)
+
+    def _on_sweep_item_changed(self, item: QTableWidgetItem) -> None:
+        if self._updating_sweep_table or item.column() != 4:
+            return
+        sweep_combo = self.sweepTable.cellWidget(item.row(), 3)
+        if isinstance(sweep_combo, QComboBox) and sweep_combo.currentText() == "values":
+            self._update_explicit_points(item.row())
+
+    def _update_explicit_points(self, row: int) -> None:
+        values_text = self._cell_text(row, 4)
+        count = len([value for value in values_text.replace("\n", ",").split(",") if value.strip()])
+        points_item = self.sweepTable.item(row, 7)
+        if points_item is None:
+            points_item = QTableWidgetItem("")
+            self.sweepTable.setItem(row, 7, points_item)
+        self._updating_sweep_table = True
+        try:
+            points_item.setText(str(count))
+        finally:
+            self._updating_sweep_table = False
 
     def preview_runs(self) -> None:
         """Render the generated run matrix without writing files."""
@@ -270,17 +333,18 @@ class CampaignWidget(QWidget):
             path = str(parameter_combo.currentData())
             mode = SweepMode(str(mode_combo.currentData()))
             sweep_type = sweep_combo.currentText()
-            first = self._cell_text(row, 4)
-            stop = self._cell_text(row, 5)
-            points = self._cell_text(row, 6)
-            label = self._cell_text(row, 7) or None
+            values = self._cell_text(row, 4)
+            start = self._cell_text(row, 5)
+            stop = self._cell_text(row, 6)
+            points = self._cell_text(row, 7)
+            label = self._cell_text(row, 8) or None
 
             if sweep_type == "values":
-                sweep = ExplicitSweep(_parse_values(first))
+                sweep = ExplicitSweep(_parse_values(values))
             elif sweep_type == "linear":
-                sweep = LinearSweep(float(first), float(stop), int(points))
+                sweep = LinearSweep(float(start), float(stop), int(points))
             elif sweep_type == "logspace":
-                sweep = LogSweep(float(first), float(stop), int(points))
+                sweep = LogSweep(float(start), float(stop), int(points))
             else:
                 raise ValueError(f"Unsupported sweep type: {sweep_type}")
             parameters.append(SweepParameter(path=path, sweep=sweep, label=label, mode=mode))
