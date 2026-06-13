@@ -86,6 +86,11 @@ magboltz-gui
 python -m magboltz_gui
 ```
 
+`magboltz-gui` can prepare input cards without a local Magboltz executable.
+Running simulations from the GUI requires a local `magboltz` binary on `PATH`,
+or a custom executable path configured in the application. The current
+regression reference is based on `MAGBOLTZ 2 VERSION 11.19`.
+
 #### Linux theming note
 - The app auto-detects platform themes on Linux and will log what it picks.
 - If your desktop still looks “Fusion/disabled”, you can force a theme:
@@ -126,6 +131,49 @@ pip install -e ".[dev]"
 ```
 
 Both install the same dev tools (black/mypy/stubs); use whichever matches your workflow.
+
+### Run tests
+
+Install the lightweight test dependencies:
+
+```bash
+pip install -e ".[test]"
+```
+
+```bash
+python -m pytest -q
+```
+
+The test suite includes parser/export checks and an Ar/CO2 70/30 reference
+case. The reference test checks that the GUI input-card representation
+round-trips semantically and that selected native Magboltz 11.19 output values
+are preserved through CSV, JSON, and XML export.
+
+Default tests intentionally avoid Qt and external Magboltz execution. Tests
+that require Qt should be marked `gui` and placed under `tests/gui/`; tests that
+execute a real Magboltz binary should be marked `magboltz`.
+
+To run the Qt smoke tests locally:
+
+```bash
+pip install -e ".[test-gui]"
+QT_QPA_PLATFORM=offscreen python -m pytest -q -m gui
+```
+
+The GUI tests cover main-window initialization, gas add/remove, parameter
+widget bindings, result-file loading, command-line clipboard copying, run-error
+paths, export-dialog state transitions, and export-dialog settings writing
+CSV/JSON/XML files through the core export layer.
+
+To run the opt-in tests that execute a real Magboltz binary:
+
+```bash
+MAGBOLTZ_TEST_BIN=/path/to/magboltz python -m pytest -q -m magboltz
+```
+
+These tests are intentionally excluded from the default path because they run a
+local Fortran Magboltz executable. `MAGBOLTZ_TEST_TIMEOUT`
+controls the per-run timeout in seconds and defaults to `900`.
 
 ### Build the documentation
 

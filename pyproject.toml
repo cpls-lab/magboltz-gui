@@ -20,6 +20,16 @@ qt = [
   "PyQt6-Qt6>=6.9.1",
   "pyqt6-utils>=0.5.0",
 ]
+test = [
+  "pytest>=8.0",
+]
+test-gui = [
+  "pytest>=8.0",
+  "pytest-qt>=4.4",
+  "PyQt6>=6.9.1",
+  "PyQt6-Qt6>=6.9.1",
+  "pyqt6-utils>=0.5.0",
+]
 dev = [
   "black>=25.9.0",
   "mypy>=1.18.2",
@@ -65,7 +75,7 @@ ignore_missing_imports = true
 
 [tool.black]
 line-length = 120
-target-version = ["py311"]
+target-version = ["py312"]
 include = '\.pyi?$'
 exclude = '''
 /(
@@ -76,6 +86,15 @@ exclude = '''
   | generated
 )/
 '''
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"
+markers = [
+  "gui: tests that require Qt/pytest-qt",
+  "magboltz: tests that execute a real Magboltz binary",
+]
 
 [project.scripts]
 magboltz-gui = "magboltz_gui.main:main"

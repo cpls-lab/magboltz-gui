@@ -61,7 +61,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.btnGasAdd.setDefaultAction(self.actionGasAdd)
         self.btnGasRemove.setDefaultAction(self.actionGasRemove)
         self.btnGasNormalize.setDefaultAction(self.actionGasNormalize)
-        self.btnCmdCopyToClipbord.setDefaultAction(self.actionResultCopy)
+        self.btnCmdCopyToClipbord.setDefaultAction(self.actionCmdCopyToClipboard)
         self.btnResultSave.setDefaultAction(self.actionResultSave)
         self.btnResultOpen.setDefaultAction(self.actionResultOpen)
         self.btnResultExport.setDefaultAction(self.actionResultExport)
@@ -836,13 +836,13 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self._currentCards.number_of_real_collisions = value
 
-    def onPenningChanged(self, value: bool) -> None:
+    def onPenningChanged(self, value: int) -> None:
 
-        self._currentCards.enable_penning = value
+        self._currentCards.enable_penning = Qt.CheckState(value) == Qt.CheckState.Checked
 
-    def onThermalChanged(self, value: bool) -> None:
+    def onThermalChanged(self, value: int) -> None:
 
-        self._currentCards.enable_thermal = value
+        self._currentCards.enable_thermal = Qt.CheckState(value) == Qt.CheckState.Checked
 
     def onFinalEnergyChanged(self, value: float) -> None:
 
