@@ -230,6 +230,9 @@ def test_campaign_tab_previews_mixed_product_and_coupled_sweep(qtbot) -> None:
     campaign.preview_runs()
 
     assert campaign.previewSummary.text() == "Runs: 4"
+    assert campaign.matrixSummary.text() == (
+        "Independent rows: 1; product size: 2; coupled rows: 2; coupled size: 2; total: 4"
+    )
     assert campaign.previewTable.columnCount() == 4
     assert campaign.previewTable.item(0, 1).text() == "100"
     assert campaign.previewTable.item(0, 2).text() == "70"
@@ -369,3 +372,28 @@ def test_campaign_tab_reports_coupled_point_mismatch_before_core(qtbot, monkeypa
     assert "Coupled rows must have the same number of points" in errors[0][1]
     assert "row 1 Gas 1 fraction=2" in errors[0][1]
     assert "row 2 Gas 2 fraction=1" in errors[0][1]
+
+
+def test_campaign_tab_limits_large_preview_and_warns(qtbot) -> None:
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+
+    campaign.add_sweep_row(
+        parameter_path="electric_field",
+        sweep_type="linear",
+        values="1",
+        stop="1000",
+        points="1000",
+    )
+
+    campaign.preview_runs()
+
+    assert campaign.previewSummary.text() == "Runs: 1000 (showing first 100) - large campaign"
+    assert campaign.matrixSummary.text() == (
+        "Independent rows: 1; product size: 1000; coupled rows: 0; coupled size: 1; "
+        "total: 1000; warning: review before generating"
+    )
+    assert campaign.previewTable.rowCount() == 100

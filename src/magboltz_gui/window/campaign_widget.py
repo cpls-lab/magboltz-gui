@@ -49,6 +49,8 @@ PARAMETER_CHOICES: tuple[tuple[str, str], ...] = (
 )
 
 SWEEP_TYPES = ("values", "linear", "logspace")
+PREVIEW_ROW_LIMIT = 100
+LARGE_CAMPAIGN_RUNS = 1000
 
 
 class CampaignWidget(QWidget):
@@ -117,6 +119,7 @@ class CampaignWidget(QWidget):
         preview_group = QGroupBox("Campaign preview")
         preview_layout = QVBoxLayout(preview_group)
         self.previewSummary = QLabel("Runs: 0")
+        self.matrixSummary = QLabel("Independent rows: 0, coupled rows: 0")
         self.previewTable = QTableWidget(0, 0)
         preview_header = self.previewTable.horizontalHeader()
         assert preview_header is not None
@@ -126,6 +129,7 @@ class CampaignWidget(QWidget):
         self.btnPreview.clicked.connect(self.preview_runs)
         self.btnGenerate.clicked.connect(self.generate_input_cards)
         preview_layout.addWidget(self.previewSummary)
+        preview_layout.addWidget(self.matrixSummary)
         preview_layout.addWidget(self.previewTable)
         preview_layout.addWidget(self.btnPreview)
         preview_layout.addWidget(self.btnGenerate)
@@ -279,11 +283,12 @@ class CampaignWidget(QWidget):
     def preview_runs(self) -> None:
         """Render the generated run matrix without writing files."""
         try:
-            runs = self._build_runs()
+            plan = self._build_plan()
+            runs = self._generate_runs(plan)
         except Exception as exc:
             self._show_error("Invalid campaign", str(exc))
             return
-        self._populate_preview(runs)
+        self._populate_preview(runs, plan)
 
     def generate_input_cards(self) -> None:
         """Write campaign input cards to a user-selected directory."""
@@ -298,13 +303,13 @@ class CampaignWidget(QWidget):
             return
 
         runs = SerialCampaignRunner().prepare(plan, Path(directory))
-        self._populate_preview(runs)
+        self._populate_preview(runs, plan)
         self._show_info("Campaign generated", f"Generated {len(runs)} input cards in:\n{directory}")
 
-    def _build_runs(self):
+    def _generate_runs(self, plan: CampaignPlan):
         from magboltz_gui.campaign import generate_runs
 
-        return generate_runs(self._build_plan())
+        return generate_runs(plan)
 
     def _build_plan(self) -> CampaignPlan:
         self.use_current_input()
@@ -386,16 +391,18 @@ class CampaignWidget(QWidget):
         item = self.sweepTable.item(row, column)
         return item.text().strip() if item is not None else ""
 
-    def _populate_preview(self, runs) -> None:
+    def _populate_preview(self, runs, plan: CampaignPlan) -> None:
         labels = list(runs[0].parameter_values) if runs else []
+        visible_runs = runs[:PREVIEW_ROW_LIMIT]
         self.previewTable.setColumnCount(1 + len(labels))
         self.previewTable.setHorizontalHeaderLabels(["run_id", *labels])
-        self.previewTable.setRowCount(len(runs))
-        for row, run in enumerate(runs):
+        self.previewTable.setRowCount(len(visible_runs))
+        for row, run in enumerate(visible_runs):
             self.previewTable.setItem(row, 0, QTableWidgetItem(run.run_id))
             for column, label in enumerate(labels, start=1):
                 self.previewTable.setItem(row, column, QTableWidgetItem(str(run.parameter_values[label])))
-        self.previewSummary.setText(f"Runs: {len(runs)}")
+        self.previewSummary.setText(_preview_summary_text(len(runs), len(visible_runs)))
+        self.matrixSummary.setText(_matrix_summary_text(plan))
 
 
 def _parse_values(text: str) -> list[float | int | bool | str]:
@@ -443,6 +450,40 @@ def _required_points(text: str) -> int:
 
 def _is_gas_fraction_path(path: str) -> bool:
     return path.startswith("gases[") and path.endswith("].gas_frac")
+
+
+def _preview_summary_text(total_runs: int, visible_runs: int) -> str:
+    text = f"Runs: {total_runs}"
+    if visible_runs < total_runs:
+        text += f" (showing first {visible_runs})"
+    if total_runs >= LARGE_CAMPAIGN_RUNS:
+        text += " - large campaign"
+    return text
+
+
+def _matrix_summary_text(plan: CampaignPlan) -> str:
+    independent = [parameter for parameter in plan.parameters if parameter.mode == SweepMode.PRODUCT]
+    coupled = [parameter for parameter in plan.parameters if parameter.mode == SweepMode.COUPLED]
+    product_size = _product_size([len(parameter.sweep.values()) for parameter in independent])
+    coupled_size = len(coupled[0].sweep.values()) if coupled else 1
+    total_size = product_size * coupled_size
+    parts = [
+        f"Independent rows: {len(independent)}",
+        f"product size: {product_size}",
+        f"coupled rows: {len(coupled)}",
+        f"coupled size: {coupled_size}",
+        f"total: {total_size}",
+    ]
+    if total_size >= LARGE_CAMPAIGN_RUNS:
+        parts.append("warning: review before generating")
+    return "; ".join(parts)
+
+
+def _product_size(sizes: list[int]) -> int:
+    total = 1
+    for size in sizes:
+        total *= size
+    return total
 
 
 def _sweep_icon(kind: str) -> QIcon:
