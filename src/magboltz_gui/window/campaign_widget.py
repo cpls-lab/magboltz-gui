@@ -20,6 +20,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QProgressBar,
     QPushButton,
@@ -200,9 +201,6 @@ class CampaignWidget(QWidget):
         preview_header = self.previewTable.horizontalHeader()
         assert preview_header is not None
         preview_header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.executableLabel = QLabel()
-        self.executableLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        self._refresh_executable_label()
         self.btnPreview = QPushButton("Preview runs")
         self.btnPreview.clicked.connect(self.preview_runs)
         action_buttons = QHBoxLayout()
@@ -210,12 +208,20 @@ class CampaignWidget(QWidget):
         action_buttons.addStretch(1)
         preview_layout.addWidget(self.previewSummary)
         preview_layout.addWidget(self.matrixSummary)
-        preview_layout.addWidget(self.executableLabel)
         preview_layout.addWidget(self.previewTable)
         preview_layout.addLayout(action_buttons)
 
         self.executionTab = QWidget()
         execution_layout = QVBoxLayout(self.executionTab)
+        execution_settings_group = QGroupBox("Execution settings")
+        execution_settings_layout = QHBoxLayout(execution_settings_group)
+        self.executableLabel = QLabel("Magboltz executable")
+        self.executableInput = QLineEdit()
+        self.executableInput.setToolTip("Executable used by Run in Campaign mode.")
+        self._sync_executable_from_settings()
+        execution_settings_layout.addWidget(self.executableLabel)
+        execution_settings_layout.addWidget(self.executableInput, 1)
+
         results_group = QGroupBox("Campaign results")
         results_layout = QVBoxLayout(results_group)
         self.resultsSummary = QLabel("Results: not run")
@@ -233,6 +239,7 @@ class CampaignWidget(QWidget):
         results_layout.addWidget(self.resultsSummary)
         results_layout.addWidget(self.progressBar)
         results_layout.addWidget(self.resultsTable)
+        execution_layout.addWidget(execution_settings_group)
         execution_layout.addWidget(results_group)
 
         self.campaignSplitter = QSplitter(Qt.Orientation.Vertical)
@@ -445,7 +452,6 @@ class CampaignWidget(QWidget):
 
     def preview_runs(self) -> None:
         """Render the generated run matrix without writing files."""
-        self._refresh_executable_label()
         try:
             plan = self._build_plan()
             runs = self._generate_runs(plan)
@@ -463,7 +469,6 @@ class CampaignWidget(QWidget):
 
     def save_campaign_as(self) -> None:
         """Write campaign input cards to a user-selected directory."""
-        self._refresh_executable_label()
         selection = self._select_output_directory("Select campaign output directory")
         if selection is None:
             return
@@ -488,7 +493,6 @@ class CampaignWidget(QWidget):
 
     def open_campaign(self) -> None:
         """Load a previously generated campaign directory."""
-        self._refresh_executable_label()
         directory = QFileDialog.getExistingDirectory(self, "Select campaign directory")
         if not directory:
             return
@@ -508,7 +512,6 @@ class CampaignWidget(QWidget):
         if self._campaign_thread is not None:
             self._show_error("Campaign already running", "Wait for the current campaign run to finish.")
             return
-        self._refresh_executable_label()
         selection = self._select_output_directory("Select campaign run directory")
         if selection is None:
             return
@@ -518,7 +521,7 @@ class CampaignWidget(QWidget):
         self._set_campaign_running(True)
         self.resultsSummary.setText(f"Results: running campaign in {directory}")
         thread = QThread(self)
-        worker = CampaignRunWorker(plan, directory, self._get_magboltz_executable())
+        worker = CampaignRunWorker(plan, directory, self._campaign_magboltz_executable())
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
         worker.progress.connect(self._on_campaign_run_progress)
@@ -621,16 +624,16 @@ class CampaignWidget(QWidget):
         self._load_sweep_rows(manifest)
         return CampaignPlan(base_cards=base_cards, parameters=self._read_parameters())
 
-    def _refresh_executable_label(self) -> None:
-        executable = self._get_magboltz_executable()
-        self.executableLabel.setText(f"Magboltz executable: {executable}")
-        self.executableLabel.setToolTip(
-            "Executable used by Run campaign. It matches the main Magboltz command path."
-        )
+    def _campaign_magboltz_executable(self) -> str:
+        executable = self.executableInput.text().strip()
+        return executable or self._get_magboltz_executable()
+
+    def _sync_executable_from_settings(self) -> None:
+        self.executableInput.setText(self._get_magboltz_executable())
 
     def refresh_executable(self) -> None:
         """Refresh the displayed executable after preferences change."""
-        self._refresh_executable_label()
+        self._sync_executable_from_settings()
 
     def _load_sweep_rows(self, manifest: dict) -> None:
         sweeps = manifest.get("sweeps")

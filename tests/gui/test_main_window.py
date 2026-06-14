@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
     QDialog,
     QDoubleSpinBox,
     QFileDialog,
+    QLineEdit,
     QMessageBox,
     QSizePolicy,
     QSplitter,
@@ -52,7 +53,9 @@ def test_main_window_initializes_default_input_card(qtbot) -> None:
     assert window.mainTab.tabText(window.mainTab.indexOf(window.campaignExecutionTab)) == "Execution"
     assert window.campaignExecutionTab is window.campaignTab.executionTab
     assert window.actionPreferences.text() == "Preferences..."
-    assert window.campaignTab.executableLabel.text().startswith("Magboltz executable: ")
+    assert window.campaignTab.executableLabel.text() == "Magboltz executable"
+    assert isinstance(window.campaignTab.executableInput, QLineEdit)
+    assert window.campaignTab.executableInput.text()
     assert not hasattr(window.campaignTab, "btnOpen")
     assert not hasattr(window.campaignTab, "btnGenerate")
     assert not hasattr(window.campaignTab, "btnRun")
@@ -269,7 +272,7 @@ def test_preferences_updates_magboltz_executable(qtbot, monkeypatch, tmp_path: P
 
     assert window.magboltzPath == executable
     assert window.commandLine.text() == f"{executable} < {input_path}"
-    assert window.campaignTab.executableLabel.text() == f"Magboltz executable: {executable}"
+    assert window.campaignTab.executableInput.text() == str(executable)
 
 
 def test_main_window_open_result_file_populates_parsed_result(qtbot, monkeypatch, reference_output_text: str, tmp_path: Path) -> None:
@@ -750,6 +753,7 @@ def test_campaign_tab_generates_large_campaign_after_confirmation(qtbot, monkeyp
 
 def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_path: Path) -> None:
     messages: list[tuple[str, str]] = []
+    executables: list[str] = []
 
     class FakeResult:
         def __init__(self, ok: bool) -> None:
@@ -757,7 +761,7 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
 
     class FakeRunner:
         def __init__(self, *args, **kwargs) -> None:
-            pass
+            executables.append(str(kwargs["executable"]))
 
         def run(self, plan, output_dir: Path, progress_callback=None, cancel_callback=None):
             output_dir.mkdir(parents=True, exist_ok=True)
@@ -774,6 +778,7 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
     window.show()
     campaign = window.campaignTab
     campaign.sweepTable.setRowCount(0)
+    campaign.executableInput.setText("/opt/magboltz/bin/magboltz")
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
     monkeypatch.setattr(campaign, "_show_info", lambda title, message: messages.append((title, message)))
     monkeypatch.setattr(campaign_widget, "SerialCampaignRunner", FakeRunner)
@@ -793,6 +798,7 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
     qtbot.waitUntil(lambda: bool(messages), timeout=3000)
 
     assert (tmp_path / "run_0001" / "stdout.txt").is_file()
+    assert executables == ["/opt/magboltz/bin/magboltz"]
     assert messages[0][0] == "Campaign run finished"
     assert "Executed 2 runs" in messages[0][1]
     assert "OK: 1" in messages[0][1]
