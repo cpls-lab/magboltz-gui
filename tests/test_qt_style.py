@@ -7,11 +7,11 @@ import sys
 from magboltz_gui.util import qt_style
 
 
-def test_platform_theme_candidates_avoid_qt6ct_on_gnome(monkeypatch) -> None:
+def test_platform_theme_candidates_avoid_platform_theme_on_gnome(monkeypatch) -> None:
     monkeypatch.setenv("XDG_CURRENT_DESKTOP", "GNOME")
     monkeypatch.delenv("XDG_SESSION_DESKTOP", raising=False)
 
-    assert qt_style._platform_theme_candidates() == ("gtk3",)
+    assert qt_style._platform_theme_candidates() == ()
 
 
 def test_platform_theme_candidates_keep_qt6ct_off_gnome(monkeypatch) -> None:

@@ -12,8 +12,9 @@ Principles
 ----------
 - Never override user choices: if env vars are already set, do nothing.
 - Only set a platform theme if the matching plugin is actually present.
-- Prefer gtk3 on GNOME. Avoid auto-selecting qt6ct on GNOME because an
-  unconfigured qt6ct setup can emit noisy palette/font diagnostics on stderr.
+- On GNOME, do not auto-select a platform theme. Prefer the Adwaita style
+  fallback after QApplication creation; platform themes can make widgets look
+  disabled or emit noisy diagnostics depending on local setup.
 - After QApplication is created, nudge the style away from Fusion if a better
   style is available.
 """
@@ -53,7 +54,7 @@ def _is_gnome_desktop() -> bool:
 
 def _platform_theme_candidates() -> tuple[str, ...]:
     if _is_gnome_desktop():
-        return ("gtk3",)
+        return ()
     return ("qt6ct", "gtk3")
 
 
