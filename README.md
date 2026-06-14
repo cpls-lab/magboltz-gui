@@ -44,7 +44,7 @@ uv pip install -e ".[qt]"
 # Debian/Ubuntu: install system PyQt6
 sudo apt install python3-pyqt6
 # Recommended for proper theming on GNOME/Wayland:
-#   sudo apt install qt6-gtk-platformtheme qt6ct adwaita-qt6
+#   sudo apt install qt6-gtk-platformtheme adwaita-qt6
 ```
 and then:
 ```bash
@@ -69,7 +69,7 @@ pip install -e ".[qt]"
 # Debian/Ubuntu: install system PyQt6
 sudo apt install python3-pyqt6
 # Recommended for proper theming on GNOME/Wayland:
-#   sudo apt install qt6-gtk-platformtheme qt6ct adwaita-qt6
+#   sudo apt install qt6-gtk-platformtheme adwaita-qt6
 ```
 and then:
 ```bash
@@ -94,14 +94,13 @@ regression reference is based on `MAGBOLTZ 2 VERSION 11.19`.
 #### Linux theming note
 - The app auto-detects platform themes on Linux and will log what it picks.
 - On Debian/GNOME, `qt6-gtk-platformtheme` alone may still leave Qt in a
-  Fusion-looking or disabled-looking style. Installing either `qt6ct` or
-  `adwaita-qt6` fixes this on tested systems.
-- If your desktop still looks “Fusion/disabled”, you can force the `qt6ct`
-  theme selector:
+  Fusion-looking or disabled-looking style. Installing `adwaita-qt6` fixes
+  this on tested systems.
+- If you explicitly prefer `qt6ct`, you can force it:
   ```bash
   QT_QPA_PLATFORMTHEME=qt6ct magboltz-gui
   ```
-  (assuming `qt6ct` is installed)
+  (assuming `qt6ct` is installed and configured)
 
 ---
 

@@ -12,7 +12,8 @@ Principles
 ----------
 - Never override user choices: if env vars are already set, do nothing.
 - Only set a platform theme if the matching plugin is actually present.
-- Prefer qt6ct (good GNOME integration), then gtk3; otherwise leave defaults.
+- Prefer gtk3 on GNOME. Avoid auto-selecting qt6ct on GNOME because an
+  unconfigured qt6ct setup can emit noisy palette/font diagnostics on stderr.
 - After QApplication is created, nudge the style away from Fusion if a better
   style is available.
 """
@@ -28,7 +29,7 @@ from typing import Optional
 def _detect_platform_theme_plugin() -> Optional[str]:
     """
     Return a platform theme plugin key we can set via QT_QPA_PLATFORMTHEME, or None.
-    Prefers qt6ct, then gtk3. Best-effort: if detection fails, return None.
+    Best-effort: if detection fails, return None.
     """
     try:
         from PyQt6.QtCore import QLibraryInfo
@@ -37,17 +38,29 @@ def _detect_platform_theme_plugin() -> Optional[str]:
     except Exception:
         return None
 
-    candidates = ("qt6ct", "gtk3")
+    candidates = _platform_theme_candidates()
     for cand in candidates:
         if any(cand in p.name.lower() for p in plug_dir.glob("libq*.so")):
             return cand
     return None
 
 
+def _is_gnome_desktop() -> bool:
+    current = os.environ.get("XDG_CURRENT_DESKTOP", "")
+    session = os.environ.get("XDG_SESSION_DESKTOP", "")
+    return "gnome" in f"{current}:{session}".lower()
+
+
+def _platform_theme_candidates() -> tuple[str, ...]:
+    if _is_gnome_desktop():
+        return ("gtk3",)
+    return ("qt6ct", "gtk3")
+
+
 def set_linux_platform_theme_env_if_available() -> None:
     """
     If on Linux and the user hasn't set QT_QPA_PLATFORMTHEME, set it to a detected
-    platform theme plugin (qt6ct or gtk3) when available.
+    platform theme plugin when available.
     """
     if not sys.platform.startswith("linux"):
         return
