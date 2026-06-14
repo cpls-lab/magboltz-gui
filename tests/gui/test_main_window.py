@@ -56,6 +56,8 @@ def test_main_window_initializes_default_input_card(qtbot) -> None:
     assert window.campaignTab.executableLabel.text() == "Magboltz executable"
     assert isinstance(window.campaignTab.executableInput, QLineEdit)
     assert window.campaignTab.executableInput.text()
+    assert not window.campaignTab.btnExportResults.isEnabled()
+    assert not window.campaignTab.btnPlotSelectedRun.isEnabled()
     assert not hasattr(window.campaignTab, "btnOpen")
     assert not hasattr(window.campaignTab, "btnGenerate")
     assert not hasattr(window.campaignTab, "btnRun")
@@ -842,6 +844,74 @@ def test_campaign_tab_opens_saved_campaign_results(qtbot, monkeypatch, tmp_path:
     assert campaign.resultsTable.item(0, 0).text() == "run_0001"
     assert campaign.resultsTable.item(0, 1).text() == "failed"
     assert campaign.resultsTable.item(0, 2).text() == "1"
+    assert campaign.btnExportResults.isEnabled()
+    assert not campaign.btnPlotSelectedRun.isEnabled()
+
+
+def test_campaign_tab_exports_visible_results_table(qtbot, monkeypatch, tmp_path: Path) -> None:
+    messages: list[tuple[str, str]] = []
+    campaign_dir = tmp_path / "campaign"
+    export_path = tmp_path / "campaign_results.csv"
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(campaign_dir))
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *args, **kwargs: (str(export_path), "CSV files (*.csv)"))
+    monkeypatch.setattr(campaign, "_show_info", lambda title, message: messages.append((title, message)))
+
+    campaign.add_sweep_row(
+        parameter_path="electric_field",
+        sweep_type="values",
+        values="100",
+    )
+    campaign.generate_input_cards()
+    campaign._populate_results_from_directory(campaign_dir)
+    campaign.export_campaign_results()
+
+    assert export_path.is_file()
+    assert export_path.read_text(encoding="utf-8").splitlines()[:2] == [
+        "run_id,status,returncode,electric_field,vz_um_ns,mean_energy_eV,stdout,stderr",
+        "run_0001,pending,,100,,,,",
+    ]
+    assert messages[-1][0] == "Campaign results exported"
+
+
+def test_campaign_tab_plots_selected_campaign_run(
+    qtbot,
+    monkeypatch,
+    tmp_path: Path,
+    reference_output_text: str,
+) -> None:
+    opened = []
+    campaign_dir = tmp_path / "campaign"
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(campaign_dir))
+    monkeypatch.setattr(campaign, "_show_info", lambda title, message: None)
+    monkeypatch.setattr(campaign, "_open_plot_window", lambda run: opened.append(run))
+
+    campaign.add_sweep_row(
+        parameter_path="electric_field",
+        sweep_type="values",
+        values="100",
+    )
+    campaign.generate_input_cards()
+    (campaign_dir / "run_0001" / "stdout.txt").write_text(reference_output_text, encoding="utf-8")
+    campaign._populate_results_from_directory(campaign_dir)
+    campaign.resultsTable.setCurrentCell(0, 0)
+
+    assert campaign.btnPlotSelectedRun.isEnabled()
+
+    campaign.plot_selected_campaign_run()
+
+    assert len(opened) == 1
+    assert opened[0].transport.vz_um_ns is not None
+    assert opened[0].transport.vz_um_ns.v_um_ns == pytest.approx(29.43)
 
 
 def test_campaign_tab_reports_missing_magboltz_executable(qtbot, monkeypatch, tmp_path: Path) -> None:

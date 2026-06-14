@@ -225,6 +225,19 @@ class CampaignWidget(QWidget):
         results_group = QGroupBox("Campaign results")
         results_layout = QVBoxLayout(results_group)
         self.resultsSummary = QLabel("Results: not run")
+        results_actions = QHBoxLayout()
+        results_actions.addWidget(self.resultsSummary)
+        results_actions.addStretch(1)
+        self.btnExportResults = QPushButton("Export results...")
+        self.btnExportResults.setEnabled(False)
+        self.btnExportResults.setToolTip("Export the visible campaign results table to CSV.")
+        self.btnExportResults.clicked.connect(self.export_campaign_results)
+        self.btnPlotSelectedRun = QPushButton("Plot selected run...")
+        self.btnPlotSelectedRun.setEnabled(False)
+        self.btnPlotSelectedRun.setToolTip("Open the existing plot window for the selected campaign run.")
+        self.btnPlotSelectedRun.clicked.connect(self.plot_selected_campaign_run)
+        results_actions.addWidget(self.btnExportResults)
+        results_actions.addWidget(self.btnPlotSelectedRun)
         self.progressBar = QProgressBar()
         self.progressBar.setMinimum(0)
         self.progressBar.setMaximum(1)
@@ -236,7 +249,8 @@ class CampaignWidget(QWidget):
         results_header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.resultsTable.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.resultsTable.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        results_layout.addWidget(self.resultsSummary)
+        self.resultsTable.itemSelectionChanged.connect(self._update_result_action_state)
+        results_layout.addLayout(results_actions)
         results_layout.addWidget(self.progressBar)
         results_layout.addWidget(self.resultsTable)
         execution_layout.addWidget(execution_settings_group)
@@ -547,6 +561,62 @@ class CampaignWidget(QWidget):
         self.progressBar.setFormat("Stopping campaign...")
         self.resultsSummary.setText("Results: stopping campaign")
 
+    def export_campaign_results(self) -> None:
+        """Export the currently visible campaign result table to CSV."""
+        if self.resultsTable.rowCount() == 0:
+            self._show_error("Export campaign results failed", "No campaign results are available.")
+            return
+        default_path = "campaign_results.csv"
+        if self._current_campaign_dir is not None:
+            default_path = str(self._current_campaign_dir / default_path)
+        filename, _selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "Export campaign results",
+            default_path,
+            "CSV files (*.csv);;All files (*)",
+        )
+        if not filename:
+            return
+
+        path = Path(filename)
+        try:
+            with path.open("w", newline="", encoding="utf-8") as handle:
+                writer = csv.writer(handle)
+                writer.writerow(self._results_table_headers())
+                for row in range(self.resultsTable.rowCount()):
+                    writer.writerow(
+                        [self._results_cell_text(row, column) for column in range(self.resultsTable.columnCount())]
+                    )
+        except Exception as exc:
+            self._show_error("Export campaign results failed", str(exc))
+            return
+        self._show_info("Campaign results exported", f"Exported {self.resultsTable.rowCount()} rows to:\n{path}")
+
+    def plot_selected_campaign_run(self) -> None:
+        """Open plots for the selected campaign run stdout."""
+        row = self.resultsTable.currentRow()
+        if row < 0:
+            self._show_error("Plot campaign run failed", "Select a campaign result row first.")
+            return
+        stdout_column = self._result_column_index("stdout")
+        if stdout_column < 0:
+            self._show_error("Plot campaign run failed", "The campaign result table does not contain stdout paths.")
+            return
+
+        stdout_path = Path(self._results_cell_text(row, stdout_column))
+        if not stdout_path.is_file():
+            self._show_error("Plot campaign run failed", "The selected run does not have a readable stdout file.")
+            return
+        input_path = stdout_path.parent / "input.in"
+        try:
+            stdout_text = stdout_path.read_text(encoding="utf-8")
+            input_text = input_path.read_text(encoding="utf-8") if input_path.is_file() else None
+            run = parse_magboltz_output(stdout_text, input_text=input_text, input_path=input_path.as_posix())
+        except Exception as exc:
+            self._show_error("Plot campaign run failed", str(exc))
+            return
+        self._open_plot_window(run)
+
     def _on_campaign_run_progress(self, completed: int, total: int, run_id: str) -> None:
         self.progressBar.setMaximum(max(total, 1))
         self.progressBar.setValue(completed)
@@ -791,6 +861,7 @@ class CampaignWidget(QWidget):
         self.resultsSummary.setText(summary)
         self.resultsTable.setColumnCount(0)
         self.resultsTable.setRowCount(0)
+        self._update_result_action_state()
 
     def _populate_results_from_execution(self, results, directory: Path) -> None:
         summary_rows = _read_csv_dicts(directory / "summary.csv")
@@ -875,6 +946,36 @@ class CampaignWidget(QWidget):
         self.resultsSummary.setText(
             f"Results: {len(summary_rows)} runs; done: {ok_count}; failed: {failed_count}; pending: {pending_count}"
         )
+        self._update_result_action_state()
+
+    def _update_result_action_state(self) -> None:
+        has_results = self.resultsTable.rowCount() > 0
+        self.btnExportResults.setEnabled(has_results)
+        self.btnPlotSelectedRun.setEnabled(has_results and self.resultsTable.currentRow() >= 0)
+
+    def _results_table_headers(self) -> list[str]:
+        headers: list[str] = []
+        for column in range(self.resultsTable.columnCount()):
+            item = self.resultsTable.horizontalHeaderItem(column)
+            headers.append(item.text() if item is not None else "")
+        return headers
+
+    def _result_column_index(self, name: str) -> int:
+        for column, header in enumerate(self._results_table_headers()):
+            if header == name:
+                return column
+        return -1
+
+    def _results_cell_text(self, row: int, column: int) -> str:
+        item = self.resultsTable.item(row, column)
+        return item.text() if item is not None else ""
+
+    def _open_plot_window(self, run) -> None:
+        from magboltz_gui.window.plots_window import PlotsWindow
+
+        window = PlotsWindow(run, self)
+        window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        window.show()
 
 
 def _parse_values(text: str) -> list[float | int | bool | str]:
