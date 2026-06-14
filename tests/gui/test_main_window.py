@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QItemSelectionModel, Qt
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -58,6 +58,7 @@ def test_main_window_initializes_default_input_card(qtbot) -> None:
     assert window.campaignTab.executableInput.text()
     assert not window.campaignTab.btnExportResults.isEnabled()
     assert not window.campaignTab.btnPlotSelectedRun.isEnabled()
+    assert not window.campaignTab.btnPlotCampaign.isEnabled()
     assert not hasattr(window.campaignTab, "btnOpen")
     assert not hasattr(window.campaignTab, "btnGenerate")
     assert not hasattr(window.campaignTab, "btnRun")
@@ -856,6 +857,7 @@ def test_campaign_tab_opens_saved_campaign_results(qtbot, monkeypatch, tmp_path:
     assert campaign.resultsTable.item(0, 2).text() == "1"
     assert campaign.btnExportResults.isEnabled()
     assert not campaign.btnPlotSelectedRun.isEnabled()
+    assert campaign.btnPlotCampaign.isEnabled()
 
 
 def test_campaign_tab_opens_partial_campaign_results(
@@ -964,6 +966,80 @@ def test_campaign_tab_plots_selected_campaign_run(
     assert len(opened) == 1
     assert opened[0].transport.vz_um_ns is not None
     assert opened[0].transport.vz_um_ns.v_um_ns == pytest.approx(29.43)
+
+
+def test_campaign_tab_plot_selected_run_requires_exactly_one_row(
+    qtbot,
+    monkeypatch,
+    tmp_path: Path,
+    reference_output_text: str,
+) -> None:
+    errors: list[tuple[str, str]] = []
+    campaign_dir = tmp_path / "campaign"
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(campaign_dir))
+    monkeypatch.setattr(campaign, "_show_info", lambda title, message: None)
+    monkeypatch.setattr(campaign, "_show_error", lambda title, message: errors.append((title, message)))
+
+    campaign.add_sweep_row(
+        parameter_path="electric_field",
+        sweep_type="values",
+        values="100, 200",
+    )
+    campaign.generate_input_cards()
+    for run_id in ("run_0001", "run_0002"):
+        (campaign_dir / run_id / "stdout.txt").write_text(reference_output_text, encoding="utf-8")
+    campaign._populate_results_from_directory(campaign_dir)
+    selection = campaign.resultsTable.selectionModel()
+    assert selection is not None
+    selection.select(
+        campaign.resultsTable.model().index(0, 0),
+        QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows,
+    )
+    selection.select(
+        campaign.resultsTable.model().index(1, 0),
+        QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows,
+    )
+
+    assert not campaign.btnPlotSelectedRun.isEnabled()
+
+    campaign.plot_selected_campaign_run()
+
+    assert errors == [("Plot campaign run failed", "Select exactly one campaign result row first.")]
+
+
+def test_campaign_tab_opens_generic_campaign_plot_with_selected_scope(qtbot, monkeypatch, tmp_path: Path) -> None:
+    opened = []
+    campaign_dir = tmp_path / "campaign"
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(campaign_dir))
+    monkeypatch.setattr(campaign, "_show_info", lambda title, message: None)
+    monkeypatch.setattr(campaign, "_open_campaign_plot_window", lambda dataset: opened.append(dataset))
+
+    campaign.add_sweep_row(
+        parameter_path="electric_field",
+        sweep_type="values",
+        values="100, 200",
+    )
+    campaign.generate_input_cards()
+    campaign._populate_results_from_directory(campaign_dir)
+    campaign.resultsTable.selectRow(1)
+
+    assert campaign.btnPlotCampaign.isEnabled()
+
+    campaign.plot_campaign_results()
+
+    assert len(opened) == 1
+    assert [row["run_id"] for row in opened[0].all_rows] == ["run_0001", "run_0002"]
+    assert [row["run_id"] for row in opened[0].selected_rows] == ["run_0002"]
 
 
 def test_campaign_tab_reports_missing_magboltz_executable(qtbot, monkeypatch, tmp_path: Path) -> None:

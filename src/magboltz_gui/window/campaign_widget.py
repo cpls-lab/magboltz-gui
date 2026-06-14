@@ -240,8 +240,13 @@ class CampaignWidget(QWidget):
         self.btnPlotSelectedRun.setEnabled(False)
         self.btnPlotSelectedRun.setToolTip("Open the existing plot window for the selected campaign run.")
         self.btnPlotSelectedRun.clicked.connect(self.plot_selected_campaign_run)
+        self.btnPlotCampaign = QPushButton("Plot campaign...")
+        self.btnPlotCampaign.setEnabled(False)
+        self.btnPlotCampaign.setToolTip("Plot numeric campaign columns for all runs or the selected runs.")
+        self.btnPlotCampaign.clicked.connect(self.plot_campaign_results)
         results_actions.addWidget(self.btnExportResults)
         results_actions.addWidget(self.btnPlotSelectedRun)
+        results_actions.addWidget(self.btnPlotCampaign)
         self.progressBar = QProgressBar()
         self.progressBar.setMinimum(0)
         self.progressBar.setMaximum(1)
@@ -253,6 +258,7 @@ class CampaignWidget(QWidget):
         results_header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.resultsTable.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.resultsTable.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.resultsTable.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.resultsTable.itemSelectionChanged.connect(self._update_result_action_state)
         results_layout.addLayout(results_actions)
         results_layout.addWidget(self.progressBar)
@@ -600,10 +606,11 @@ class CampaignWidget(QWidget):
 
     def plot_selected_campaign_run(self) -> None:
         """Open plots for the selected campaign run stdout."""
-        row = self.resultsTable.currentRow()
-        if row < 0:
-            self._show_error("Plot campaign run failed", "Select a campaign result row first.")
+        selected_rows = self._selected_result_rows()
+        if len(selected_rows) != 1:
+            self._show_error("Plot campaign run failed", "Select exactly one campaign result row first.")
             return
+        row = selected_rows[0]
         stdout_column = self._result_column_index("stdout")
         if stdout_column < 0:
             self._show_error("Plot campaign run failed", "The campaign result table does not contain stdout paths.")
@@ -622,6 +629,19 @@ class CampaignWidget(QWidget):
             self._show_error("Plot campaign run failed", str(exc))
             return
         self._open_plot_window(run)
+
+    def plot_campaign_results(self) -> None:
+        """Open a generic X/Y plot dialog for campaign result columns."""
+        if self.resultsTable.rowCount() == 0:
+            self._show_error("Plot campaign failed", "No campaign results are available.")
+            return
+        from magboltz_gui.window.campaign_plot_window import CampaignPlotDataset
+
+        dataset = CampaignPlotDataset(
+            all_rows=self._result_rows(),
+            selected_rows=[self._result_row(row) for row in self._selected_result_rows()],
+        )
+        self._open_campaign_plot_window(dataset)
 
     def _on_campaign_run_progress(self, completed: int, total: int, run_id: str) -> None:
         self.progressBar.setMaximum(max(total, 1))
@@ -967,8 +987,10 @@ class CampaignWidget(QWidget):
 
     def _update_result_action_state(self) -> None:
         has_results = self.resultsTable.rowCount() > 0
+        selected_count = len(self._selected_result_rows())
         self.btnExportResults.setEnabled(has_results)
-        self.btnPlotSelectedRun.setEnabled(has_results and self.resultsTable.currentRow() >= 0)
+        self.btnPlotSelectedRun.setEnabled(has_results and selected_count == 1)
+        self.btnPlotCampaign.setEnabled(has_results)
 
     def _results_table_headers(self) -> list[str]:
         headers: list[str] = []
@@ -987,10 +1009,28 @@ class CampaignWidget(QWidget):
         item = self.resultsTable.item(row, column)
         return item.text() if item is not None else ""
 
+    def _selected_result_rows(self) -> list[int]:
+        rows = {index.row() for index in self.resultsTable.selectedIndexes()}
+        return sorted(rows)
+
+    def _result_rows(self) -> list[dict[str, str]]:
+        return [self._result_row(row) for row in range(self.resultsTable.rowCount())]
+
+    def _result_row(self, row: int) -> dict[str, str]:
+        headers = self._results_table_headers()
+        return {header: self._results_cell_text(row, column) for column, header in enumerate(headers)}
+
     def _open_plot_window(self, run) -> None:
         from magboltz_gui.window.plots_window import PlotsWindow
 
         window = PlotsWindow(run, self)
+        window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        window.show()
+
+    def _open_campaign_plot_window(self, dataset) -> None:
+        from magboltz_gui.window.campaign_plot_window import CampaignPlotWindow
+
+        window = CampaignPlotWindow(dataset, self)
         window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         window.show()
 
