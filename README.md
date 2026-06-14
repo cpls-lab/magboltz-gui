@@ -93,8 +93,9 @@ regression reference is based on `MAGBOLTZ 2 VERSION 11.19`.
 
 #### Linux theming note
 - The app auto-detects platform themes on Linux and will log what it picks.
-- On Debian/GNOME, installing `adwaita-qt6` lets the app use the native-looking
-  Adwaita Qt style without forcing `qt6ct`.
+- On Debian/GNOME, the app keeps Qt's Fusion style and applies an explicit
+  readable palette. This avoids `qt6ct` diagnostics and Adwaita/GTK variants
+  that can make enabled controls look disabled on some setups.
 - If you explicitly prefer `qt6ct`, you can force it:
   ```bash
   QT_QPA_PLATFORMTHEME=qt6ct magboltz-gui

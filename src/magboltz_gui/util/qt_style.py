@@ -12,9 +12,9 @@ Principles
 ----------
 - Never override user choices: if env vars are already set, do nothing.
 - Only set a platform theme if the matching plugin is actually present.
-- On GNOME, do not auto-select a platform theme. Prefer the Adwaita style
-  fallback after QApplication creation; platform themes can make widgets look
-  disabled or emit noisy diagnostics depending on local setup.
+- On GNOME, do not auto-select a platform theme. Keep Fusion but apply an
+  explicit readable palette; Adwaita/GTK/qt6ct can look disabled or emit noisy
+  diagnostics depending on local setup.
 - After QApplication is created, nudge the style away from Fusion if a better
   style is available.
 """
@@ -90,6 +90,11 @@ def apply_linux_style_fallback(app: object) -> None:
         print(f"[magboltz-gui] Qt style remains: {style_now}", file=sys.stderr)
         return
 
+    if _is_gnome_desktop():
+        _apply_gnome_fusion_palette(app)
+        print("[magboltz-gui] Qt style remains: fusion with GNOME-readable palette", file=sys.stderr)
+        return
+
     available = [s.lower() for s in QStyleFactory.keys()]
     for candidate in ("adwaita", "breeze"):
         if candidate in available and candidate != style_now:
@@ -98,3 +103,24 @@ def apply_linux_style_fallback(app: object) -> None:
             break
     else:
         print(f"[magboltz-gui] Qt style remains: {style_now}", file=sys.stderr)
+
+
+def _apply_gnome_fusion_palette(app: object) -> None:
+    """Apply an explicit light palette that keeps Fusion controls visibly enabled on GNOME."""
+    from PyQt6.QtGui import QColor, QPalette
+
+    palette = QPalette()
+    palette.setColor(QPalette.ColorRole.Window, QColor("#f0f0f0"))
+    palette.setColor(QPalette.ColorRole.WindowText, QColor("#202020"))
+    palette.setColor(QPalette.ColorRole.Base, QColor("#ffffff"))
+    palette.setColor(QPalette.ColorRole.AlternateBase, QColor("#f6f6f6"))
+    palette.setColor(QPalette.ColorRole.Text, QColor("#202020"))
+    palette.setColor(QPalette.ColorRole.Button, QColor("#e6e6e6"))
+    palette.setColor(QPalette.ColorRole.ButtonText, QColor("#202020"))
+    palette.setColor(QPalette.ColorRole.Highlight, QColor("#2a76d2"))
+    palette.setColor(QPalette.ColorRole.HighlightedText, QColor("#ffffff"))
+    palette.setColor(QPalette.ColorRole.PlaceholderText, QColor("#707070"))
+    palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, QColor("#808080"))
+    palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, QColor("#808080"))
+    palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, QColor("#808080"))
+    app.setPalette(palette)
