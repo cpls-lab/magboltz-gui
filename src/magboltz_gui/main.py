@@ -13,7 +13,6 @@ from magboltz_gui.util.qt_style import (
     apply_linux_style_fallback,
     set_linux_platform_theme_env_if_available,
 )
-from magboltz_gui.util.qt_messages import install_qt_message_filter
 from magboltz_gui.util.icon_theme import ensure_icon_theme
 
 
@@ -22,7 +21,6 @@ def main() -> None:
 
     # Best-effort platform theme/style setup (Linux) without overriding user choices.
     set_linux_platform_theme_env_if_available()
-    install_qt_message_filter()
 
     from PyQt6.QtGui import QIcon
     from PyQt6.QtWidgets import QApplication
