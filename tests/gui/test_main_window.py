@@ -354,6 +354,37 @@ def test_campaign_tab_uses_splitter_between_sweeps_and_preview(qtbot) -> None:
     assert splitter.sizes()[0] < splitter.sizes()[1]
 
 
+def test_campaign_tab_moves_selected_sweep_rows(qtbot) -> None:
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+    campaign.add_sweep_row(parameter_path="electric_field", sweep_type="values", values="100", label="field")
+    campaign.add_sweep_row(parameter_path="gas_pressure", sweep_type="linear", values="1", stop="2", points="2", label="pressure")
+
+    campaign.sweepTable.setCurrentCell(1, 0)
+    campaign.move_selected_sweep_up()
+
+    first_parameter = campaign.sweepTable.cellWidget(0, 1)
+    second_parameter = campaign.sweepTable.cellWidget(1, 1)
+    assert isinstance(first_parameter, QComboBox)
+    assert isinstance(second_parameter, QComboBox)
+    assert first_parameter.currentData() == "gas_pressure"
+    assert second_parameter.currentData() == "electric_field"
+    assert campaign.sweepTable.currentRow() == 0
+
+    campaign.move_selected_sweep_down()
+
+    first_parameter = campaign.sweepTable.cellWidget(0, 1)
+    second_parameter = campaign.sweepTable.cellWidget(1, 1)
+    assert isinstance(first_parameter, QComboBox)
+    assert isinstance(second_parameter, QComboBox)
+    assert first_parameter.currentData() == "electric_field"
+    assert second_parameter.currentData() == "gas_pressure"
+    assert campaign.sweepTable.currentRow() == 1
+
+
 def test_campaign_tab_generates_input_cards(qtbot, monkeypatch, tmp_path: Path) -> None:
     messages: list[tuple[str, str]] = []
     window = MagboltzGUI()

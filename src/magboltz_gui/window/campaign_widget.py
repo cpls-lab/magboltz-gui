@@ -169,11 +169,25 @@ class CampaignWidget(QWidget):
         self.btnRemoveSweep.setIconSize(QSize(20, 20))
         self.btnRemoveSweep.setToolTip("Remove selected sweep")
         self.btnRemoveSweep.setText("Remove selected")
+        self.btnMoveSweepUp = QToolButton()
+        self.btnMoveSweepUp.setIcon(_sweep_icon("up"))
+        self.btnMoveSweepUp.setIconSize(QSize(20, 20))
+        self.btnMoveSweepUp.setToolTip("Move selected sweep up")
+        self.btnMoveSweepUp.setText("Move up")
+        self.btnMoveSweepDown = QToolButton()
+        self.btnMoveSweepDown.setIcon(_sweep_icon("down"))
+        self.btnMoveSweepDown.setIconSize(QSize(20, 20))
+        self.btnMoveSweepDown.setToolTip("Move selected sweep down")
+        self.btnMoveSweepDown.setText("Move down")
         self.btnAddSweep.clicked.connect(self.add_default_sweep_row)
         self.btnRemoveSweep.clicked.connect(self.remove_selected_sweep)
+        self.btnMoveSweepUp.clicked.connect(self.move_selected_sweep_up)
+        self.btnMoveSweepDown.clicked.connect(self.move_selected_sweep_down)
         sweep_buttons.addWidget(self.btnAddSweep)
         sweep_buttons.addWidget(self.btnRemoveSweep)
         sweep_buttons.addStretch(1)
+        sweep_buttons.addWidget(self.btnMoveSweepUp)
+        sweep_buttons.addWidget(self.btnMoveSweepDown)
         sweep_layout.addWidget(self.sweepTable)
         sweep_layout.addLayout(sweep_buttons)
 
@@ -312,6 +326,53 @@ class CampaignWidget(QWidget):
         row = self.sweepTable.currentRow()
         if row >= 0:
             self.sweepTable.removeRow(row)
+
+    def move_selected_sweep_up(self) -> None:
+        """Move the selected sweep row one slot up."""
+        self._move_selected_sweep(-1)
+
+    def move_selected_sweep_down(self) -> None:
+        """Move the selected sweep row one slot down."""
+        self._move_selected_sweep(1)
+
+    def _move_selected_sweep(self, direction: int) -> None:
+        row = self.sweepTable.currentRow()
+        target_row = row + direction
+        if row < 0 or target_row < 0 or target_row >= self.sweepTable.rowCount():
+            return
+
+        rows = [self._sweep_row_state(index) for index in range(self.sweepTable.rowCount())]
+        rows[row], rows[target_row] = rows[target_row], rows[row]
+
+        self.sweepTable.setRowCount(0)
+        for row_state in rows:
+            self.add_sweep_row(**row_state)
+        self.sweepTable.setCurrentCell(target_row, 0)
+
+    def _sweep_row_state(self, row: int) -> dict:
+        enabled_widget = self.sweepTable.cellWidget(row, 0)
+        parameter_combo = self.sweepTable.cellWidget(row, 1)
+        mode_combo = self.sweepTable.cellWidget(row, 2)
+        sweep_combo = self.sweepTable.cellWidget(row, 3)
+        enabled = enabled_widget.isChecked() if isinstance(enabled_widget, QCheckBox) else True
+        parameter_path = str(parameter_combo.currentData()) if isinstance(parameter_combo, QComboBox) else "electric_field"
+        mode = (
+            SweepMode(str(mode_combo.currentData()))
+            if isinstance(mode_combo, QComboBox)
+            else SweepMode.PRODUCT
+        )
+        sweep_type = sweep_combo.currentText() if isinstance(sweep_combo, QComboBox) else "values"
+        values = self._cell_text(row, 4) if sweep_type == "values" else self._cell_text(row, 5)
+        return {
+            "parameter_path": parameter_path,
+            "sweep_type": sweep_type,
+            "values": values,
+            "stop": self._cell_text(row, 6),
+            "points": self._cell_text(row, 7),
+            "label": self._cell_text(row, 8),
+            "mode": mode,
+            "enabled": enabled,
+        }
 
     def _apply_mode_constraints(self, parameter_combo: QComboBox, mode_combo: QComboBox) -> None:
         path = str(parameter_combo.currentData())
@@ -953,11 +1014,13 @@ def _product_size(sizes: list[int]) -> int:
 
 def _sweep_icon(kind: str) -> QIcon:
     icon_names = {
-        "add": ("addition-color-icon.svg", "list-add"),
-        "remove": ("subtract-color-icon.svg", "list-remove"),
+        "add": ("linux_icons", "addition-color-icon.svg", "list-add"),
+        "remove": ("linux_icons", "subtract-color-icon.svg", "list-remove"),
+        "up": ("macOS_icons", "up.png", "go-up"),
+        "down": ("macOS_icons", "down.png", "go-down"),
     }
-    bundled_name, theme_name = icon_names[kind]
-    icon_path = files("magboltz_gui.icons").joinpath("linux_icons", bundled_name)
+    directory, bundled_name, theme_name = icon_names[kind]
+    icon_path = files("magboltz_gui.icons").joinpath(directory, bundled_name)
     if icon_path.is_file():
         return QIcon(str(icon_path))
     return QIcon.fromTheme(theme_name)
