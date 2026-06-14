@@ -412,7 +412,7 @@ class CampaignWidget(QWidget):
             item.setFlags(flags | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsSelectable)
             item.setToolTip(enabled_tooltip)
         else:
-            item.setFlags(flags & ~Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable & ~Qt.ItemFlag.ItemIsSelectable)
+            item.setFlags((flags | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable) & ~Qt.ItemFlag.ItemIsEditable)
             item.setToolTip("Disabled for the selected sweep type.")
 
     def _set_cell_read_only(self, row: int, column: int, tooltip: str) -> None:
@@ -694,6 +694,7 @@ class CampaignWidget(QWidget):
         parameters: list[SweepParameter] = []
         errors: list[str] = []
         coupled_rows: list[tuple[int, str, int]] = []
+        seen_parameters: dict[str, tuple[int, str]] = {}
         for row in range(self.sweepTable.rowCount()):
             enabled = self.sweepTable.cellWidget(row, 0)
             if isinstance(enabled, QCheckBox) and not enabled.isChecked():
@@ -719,6 +720,13 @@ class CampaignWidget(QWidget):
             points = self._cell_text(row, 7)
             label = self._cell_text(row, 8) or None
             row_context = f"Row {row + 1} ({parameter_combo.currentText()})"
+            if path in seen_parameters:
+                previous_row, previous_label = seen_parameters[path]
+                errors.append(
+                    f"{row_context}: parameter already selected in row {previous_row} ({previous_label})"
+                )
+                continue
+            seen_parameters[path] = (row + 1, parameter_combo.currentText())
 
             try:
                 if sweep_type == "values":

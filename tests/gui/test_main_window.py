@@ -573,8 +573,10 @@ def test_campaign_tab_updates_editable_sweep_cells_by_type(qtbot) -> None:
     assert isinstance(sweep_combo, QComboBox)
 
     assert values_item.flags() & Qt.ItemFlag.ItemIsEditable
-    assert not start_item.flags() & Qt.ItemFlag.ItemIsEnabled
-    assert not stop_item.flags() & Qt.ItemFlag.ItemIsEnabled
+    assert start_item.flags() & Qt.ItemFlag.ItemIsSelectable
+    assert not start_item.flags() & Qt.ItemFlag.ItemIsEditable
+    assert stop_item.flags() & Qt.ItemFlag.ItemIsSelectable
+    assert not stop_item.flags() & Qt.ItemFlag.ItemIsEditable
     assert points_item.text() == "3"
     assert points_item.flags() & Qt.ItemFlag.ItemIsEnabled
     assert not points_item.flags() & Qt.ItemFlag.ItemIsEditable
@@ -585,7 +587,8 @@ def test_campaign_tab_updates_editable_sweep_cells_by_type(qtbot) -> None:
 
     sweep_combo.setCurrentText("linear")
 
-    assert not values_item.flags() & Qt.ItemFlag.ItemIsEnabled
+    assert values_item.flags() & Qt.ItemFlag.ItemIsSelectable
+    assert not values_item.flags() & Qt.ItemFlag.ItemIsEditable
     assert start_item.flags() & Qt.ItemFlag.ItemIsEditable
     assert stop_item.flags() & Qt.ItemFlag.ItemIsEditable
     assert points_item.flags() & Qt.ItemFlag.ItemIsEditable
@@ -620,6 +623,25 @@ def test_campaign_tab_reports_contextual_validation_errors(qtbot, monkeypatch) -
     assert "Fix campaign sweep rows:" in errors[0][1]
     assert "Row 1 (Electric field): Start is required" in errors[0][1]
     assert "Row 2 (Gas 1 fraction): Coupled mode requires at least two enabled coupled rows" in errors[0][1]
+
+
+def test_campaign_tab_rejects_duplicate_sweep_parameters(qtbot, monkeypatch) -> None:
+    errors: list[tuple[str, str]] = []
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+    monkeypatch.setattr(campaign, "_show_error", lambda title, message: errors.append((title, message)))
+
+    campaign.add_sweep_row(parameter_path="electric_field", sweep_type="values", values="100, 200")
+    campaign.add_sweep_row(parameter_path="electric_field", sweep_type="linear", values="100", stop="200", points="2")
+
+    campaign.preview_runs()
+
+    assert errors
+    assert errors[0][0] == "Invalid campaign"
+    assert "Row 2 (Electric field): parameter already selected in row 1 (Electric field)" in errors[0][1]
 
 
 def test_campaign_tab_reports_coupled_point_mismatch_before_core(qtbot, monkeypatch) -> None:
