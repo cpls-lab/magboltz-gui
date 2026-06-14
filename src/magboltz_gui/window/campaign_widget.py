@@ -1027,9 +1027,9 @@ def _sweep_icon(kind: str) -> QIcon:
     icon_names = {
         "add": ("linux_icons", "addition-color-icon.svg", "list-add"),
         "remove": ("linux_icons", "subtract-color-icon.svg", "list-remove"),
-        "up": ("macOS_icons", "up.png", "go-up"),
-        "down": ("macOS_icons", "down.png", "go-down"),
     }
+    if kind in {"up", "down"}:
+        return QIcon.fromTheme(f"go-{kind}")
     directory, bundled_name, theme_name = icon_names[kind]
     icon_path = files("magboltz_gui.icons").joinpath(directory, bundled_name)
     if icon_path.is_file():
