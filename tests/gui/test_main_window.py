@@ -351,6 +351,7 @@ def test_campaign_tab_uses_splitter_between_sweeps_and_preview(qtbot) -> None:
     assert splitter.count() == 2
     assert splitter.widget(0).objectName() == "campaignSweepParametersGroup"
     assert splitter.widget(1).objectName() == "campaignPreviewGroup"
+    assert splitter.sizes()[0] < splitter.sizes()[1]
 
 
 def test_campaign_tab_generates_input_cards(qtbot, monkeypatch, tmp_path: Path) -> None:

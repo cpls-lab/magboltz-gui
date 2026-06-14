@@ -225,9 +225,9 @@ class CampaignWidget(QWidget):
         self.campaignSplitter.setObjectName("campaignSplitter")
         self.campaignSplitter.addWidget(sweep_group)
         self.campaignSplitter.addWidget(preview_group)
-        self.campaignSplitter.setStretchFactor(0, 3)
-        self.campaignSplitter.setStretchFactor(1, 2)
-        self.campaignSplitter.setSizes([600, 350])
+        self.campaignSplitter.setStretchFactor(0, 1)
+        self.campaignSplitter.setStretchFactor(1, 3)
+        self.campaignSplitter.setSizes([250, 750])
         layout.addWidget(self.campaignSplitter)
 
         self.add_default_sweep_row()
