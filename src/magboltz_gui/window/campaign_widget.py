@@ -63,6 +63,8 @@ LARGE_CAMPAIGN_RUNS = 1000
 class CampaignRunWorker(QObject):
     """Run a serial campaign off the GUI thread."""
 
+    prepared = pyqtSignal(int)
+    resultCompleted = pyqtSignal(object)
     progress = pyqtSignal(int, int, str)
     finished = pyqtSignal(object, object, object)
     cancelled = pyqtSignal(object, object, object)
@@ -86,6 +88,8 @@ class CampaignRunWorker(QObject):
                 self._directory,
                 progress_callback=lambda completed, total, run_id: self.progress.emit(completed, total, run_id),
                 cancel_callback=lambda: self._cancel_requested,
+                prepared_callback=lambda total: self.prepared.emit(total),
+                result_callback=lambda result: self.resultCompleted.emit(result),
             )
         except CampaignCancelled as exc:
             self.cancelled.emit(self._plan, self._directory, exc.results)
@@ -538,6 +542,8 @@ class CampaignWidget(QWidget):
         worker = CampaignRunWorker(plan, directory, self._campaign_magboltz_executable())
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
+        worker.prepared.connect(self._on_campaign_run_prepared)
+        worker.resultCompleted.connect(self._on_campaign_run_result_completed)
         worker.progress.connect(self._on_campaign_run_progress)
         worker.finished.connect(self._on_campaign_run_finished)
         worker.cancelled.connect(self._on_campaign_run_cancelled)
@@ -622,6 +628,14 @@ class CampaignWidget(QWidget):
         self.progressBar.setValue(completed)
         self.progressBar.setFormat(f"Completed {completed}/{total}: {run_id}")
         self.resultsSummary.setText(f"Results: running campaign ({completed}/{total})")
+
+    def _on_campaign_run_prepared(self, _total: int) -> None:
+        if self._current_campaign_dir is not None:
+            self._populate_results_from_directory(self._current_campaign_dir)
+
+    def _on_campaign_run_result_completed(self, _result) -> None:
+        if self._current_campaign_dir is not None:
+            self._populate_results_from_directory(self._current_campaign_dir)
 
     def _on_campaign_run_finished(self, plan: CampaignPlan, directory: Path, results) -> None:
         runs = self._generate_runs(plan)

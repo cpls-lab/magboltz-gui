@@ -206,6 +206,44 @@ def test_serial_runner_executes_each_input_card(tmp_path: Path) -> None:
     assert "run_0001,done,0" in status
 
 
+def test_serial_runner_reports_prepared_and_incremental_results(tmp_path: Path) -> None:
+    fake_magboltz = tmp_path / "fake_magboltz"
+    fake_magboltz.write_text(
+        "#!/usr/bin/env python3\n"
+        "import sys\n"
+        "sys.stdin.read()\n"
+        "print('ok')\n",
+        encoding="utf-8",
+    )
+    os.chmod(fake_magboltz, 0o755)
+    plan = CampaignPlan(
+        base_cards=_base_cards(),
+        parameters=[SweepParameter("electric_field", ExplicitSweep([100.0, 200.0]))],
+    )
+    prepared_totals: list[int] = []
+    completed_runs: list[str] = []
+    observed_status: list[str] = []
+    output_dir = tmp_path / "campaign"
+
+    def on_result(result) -> None:
+        completed_runs.append(result.run_id)
+        observed_status.append((output_dir / "run_status.csv").read_text(encoding="utf-8"))
+
+    SerialCampaignRunner(executable=str(fake_magboltz)).run(
+        plan,
+        output_dir,
+        prepared_callback=prepared_totals.append,
+        result_callback=on_result,
+    )
+
+    assert prepared_totals == [2]
+    assert completed_runs == ["run_0001", "run_0002"]
+    assert "run_0001,done,0" in observed_status[0]
+    assert "run_0002,done,0" not in observed_status[0]
+    assert "run_0001,done,0" in observed_status[1]
+    assert "run_0002,done,0" in observed_status[1]
+
+
 def test_serial_runner_can_cancel_running_process(tmp_path: Path) -> None:
     fake_magboltz = tmp_path / "slow_magboltz"
     fake_magboltz.write_text(

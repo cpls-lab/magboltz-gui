@@ -67,11 +67,16 @@ class SerialCampaignRunner:
         output_dir: Path,
         progress_callback: Callable[[int, int, str], None] | None = None,
         cancel_callback: Callable[[], bool] | None = None,
+        prepared_callback: Callable[[int], None] | None = None,
+        result_callback: Callable[[CampaignExecutionResult], None] | None = None,
     ) -> list[CampaignExecutionResult]:
         """Materialize and execute all generated runs serially."""
         runs = self.prepare(plan, output_dir)
         results: list[CampaignExecutionResult] = []
         total = len(runs)
+        self._write_status(output_dir / "run_status.csv", results)
+        if prepared_callback is not None:
+            prepared_callback(total)
         for run in runs:
             if cancel_callback is not None and cancel_callback():
                 self._write_status(output_dir / "run_status.csv", results)
@@ -90,6 +95,9 @@ class SerialCampaignRunner:
                     stderr_path=stderr_path,
                 )
             )
+            self._write_status(output_dir / "run_status.csv", results)
+            if result_callback is not None:
+                result_callback(results[-1])
             if cancel_callback is not None and cancel_callback():
                 self._write_status(output_dir / "run_status.csv", results)
                 raise CampaignCancelled(results)

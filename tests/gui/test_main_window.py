@@ -765,12 +765,22 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
         def __init__(self, *args, **kwargs) -> None:
             executables.append(str(kwargs["executable"]))
 
-        def run(self, plan, output_dir: Path, progress_callback=None, cancel_callback=None):
+        def run(
+            self,
+            plan,
+            output_dir: Path,
+            progress_callback=None,
+            cancel_callback=None,
+            prepared_callback=None,
+            result_callback=None,
+        ):
             output_dir.mkdir(parents=True, exist_ok=True)
             (output_dir / "summary.csv").write_text("run_id,electric_field\nrun_0001,100\n", encoding="utf-8")
             (output_dir / "run_0001").mkdir()
             (output_dir / "run_0001" / "stdout.txt").write_text("ok\n", encoding="utf-8")
             (output_dir / "run_0001" / "stderr.txt").write_text("", encoding="utf-8")
+            if prepared_callback is not None:
+                prepared_callback(1)
             if progress_callback is not None:
                 progress_callback(1, 2, "run_0001")
             return [FakeResult(True), FakeResult(False)]
@@ -921,7 +931,15 @@ def test_campaign_tab_reports_missing_magboltz_executable(qtbot, monkeypatch, tm
         def __init__(self, *args, **kwargs) -> None:
             pass
 
-        def run(self, plan, output_dir: Path, progress_callback=None, cancel_callback=None):
+        def run(
+            self,
+            plan,
+            output_dir: Path,
+            progress_callback=None,
+            cancel_callback=None,
+            prepared_callback=None,
+            result_callback=None,
+        ):
             output_dir.mkdir(parents=True, exist_ok=True)
             raise FileNotFoundError(2, "No such file or directory", "magboltz")
 
