@@ -25,6 +25,7 @@ class CampaignExecutionResult:
     input_path: Path
     stdout_path: Path
     stderr_path: Path
+    executed_at: str
 
     @property
     def ok(self) -> bool:
@@ -93,6 +94,7 @@ class SerialCampaignRunner:
                     input_path=input_path,
                     stdout_path=stdout_path,
                     stderr_path=stderr_path,
+                    executed_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
                 )
             )
             self._write_status(output_dir / "run_status.csv", results)
@@ -148,7 +150,7 @@ class SerialCampaignRunner:
         with path.open("w", newline="", encoding="utf-8") as handle:
             writer = csv.DictWriter(
                 handle,
-                fieldnames=["run_id", "status", "returncode", "input", "stdout", "stderr"],
+                fieldnames=["run_id", "status", "returncode", "executed_at", "input", "stdout", "stderr"],
             )
             writer.writeheader()
             for result in results:
@@ -157,6 +159,7 @@ class SerialCampaignRunner:
                         "run_id": result.run_id,
                         "status": "done" if result.ok else "failed",
                         "returncode": result.returncode,
+                        "executed_at": result.executed_at,
                         "input": result.input_path.as_posix(),
                         "stdout": result.stdout_path.as_posix(),
                         "stderr": result.stderr_path.as_posix(),

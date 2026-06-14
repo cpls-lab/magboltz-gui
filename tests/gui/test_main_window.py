@@ -820,7 +820,7 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
     assert campaign.resultsSummary.text() == "Results: 1 runs; done: 1; failed: 0; pending: 0"
     assert campaign.resultsTable.item(0, 0).text() == "run_0001"
     assert campaign.resultsTable.item(0, 1).text() == "done"
-    assert campaign.resultsTable.item(0, 3).text() == "100"
+    assert campaign.resultsTable.item(0, 4).text() == "100"
 
 
 def test_campaign_tab_opens_saved_campaign_results(qtbot, monkeypatch, tmp_path: Path) -> None:
@@ -858,6 +858,48 @@ def test_campaign_tab_opens_saved_campaign_results(qtbot, monkeypatch, tmp_path:
     assert not campaign.btnPlotSelectedRun.isEnabled()
 
 
+def test_campaign_tab_opens_partial_campaign_results(
+    qtbot,
+    monkeypatch,
+    tmp_path: Path,
+    reference_output_text: str,
+) -> None:
+    messages: list[tuple[str, str]] = []
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
+    monkeypatch.setattr(campaign, "_show_info", lambda title, message: messages.append((title, message)))
+
+    campaign.add_sweep_row(
+        parameter_path="electric_field",
+        sweep_type="values",
+        values="100, 200",
+    )
+    campaign.generate_input_cards()
+    (tmp_path / "run_status.csv").write_text(
+        "run_id,status,returncode,input,stdout,stderr\n"
+        f"run_0001,done,0,{tmp_path / 'run_0001' / 'input.in'},{tmp_path / 'run_0001' / 'stdout.txt'},{tmp_path / 'run_0001' / 'stderr.txt'}\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "run_0001" / "stdout.txt").write_text(reference_output_text, encoding="utf-8")
+    (tmp_path / "run_0001" / "stderr.txt").write_text("", encoding="utf-8")
+
+    messages.clear()
+    campaign.open_campaign()
+
+    assert campaign.resultsSummary.text() == "Results: 2 runs; done: 1; failed: 0; pending: 1"
+    assert campaign.resultsTable.item(0, 0).text() == "run_0001"
+    assert campaign.resultsTable.item(0, 1).text() == "done"
+    assert campaign.resultsTable.item(0, 5).text() == "29.43"
+    assert campaign.resultsTable.item(1, 0).text() == "run_0002"
+    assert campaign.resultsTable.item(1, 1).text() == "pending"
+    assert campaign.btnExportResults.isEnabled()
+    assert not campaign.btnPlotSelectedRun.isEnabled()
+
+
 def test_campaign_tab_exports_visible_results_table(qtbot, monkeypatch, tmp_path: Path) -> None:
     messages: list[tuple[str, str]] = []
     campaign_dir = tmp_path / "campaign"
@@ -882,8 +924,8 @@ def test_campaign_tab_exports_visible_results_table(qtbot, monkeypatch, tmp_path
 
     assert export_path.is_file()
     assert export_path.read_text(encoding="utf-8").splitlines()[:2] == [
-        "run_id,status,returncode,electric_field,vz_um_ns,mean_energy_eV,stdout,stderr",
-        "run_0001,pending,,100,,,,",
+        "run_id,status,returncode,executed_at,electric_field,vz_um_ns,mean_energy_eV,stdout,stderr",
+        "run_0001,pending,,,100,,,,",
     ]
     assert messages[-1][0] == "Campaign results exported"
 

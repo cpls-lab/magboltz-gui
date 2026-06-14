@@ -889,6 +889,7 @@ class CampaignWidget(QWidget):
             status_by_run[run_id] = {
                 "status": "done" if result.ok else "failed",
                 "returncode": str(getattr(result, "returncode", "")),
+                "executed_at": str(getattr(result, "executed_at", "")),
                 "stdout": getattr(result, "stdout_path", directory / run_id / "stdout.txt").as_posix(),
                 "stderr": getattr(result, "stderr_path", directory / run_id / "stderr.txt").as_posix(),
             }
@@ -917,6 +918,7 @@ class CampaignWidget(QWidget):
             "run_id",
             "status",
             "returncode",
+            "executed_at",
             *parameter_columns,
             "vz_um_ns",
             "mean_energy_eV",
@@ -948,6 +950,7 @@ class CampaignWidget(QWidget):
                 "run_id": run_id,
                 "status": status,
                 "returncode": status_row.get("returncode", ""),
+                "executed_at": status_row.get("executed_at", ""),
                 **{column: summary.get(column, "") for column in parameter_columns},
                 "vz_um_ns": parsed.get("vz_um_ns", ""),
                 "mean_energy_eV": parsed.get("mean_energy_eV", ""),
