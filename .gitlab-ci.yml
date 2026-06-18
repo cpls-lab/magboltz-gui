@@ -36,7 +36,7 @@ build-check:
   before_script: *install_verify_deps
   script:
     - python -m compileall src
-    - python -m pytest -q -m "not gui and not magboltz"
+    - python -m pytest -q --ignore=tests/gui -m "not gui and not magboltz"
   rules: *rules_verify
   interruptible: true
 
