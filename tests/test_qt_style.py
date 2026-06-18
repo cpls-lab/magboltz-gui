@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import sys
 
+import pytest
+
 from magboltz_gui.util import qt_style
 
 
@@ -56,6 +58,7 @@ def test_platform_theme_env_respects_user_choice(monkeypatch) -> None:
     assert qt_style.os.environ["QT_QPA_PLATFORMTHEME"] == "qt6ct"
 
 
+@pytest.mark.gui
 def test_gnome_fusion_fallback_uses_palette_instead_of_style(monkeypatch) -> None:
     monkeypatch.setattr(sys, "platform", "linux")
     monkeypatch.setenv("XDG_CURRENT_DESKTOP", "GNOME")
