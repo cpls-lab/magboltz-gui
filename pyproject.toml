@@ -59,8 +59,6 @@ magboltz_gui = [
     "database/*.csv",
     "icons/*.svg",
     "icons/*.png",
-    "icons/macOS_icons/*.png",
-    "icons/linux_icons/*.png",
     "icons/linux_icons/*.svg",
 ]
 

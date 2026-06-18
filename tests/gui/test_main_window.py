@@ -82,6 +82,28 @@ def test_main_window_initializes_default_input_card(qtbot) -> None:
     assert "Preferences..." in edit_menu_actions
 
 
+def test_main_window_uses_standard_icons_on_macos(qtbot, monkeypatch) -> None:
+    calls: list[bool] = []
+    original_apply = MagboltzGUI._apply_standard_action_icons
+
+    def apply_standard_icons_spy(self, *, force: bool) -> None:
+        calls.append(force)
+        original_apply(self, force=force)
+
+    monkeypatch.setattr(main_window.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(MagboltzGUI, "_apply_standard_action_icons", apply_standard_icons_spy)
+
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+
+    assert calls == [True]
+    assert not window.actionNew.icon().isNull()
+    assert not window.actionOpen.icon().isNull()
+    assert not window.actionSave.icon().isNull()
+    assert not window.actionRun.icon().isNull()
+    assert not window.actionStop.icon().isNull()
+
+
 def test_main_window_mode_selector_tracks_single_and_campaign_tabs(qtbot) -> None:
     window = MagboltzGUI()
     qtbot.addWidget(window)
