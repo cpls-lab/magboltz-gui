@@ -757,6 +757,7 @@ def test_campaign_tab_generates_large_campaign_after_confirmation(qtbot, monkeyp
 def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_path: Path) -> None:
     messages: list[tuple[str, str]] = []
     executables: list[str] = []
+    max_workers: list[int] = []
 
     class FakeResult:
         def __init__(self, ok: bool) -> None:
@@ -765,6 +766,7 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
     class FakeRunner:
         def __init__(self, *args, **kwargs) -> None:
             executables.append(str(kwargs["executable"]))
+            max_workers.append(int(kwargs["max_workers"]))
 
         def run(
             self,
@@ -792,6 +794,8 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
     campaign = window.campaignTab
     campaign.sweepTable.setRowCount(0)
     campaign.executableInput.setText("/opt/magboltz/bin/magboltz")
+    campaign.parallelExecutionCheck.setChecked(True)
+    campaign.maxWorkersSpin.setValue(2)
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
     monkeypatch.setattr(campaign, "_show_info", lambda title, message: messages.append((title, message)))
     monkeypatch.setattr(campaign_widget, "SerialCampaignRunner", FakeRunner)
@@ -812,6 +816,7 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
 
     assert (tmp_path / "run_0001" / "stdout.txt").is_file()
     assert executables == ["/opt/magboltz/bin/magboltz"]
+    assert max_workers == [2]
     assert messages[0][0] == "Campaign run finished"
     assert "Executed 2 runs" in messages[0][1]
     assert "OK: 1" in messages[0][1]

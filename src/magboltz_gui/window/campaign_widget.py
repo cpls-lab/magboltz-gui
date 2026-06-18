@@ -25,6 +25,7 @@ from PyQt6.QtWidgets import (
     QProgressBar,
     QPushButton,
     QSplitter,
+    QSpinBox,
     QTableWidget,
     QTableWidgetItem,
     QToolButton,
@@ -61,7 +62,7 @@ LARGE_CAMPAIGN_RUNS = 1000
 
 
 class CampaignRunWorker(QObject):
-    """Run a serial campaign off the GUI thread."""
+    """Run a campaign off the GUI thread."""
 
     prepared = pyqtSignal(int)
     resultCompleted = pyqtSignal(object)
@@ -70,11 +71,12 @@ class CampaignRunWorker(QObject):
     cancelled = pyqtSignal(object, object, object)
     failed = pyqtSignal(str, str)
 
-    def __init__(self, plan: CampaignPlan, directory: Path, executable: str) -> None:
+    def __init__(self, plan: CampaignPlan, directory: Path, executable: str, max_workers: int = 1) -> None:
         super().__init__()
         self._plan = plan
         self._directory = directory
         self._executable = executable
+        self._max_workers = max_workers
         self._cancel_requested = False
 
     def cancel(self) -> None:
@@ -83,7 +85,7 @@ class CampaignRunWorker(QObject):
     @pyqtSlot()
     def run(self) -> None:
         try:
-            results = SerialCampaignRunner(executable=self._executable).run(
+            results = SerialCampaignRunner(executable=self._executable, max_workers=self._max_workers).run(
                 self._plan,
                 self._directory,
                 progress_callback=lambda completed, total, run_id: self.progress.emit(completed, total, run_id),
@@ -223,8 +225,25 @@ class CampaignWidget(QWidget):
         self.executableInput = QLineEdit()
         self.executableInput.setToolTip("Executable used by Run in Campaign mode.")
         self._sync_executable_from_settings()
+        self.parallelExecutionCheck = QCheckBox("Multi-thread execution")
+        self.parallelExecutionCheck.setToolTip(
+            "Run multiple Magboltz executions concurrently. "
+            "Each worker starts a separate Magboltz process; keep disabled for serial execution."
+        )
+        self.maxWorkersLabel = QLabel("Max threads")
+        self.maxWorkersLabel.setEnabled(False)
+        self.maxWorkersSpin = QSpinBox()
+        self.maxWorkersSpin.setRange(0, 1024)
+        self.maxWorkersSpin.setValue(0)
+        self.maxWorkersSpin.setEnabled(False)
+        self.maxWorkersSpin.setToolTip("Maximum concurrent Magboltz processes. 0 uses the available CPU cores.")
+        self.parallelExecutionCheck.toggled.connect(self.maxWorkersLabel.setEnabled)
+        self.parallelExecutionCheck.toggled.connect(self.maxWorkersSpin.setEnabled)
         execution_settings_layout.addWidget(self.executableLabel)
         execution_settings_layout.addWidget(self.executableInput, 1)
+        execution_settings_layout.addWidget(self.parallelExecutionCheck)
+        execution_settings_layout.addWidget(self.maxWorkersLabel)
+        execution_settings_layout.addWidget(self.maxWorkersSpin)
 
         results_group = QGroupBox("Campaign results")
         results_layout = QVBoxLayout(results_group)
@@ -532,7 +551,7 @@ class CampaignWidget(QWidget):
         self._show_info("Campaign opened", f"Loaded {len(runs)} runs from:\n{directory}")
 
     def run_campaign(self) -> None:
-        """Write and execute campaign input cards serially."""
+        """Write and execute campaign input cards."""
         if self._campaign_thread is not None:
             self._show_error("Campaign already running", "Wait for the current campaign run to finish.")
             return
@@ -545,7 +564,12 @@ class CampaignWidget(QWidget):
         self._set_campaign_running(True)
         self.resultsSummary.setText(f"Results: running campaign in {directory}")
         thread = QThread(self)
-        worker = CampaignRunWorker(plan, directory, self._campaign_magboltz_executable())
+        worker = CampaignRunWorker(
+            plan,
+            directory,
+            self._campaign_magboltz_executable(),
+            max_workers=self._campaign_max_workers(),
+        )
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
         worker.prepared.connect(self._on_campaign_run_prepared)
@@ -692,6 +716,10 @@ class CampaignWidget(QWidget):
             self.progressBar.setFormat("Campaign idle")
         self.btnPreview.setEnabled(not running)
         self.sweepTable.setEnabled(not running)
+        self.parallelExecutionCheck.setEnabled(not running)
+        parallel_enabled = not running and self.parallelExecutionCheck.isChecked()
+        self.maxWorkersLabel.setEnabled(parallel_enabled)
+        self.maxWorkersSpin.setEnabled(parallel_enabled)
         self.runningChanged.emit(running)
 
     def _select_output_directory(self, title: str) -> tuple[CampaignPlan, Path] | None:
@@ -731,6 +759,11 @@ class CampaignWidget(QWidget):
     def _campaign_magboltz_executable(self) -> str:
         executable = self.executableInput.text().strip()
         return executable or self._get_magboltz_executable()
+
+    def _campaign_max_workers(self) -> int:
+        if not self.parallelExecutionCheck.isChecked():
+            return 1
+        return self.maxWorkersSpin.value()
 
     def _sync_executable_from_settings(self) -> None:
         self.executableInput.setText(self._get_magboltz_executable())

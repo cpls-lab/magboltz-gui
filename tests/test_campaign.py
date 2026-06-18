@@ -245,6 +245,47 @@ def test_serial_runner_reports_prepared_and_incremental_results(tmp_path: Path) 
     assert "run_0002,done,0" in observed_status[1]
 
 
+def test_runner_can_execute_campaign_in_parallel(tmp_path: Path) -> None:
+    active_dir = tmp_path / "active"
+    active_dir.mkdir()
+    log_path = tmp_path / "active-counts.log"
+    fake_magboltz = tmp_path / "parallel_magboltz"
+    fake_magboltz.write_text(
+        "#!/usr/bin/env python3\n"
+        "from pathlib import Path\n"
+        "import os, sys, time\n"
+        "sys.stdin.read()\n"
+        f"active_dir = Path({str(active_dir)!r})\n"
+        f"log_path = Path({str(log_path)!r})\n"
+        "marker = active_dir / str(os.getpid())\n"
+        "marker.write_text(str(os.getpid()), encoding='utf-8')\n"
+        "time.sleep(0.15)\n"
+        "with log_path.open('a', encoding='utf-8') as handle:\n"
+        "    handle.write(f'{Path.cwd().name},{len(list(active_dir.iterdir()))}\\n')\n"
+        "time.sleep(0.25)\n"
+        "marker.unlink(missing_ok=True)\n"
+        "print('ok')\n",
+        encoding="utf-8",
+    )
+    os.chmod(fake_magboltz, 0o755)
+    plan = CampaignPlan(
+        base_cards=_base_cards(),
+        parameters=[SweepParameter("electric_field", ExplicitSweep([100.0, 200.0, 300.0, 400.0]))],
+    )
+
+    results = SerialCampaignRunner(executable=str(fake_magboltz), max_workers=2).run(
+        plan,
+        tmp_path / "campaign",
+    )
+
+    assert [result.run_id for result in results] == ["run_0001", "run_0002", "run_0003", "run_0004"]
+    assert all(result.ok for result in results)
+    observed_parallelism = [
+        int(line.split(",", maxsplit=1)[1]) for line in log_path.read_text(encoding="utf-8").splitlines()
+    ]
+    assert max(observed_parallelism) >= 2
+
+
 def test_serial_runner_can_cancel_running_process(tmp_path: Path) -> None:
     fake_magboltz = tmp_path / "slow_magboltz"
     fake_magboltz.write_text(
