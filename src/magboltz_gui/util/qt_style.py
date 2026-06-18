@@ -12,7 +12,9 @@ Principles
 ----------
 - Never override user choices: if env vars are already set, do nothing.
 - Only set a platform theme if the matching plugin is actually present.
-- Prefer qt6ct (good GNOME integration), then gtk3; otherwise leave defaults.
+- On GNOME, do not auto-select a platform theme. Keep Fusion but apply an
+  explicit readable palette; Adwaita/GTK/qt6ct can look disabled or emit noisy
+  diagnostics depending on local setup.
 - After QApplication is created, nudge the style away from Fusion if a better
   style is available.
 """
@@ -28,7 +30,7 @@ from typing import Optional
 def _detect_platform_theme_plugin() -> Optional[str]:
     """
     Return a platform theme plugin key we can set via QT_QPA_PLATFORMTHEME, or None.
-    Prefers qt6ct, then gtk3. Best-effort: if detection fails, return None.
+    Best-effort: if detection fails, return None.
     """
     try:
         from PyQt6.QtCore import QLibraryInfo
@@ -37,17 +39,29 @@ def _detect_platform_theme_plugin() -> Optional[str]:
     except Exception:
         return None
 
-    candidates = ("qt6ct", "gtk3")
+    candidates = _platform_theme_candidates()
     for cand in candidates:
         if any(cand in p.name.lower() for p in plug_dir.glob("libq*.so")):
             return cand
     return None
 
 
+def _is_gnome_desktop() -> bool:
+    current = os.environ.get("XDG_CURRENT_DESKTOP", "")
+    session = os.environ.get("XDG_SESSION_DESKTOP", "")
+    return "gnome" in f"{current}:{session}".lower()
+
+
+def _platform_theme_candidates() -> tuple[str, ...]:
+    if _is_gnome_desktop():
+        return ()
+    return ("qt6ct", "gtk3")
+
+
 def set_linux_platform_theme_env_if_available() -> None:
     """
     If on Linux and the user hasn't set QT_QPA_PLATFORMTHEME, set it to a detected
-    platform theme plugin (qt6ct or gtk3) when available.
+    platform theme plugin when available.
     """
     if not sys.platform.startswith("linux"):
         return
@@ -72,11 +86,41 @@ def apply_linux_style_fallback(app: object) -> None:
         return
 
     style_now = app.style().objectName().lower()
+    if style_now != "fusion":
+        print(f"[magboltz-gui] Qt style remains: {style_now}", file=sys.stderr)
+        return
+
+    if _is_gnome_desktop():
+        _apply_gnome_fusion_palette(app)
+        print("[magboltz-gui] Qt style remains: fusion with GNOME-readable palette", file=sys.stderr)
+        return
+
     available = [s.lower() for s in QStyleFactory.keys()]
-    for candidate in ("qt6ct-style", "gtk3", "fusion"):
+    for candidate in ("adwaita", "breeze"):
         if candidate in available and candidate != style_now:
             app.setStyle(candidate)
             print(f"[magboltz-gui] Qt style fallback: {style_now} -> {candidate}", file=sys.stderr)
             break
     else:
         print(f"[magboltz-gui] Qt style remains: {style_now}", file=sys.stderr)
+
+
+def _apply_gnome_fusion_palette(app: object) -> None:
+    """Apply an explicit light palette that keeps Fusion controls visibly enabled on GNOME."""
+    from PyQt6.QtGui import QColor, QPalette
+
+    palette = QPalette()
+    palette.setColor(QPalette.ColorRole.Window, QColor("#f0f0f0"))
+    palette.setColor(QPalette.ColorRole.WindowText, QColor("#202020"))
+    palette.setColor(QPalette.ColorRole.Base, QColor("#ffffff"))
+    palette.setColor(QPalette.ColorRole.AlternateBase, QColor("#f6f6f6"))
+    palette.setColor(QPalette.ColorRole.Text, QColor("#202020"))
+    palette.setColor(QPalette.ColorRole.Button, QColor("#e6e6e6"))
+    palette.setColor(QPalette.ColorRole.ButtonText, QColor("#202020"))
+    palette.setColor(QPalette.ColorRole.Highlight, QColor("#2a76d2"))
+    palette.setColor(QPalette.ColorRole.HighlightedText, QColor("#ffffff"))
+    palette.setColor(QPalette.ColorRole.PlaceholderText, QColor("#707070"))
+    palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, QColor("#808080"))
+    palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, QColor("#808080"))
+    palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, QColor("#808080"))
+    app.setPalette(palette)

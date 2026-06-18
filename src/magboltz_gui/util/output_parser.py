@@ -99,17 +99,24 @@ def parse_magboltz_output(stdout_text: str, input_text: Optional[str] = None, in
             mix_start = i + 1
             break
     if mix_start is not None:
+        parsed_any = False
         for line in lines[mix_start:]:
             if not line.strip():
-                break
+                if parsed_any:
+                    break
+                continue
             parts = line.strip().split()
             if not parts:
                 continue
             try:
                 fraction = _parse_float(parts[-1])
+                if fraction is None:
+                    warnings.append(f"Failed to parse mixture line: {line}")
+                    continue
                 name = parts[0]
                 model_tag = " ".join(parts[1:-1]) or None
                 result.mixture.append(MixtureGas(name=name, model_tag=model_tag, fraction_percent=fraction))
+                parsed_any = True
             except Exception:
                 warnings.append(f"Failed to parse mixture line: {line}")
 

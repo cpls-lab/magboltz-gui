@@ -189,6 +189,8 @@ class RunResult:
         def _serialize(obj: Any) -> Any:
             if hasattr(obj, "__dict__"):
                 return {k: _serialize(v) for k, v in obj.__dict__.items()}
+            if isinstance(obj, dict):
+                return {k: _serialize(v) for k, v in obj.items()}
             if isinstance(obj, list):
                 return [_serialize(v) for v in obj]
             return obj

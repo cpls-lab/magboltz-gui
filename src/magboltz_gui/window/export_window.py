@@ -35,6 +35,7 @@ class ExportDialog(QDialog):
         if icon_path.is_file():
             self.setWindowIcon(QIcon(str(icon_path)))
         self._run = run
+        self._suggested_path: Optional[str] = None
         self._settings = QSettings()
         self._init_ui()
         self._load_settings()
@@ -166,8 +167,10 @@ class ExportDialog(QDialog):
         if fmt == ExportFormat.CSV and export_type == ExportType.FULL_RUN_ARCHIVE:
             return
         name = default_filename(self._run, export_type, ext)
-        if not self.txtPath.text().strip():
+        current = self.txtPath.text().strip()
+        if not current or current == self._suggested_path:
             self.txtPath.setText(name)
+        self._suggested_path = name
 
     def _browse(self) -> None:
         fmt = self._current_format()

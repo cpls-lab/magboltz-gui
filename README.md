@@ -44,7 +44,7 @@ uv pip install -e ".[qt]"
 # Debian/Ubuntu: install system PyQt6
 sudo apt install python3-pyqt6
 # Recommended for proper theming on GNOME/Wayland:
-#   sudo apt install qt6-gtk-platformtheme qt6ct
+#   sudo apt install adwaita-qt6
 ```
 and then:
 ```bash
@@ -69,7 +69,7 @@ pip install -e ".[qt]"
 # Debian/Ubuntu: install system PyQt6
 sudo apt install python3-pyqt6
 # Recommended for proper theming on GNOME/Wayland:
-#   sudo apt install qt6-gtk-platformtheme qt6ct
+#   sudo apt install adwaita-qt6
 ```
 and then:
 ```bash
@@ -86,17 +86,55 @@ magboltz-gui
 python -m magboltz_gui
 ```
 
+`magboltz-gui` can prepare input cards without a local Magboltz executable.
+Running simulations from the GUI requires a local `magboltz` binary on `PATH`,
+or a custom executable path configured in the application. The current
+regression reference is based on `MAGBOLTZ 2 VERSION 11.19`.
+
 #### Linux theming note
 - The app auto-detects platform themes on Linux and will log what it picks.
-- If your desktop still looks “Fusion/disabled”, you can force a theme:
+- On Debian/GNOME, the app keeps Qt's Fusion style and applies an explicit
+  readable palette. This avoids `qt6ct` diagnostics and Adwaita/GTK variants
+  that can make enabled controls look disabled on some setups.
+- If you explicitly prefer `qt6ct`, you can force it:
   ```bash
-  QT_QPA_PLATFORMTHEME=qt6ct QT_STYLE_OVERRIDE=qt6ct-style magboltz-gui
+  QT_QPA_PLATFORMTHEME=qt6ct magboltz-gui
   ```
-  (assuming `qt6ct` / `qt6-gtk-platformtheme` are installed)
+  (assuming `qt6ct` is installed and configured)
 
 ---
 
 ## Developer notes
+
+### Campaign sweep core
+
+The first non-GUI campaign slice can generate reproducible parameter sweeps from
+an existing `InputCards` object and materialize one input card per run:
+
+```python
+from magboltz_gui.campaign import CampaignPlan, ExplicitSweep, SerialCampaignRunner, SweepParameter
+
+plan = CampaignPlan(
+    base_cards=cards,
+    parameters=[
+        SweepParameter("electric_field", ExplicitSweep([100.0, 200.0, 500.0])),
+    ],
+)
+
+SerialCampaignRunner().prepare(plan, output_dir)
+```
+
+Supported field paths include top-level fields such as `electric_field` and
+indexed gas-mixture fields such as `gases[0].gas_frac`. Execution is serial by
+design in this first slice.
+
+The GUI includes an initial `Campaign` tab for this workflow. It can snapshot the
+current input card, define simple `values`, `linear`, and `logspace` sweeps,
+preview the generated run matrix, and generate one `input.in` file per run. Each
+sweep row can be part of the product grid or the single coupled-rows group. This
+supports patterns such as a product sweep over field values while Ar/CO2
+fractions vary together. The GUI does not execute campaigns yet; execution
+remains a follow-up slice.
 
 ### Regenerate Qt UI bindings
 
@@ -126,6 +164,49 @@ pip install -e ".[dev]"
 ```
 
 Both install the same dev tools (black/mypy/stubs); use whichever matches your workflow.
+
+### Run tests
+
+Install the lightweight test dependencies:
+
+```bash
+pip install -e ".[test]"
+```
+
+```bash
+python -m pytest -q
+```
+
+The test suite includes parser/export checks and an Ar/CO2 70/30 reference
+case. The reference test checks that the GUI input-card representation
+round-trips semantically and that selected native Magboltz 11.19 output values
+are preserved through CSV, JSON, and XML export.
+
+Default tests intentionally avoid Qt and external Magboltz execution. Tests
+that require Qt should be marked `gui` and placed under `tests/gui/`; tests that
+execute a real Magboltz binary should be marked `magboltz`.
+
+To run the Qt smoke tests locally:
+
+```bash
+pip install -e ".[test-gui]"
+QT_QPA_PLATFORM=offscreen python -m pytest -q -m gui
+```
+
+The GUI tests cover main-window initialization, gas add/remove, parameter
+widget bindings, result-file loading, command-line clipboard copying, run-error
+paths, export-dialog state transitions, and export-dialog settings writing
+CSV/JSON/XML files through the core export layer.
+
+To run the opt-in tests that execute a real Magboltz binary:
+
+```bash
+MAGBOLTZ_TEST_BIN=/path/to/magboltz python -m pytest -q -m magboltz
+```
+
+These tests are intentionally excluded from the default path because they run a
+local Fortran Magboltz executable. `MAGBOLTZ_TEST_TIMEOUT`
+controls the per-run timeout in seconds and defaults to `900`.
 
 ### Build the documentation
 
