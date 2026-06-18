@@ -9,13 +9,19 @@ from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtWidgets import QStyle
 from PyQt6.QtWidgets import (
     QMainWindow,
+    QDialog,
     QFileDialog,
     QMessageBox,
+    QSizePolicy,
     QTableWidgetItem,
     QHeaderView,
     QTableWidget,
     QApplication,
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
     QVBoxLayout,
+    QWidget,
 )
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.colors import ListedColormap
@@ -30,7 +36,9 @@ from magboltz_gui.util import parser
 from magboltz_gui.window.delegates import GasNameDelegate, AmountDelegate
 from magboltz_gui.util.process import ProcessManager
 from magboltz_gui.util.run_result import RunResult
+from magboltz_gui.window.campaign_widget import CampaignWidget
 from magboltz_gui.window.export_window import ExportDialog
+from magboltz_gui.window.preferences_window import PreferencesDialog, load_magboltz_executable_setting
 from magboltz_gui.util.export_controller import export_to_file
 from magboltz_gui.util.export_types import ExportFormat, ExportType, CsvOptions, JsonOptions, XmlOptions
 
@@ -56,12 +64,13 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self._currentCards: InputCards = InputCards()
         self._currentModified: bool = False
         self._last_run_result: Optional[RunResult] = None
+        self.magboltzPath: Optional[Path] = load_magboltz_executable_setting()
 
         # Associating button to actions
         self.btnGasAdd.setDefaultAction(self.actionGasAdd)
         self.btnGasRemove.setDefaultAction(self.actionGasRemove)
         self.btnGasNormalize.setDefaultAction(self.actionGasNormalize)
-        self.btnCmdCopyToClipbord.setDefaultAction(self.actionResultCopy)
+        self.btnCmdCopyToClipbord.setDefaultAction(self.actionCmdCopyToClipboard)
         self.btnResultSave.setDefaultAction(self.actionResultSave)
         self.btnResultOpen.setDefaultAction(self.actionResultOpen)
         self.btnResultExport.setDefaultAction(self.actionResultExport)
@@ -71,13 +80,13 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.btnGasDown.setDefaultAction(self.actionGasMoveDown)
 
         # Associating actions to methods
-        self.actionNew.triggered.connect(self.fileNew)
-        self.actionOpen.triggered.connect(self.fileOpen)
-        self.actionSave.triggered.connect(self.fileSave)
-        self.actionSaveAs.triggered.connect(self.fileSaveAs)
+        self.actionNew.triggered.connect(self.newDocument)
+        self.actionOpen.triggered.connect(self.openDocument)
+        self.actionSave.triggered.connect(self.saveDocument)
+        self.actionSaveAs.triggered.connect(self.saveDocumentAs)
         self.actionClose.triggered.connect(self.fileClose)
-        self.actionRun.triggered.connect(self.run)
-        self.actionStop.triggered.connect(self.stopRun)
+        self.actionRun.triggered.connect(self.runDocument)
+        self.actionStop.triggered.connect(self.stopDocument)
         self.actionGasAdd.triggered.connect(self.gasAdd)
         self.actionGasRemove.triggered.connect(self.gasRemove)
         self.actionCmdCopyToClipboard.triggered.connect(self.cmdCopyToClipboard)
@@ -91,8 +100,29 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.actionGasMoveDown.triggered.connect(self.gasMoveDown)
         self.actionGraphSave.triggered.connect(self.graphSave)
         self.actionAbout.triggered.connect(self.show_about_dialog)
+        self._install_preferences_action()
 
+        self.executionSingleTab = self.tabExecution
+        self.executionSingleTab.setObjectName("executionSingleTab")
         self.mainTab.setCurrentWidget(self.tabConfiguration)
+        self.campaignTab = CampaignWidget(
+            get_current_cards=lambda: self._currentCards,
+            get_magboltz_executable=lambda: str(self.magboltzPath or "magboltz"),
+            set_current_cards=self._set_current_cards_from_campaign,
+            show_info=self.show_info,
+            show_error=self.show_error,
+            parent=self.mainTab,
+        )
+        self.mainTab.addTab(self.campaignTab, "Campaign")
+        self.executionCampaignTab = self.campaignTab.executionTab
+        self.executionCampaignTab.setObjectName("executionCampaignTab")
+        self.campaignExecutionTab = self.executionCampaignTab
+        self.mainTab.addTab(self.executionCampaignTab, "Execution")
+        self._install_result_actions()
+        self._install_mode_selector()
+        self.campaignTab.runningChanged.connect(self._set_running_state)
+        self.mainTab.currentChanged.connect(self._sync_mode_selector_from_tab)
+        self._apply_mode_tab_visibility("Single")
 
         self.fillColorMap()
 
@@ -118,12 +148,12 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.database = GasDatabase()
         self.database.load(Path(str(files("magboltz_gui.database").joinpath("database.csv"))))
 
-        self.magboltzPath: Optional[Path] = None
         self.processes: List[ProcessManager] = []
         # Gas normalize button is obsolete with amount/percent split.
         self.btnGasNormalize.setVisible(False)
         self.actionGasNormalize.setEnabled(False)
         self.actionGasNormalize.setVisible(False)
+        self.actionNew.trigger()
         self.actionResultExport.setEnabled(False)
         self.btnResultExport.setEnabled(False)
         self.actionShowPlots.setEnabled(False)
@@ -131,7 +161,78 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.actionResultOpen.setEnabled(True)
         self.btnResultOpen.setEnabled(True)
         self.actionStop.setVisible(False)
-        self.actionNew.trigger()
+
+    def _set_current_cards_from_campaign(self, cards: InputCards) -> None:
+        self._currentCards = cards
+        self._currentInputFile = None
+        self._currentModified = True
+        self.connect()
+        self.actionResultExport.setEnabled(False)
+        self.btnResultExport.setEnabled(False)
+        self.actionShowPlots.setEnabled(False)
+        self.btnResultPlots.setEnabled(False)
+        self.actionStop.setVisible(False)
+
+    def _install_result_actions(self) -> None:
+        before_action = self.actionResultSave
+        self.menuRun.insertAction(before_action, self.actionResultOpen)
+
+    def _install_preferences_action(self) -> None:
+        self.actionPreferences = QAction(QIcon.fromTheme("preferences-system"), "Preferences...", self)
+        self.actionPreferences.triggered.connect(self.openPreferences)
+        self.menu_Edit.addSeparator()
+        self.menu_Edit.addAction(self.actionPreferences)
+
+    def _install_mode_selector(self) -> None:
+        self.modeSelectorWidget = QWidget(self)
+        layout = QHBoxLayout(self.modeSelectorWidget)
+        layout.setContentsMargins(8, 0, 0, 0)
+        layout.setSpacing(4)
+
+        self.modeSelectorLabel = QLabel("Mode", self.modeSelectorWidget)
+        self.modeSelectorCombo = QComboBox(self.modeSelectorWidget)
+        self.modeSelectorCombo.addItems(["Single", "Campaign"])
+        self.modeSelectorCombo.setToolTip("Choose whether the toolbar actions target a single run or a campaign workflow.")
+        self.modeSelectorCombo.currentTextChanged.connect(self._on_mode_selector_changed)
+
+        layout.addWidget(self.modeSelectorLabel)
+        layout.addWidget(self.modeSelectorCombo)
+
+        self.modeSelectorSpacer = QWidget(self)
+        self.modeSelectorSpacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.mainToolBar.addWidget(self.modeSelectorSpacer)
+        self.mainToolBar.addSeparator()
+        self.mainToolBar.addWidget(self.modeSelectorWidget)
+
+    def _on_mode_selector_changed(self, mode: str) -> None:
+        self.mainTab.blockSignals(True)
+        self._apply_mode_tab_visibility(mode)
+        self.mainTab.blockSignals(False)
+
+    def _sync_mode_selector_from_tab(self) -> None:
+        current_widget = self.mainTab.currentWidget()
+        if current_widget == self.tabConfiguration:
+            return
+        campaign_widgets = {self.campaignTab, self.executionCampaignTab}
+        mode = "Campaign" if current_widget in campaign_widgets else "Single"
+        if self.modeSelectorCombo.currentText() == mode:
+            return
+        self.modeSelectorCombo.blockSignals(True)
+        self.modeSelectorCombo.setCurrentText(mode)
+        self.modeSelectorCombo.blockSignals(False)
+        self._apply_mode_tab_visibility(mode)
+
+    def _apply_mode_tab_visibility(self, mode: str) -> None:
+        show_campaign = mode == "Campaign"
+        self._set_tab_visible(self.tabConfiguration, True)
+        self._set_tab_visible(self.executionSingleTab, not show_campaign)
+        self._set_tab_visible(self.campaignTab, show_campaign)
+        self._set_tab_visible(self.executionCampaignTab, show_campaign)
+
+    def _set_tab_visible(self, widget: QWidget, visible: bool) -> None:
+        index = self.mainTab.indexOf(widget)
+        if index >= 0:
+            self.mainTab.setTabVisible(index, visible)
 
     def createPieChart(self) -> None:
         fig = Figure(figsize=(3, 3))
@@ -249,6 +350,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self.actionResultClear: QStyle.StandardPixmap.SP_TrashIcon,
             self.actionResultSave: QStyle.StandardPixmap.SP_DialogSaveButton,
             self.actionResultOpen: QStyle.StandardPixmap.SP_DialogOpenButton,
+            self.actionPreferences: QStyle.StandardPixmap.SP_FileDialogDetailedView,
             self.actionResultExport: QStyle.StandardPixmap.SP_DialogSaveButton,
             self.actionShowPlots: QStyle.StandardPixmap.SP_FileDialogDetailedView,
             self.actionGraphSave: QStyle.StandardPixmap.SP_DialogSaveButton,
@@ -257,6 +359,46 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         for action, sp in mapping.items():
             if action.icon().isNull():
                 action.setIcon(style.standardIcon(sp))
+
+    def _is_campaign_mode(self) -> bool:
+        return self.modeSelectorCombo.currentText() == "Campaign"
+
+    def newDocument(self) -> None:
+        if self._is_campaign_mode():
+            self.campaignTab.new_campaign()
+        else:
+            self.fileNew()
+
+    def openDocument(self) -> None:
+        if self._is_campaign_mode():
+            self.campaignTab.open_campaign()
+        else:
+            self.fileOpen()
+
+    def saveDocument(self) -> None:
+        if self._is_campaign_mode():
+            self.campaignTab.save_campaign()
+        else:
+            self.fileSave()
+
+    def saveDocumentAs(self) -> None:
+        if self._is_campaign_mode():
+            self.campaignTab.save_campaign_as()
+        else:
+            self.fileSaveAs()
+
+    def runDocument(self) -> None:
+        if self._is_campaign_mode():
+            self.mainTab.setCurrentWidget(self.executionCampaignTab)
+            self.campaignTab.run_campaign()
+        else:
+            self.run()
+
+    def stopDocument(self) -> None:
+        if self._is_campaign_mode():
+            self.campaignTab.cancel_campaign()
+        else:
+            self.stopRun()
 
     def fileNew(self) -> None:
         self._currentCards = InputCards()
@@ -445,6 +587,15 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         window = PlotsWindow(self._last_run_result, self)
         window.show()
+
+    def openPreferences(self) -> None:
+        dialog = PreferencesDialog(self.magboltzPath, self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        dialog.save()
+        self.magboltzPath = dialog.magboltz_path()
+        self.updateCmdLine()
+        self.campaignTab.refresh_executable()
 
     def run(self) -> None:
 
@@ -836,13 +987,13 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self._currentCards.number_of_real_collisions = value
 
-    def onPenningChanged(self, value: bool) -> None:
+    def onPenningChanged(self, value: int) -> None:
 
-        self._currentCards.enable_penning = value
+        self._currentCards.enable_penning = Qt.CheckState(value) == Qt.CheckState.Checked
 
-    def onThermalChanged(self, value: bool) -> None:
+    def onThermalChanged(self, value: int) -> None:
 
-        self._currentCards.enable_thermal = value
+        self._currentCards.enable_thermal = Qt.CheckState(value) == Qt.CheckState.Checked
 
     def onFinalEnergyChanged(self, value: float) -> None:
 

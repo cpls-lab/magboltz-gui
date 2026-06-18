@@ -18,7 +18,7 @@ variables:
 
 .install-verify-deps: &install_verify_deps
   - python -m pip install --upgrade pip
-  - python -m pip install -e .
+  - python -m pip install -e ".[test]"
 
 .install-doc-deps: &install_doc_deps
   - python -m pip install --upgrade pip
@@ -36,6 +36,7 @@ build-check:
   before_script: *install_verify_deps
   script:
     - python -m compileall src
+    - python -m pytest -q --ignore=tests/gui -m "not gui and not magboltz"
   rules: *rules_verify
   interruptible: true
 
