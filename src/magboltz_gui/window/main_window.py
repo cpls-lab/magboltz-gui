@@ -50,10 +50,6 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         # uic.loadUi(files("magboltz_gui.ui").joinpath("main.ui"), self) <- Not needed anymore because we use pyuic6
 
-        system = platform.system()
-        if system == "Darwin":
-            self.initDarwinActionIcons()
-
         cw = self.centralWidget()
         assert cw is not None
         cw.setVisible(False)
@@ -253,75 +249,20 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         self.splitterGases.setSizes([600, 200])
 
-    def initDarwinActionIcons(self) -> None:
-        # This method set the icons for macOS
-
-        actions: List[QAction] = [
-            self.actionNew,
-            self.actionOpen,
-            self.actionSave,
-            self.actionSaveAs,
-            self.actionRevert,
-            self.actionClose,
-            self.actionQuit,
-            self.actionRun,
-            self.actionStop,
-            self.actionGasAdd,
-            self.actionGasRemove,
-            self.actionGasMoveUp,
-            self.actionGasMoveDown,
-            self.actionGasNormalize,
-            self.actionCmdCopyToClipboard,
-            self.actionResultCopy,
-            self.actionResultClear,
-            self.actionResultSave,
-            self.actionResultOpen,
-            self.actionResultExport,
-            self.actionShowPlots,
-            self.actionGraphSave,
-        ]
-
-        icns_map = {
-            self.actionNew: "src/magboltz_gui/icons/macOS_icons/new_file.png",
-            self.actionOpen: "src/magboltz_gui/icons/macOS_icons/open.png",
-            self.actionSave: "src/magboltz_gui/icons/macOS_icons/save.png",
-            self.actionSaveAs: "src/magboltz_gui/icons/macOS_icons/save_as.png",
-            self.actionRevert: "src/magboltz_gui/icons/macOS_icons/revert.png",
-            self.actionClose: "src/magboltz_gui/icons/macOS_icons/TrashIcon.icns",
-            self.actionQuit: "src/magboltz_gui/icons/macOS_icons/AlertStopIcon.icns",
-            self.actionRun: "src/magboltz_gui/icons/macOS_icons/execute.png",
-            self.actionStop: "src/magboltz_gui/icons/macOS_icons/AlertStopIcon.icns",
-            self.actionGasAdd: "src/magboltz_gui/icons/macOS_icons/add_fill.png",
-            self.actionGasRemove: "src/magboltz_gui/icons/macOS_icons/remove_fill.png",
-            self.actionGasMoveUp: "src/magboltz_gui/icons/macOS_icons/up.png",
-            self.actionGasMoveDown: "src/magboltz_gui/icons/macOS_icons/down.png",
-            self.actionGasNormalize: "src/magboltz_gui/icons/macOS_icons/normalize.png",
-            self.actionCmdCopyToClipboard: "src/magboltz_gui/icons/macOS_icons/copy.png",
-            self.actionResultCopy: "src/magboltz_gui/icons/macOS_icons/copy.png",
-            self.actionResultClear: "src/magboltz_gui/icons/macOS_icons/remove.png",
-            self.actionResultSave: "src/magboltz_gui/icons/macOS_icons/save.png",
-            self.actionResultOpen: "src/magboltz_gui/icons/macOS_icons/open.png",
-            self.actionResultExport: "src/magboltz_gui/icons/macOS_icons/export.png",
-            self.actionShowPlots: "src/magboltz_gui/icons/macOS_icons/graph.png",
-            self.actionGraphSave: "src/magboltz_gui/icons/macOS_icons/graph.png",
-        }
-
-        for action in actions:
-            icon = icns_map.get(action, None)
-            if icon is not None:
-                if Path(icon).is_file():
-                    action.setIcon(QIcon(icon))
-
     def _apply_icon_fallbacks(self) -> None:
         """
-        Assign Qt standard icons when theme icons are missing
-        (common on minimal Linux setups). Runs after macOS overrides; only fills null icons.
+        Assign Qt standard icons when needed.
+
+        On macOS, force Qt standard icons so Cocoa supplies native-looking
+        artwork instead of the old bundled PNG overrides.
         """
-        style = self.style()
-        assert style is not None
+        system = platform.system()
+        if system == "Darwin":
+            self._apply_standard_action_icons(force=True)
+            return
 
         # On Linux, force bundled icons for Gas Add/Remove (clear "+" / "-" visuals)
-        if platform.system() == "Linux":
+        if system == "Linux":
             linux_icons_dir = files("magboltz_gui.icons").joinpath("linux_icons")
             add_icon = linux_icons_dir.joinpath("addition-color-icon.svg")
             remove_icon = linux_icons_dir.joinpath("subtract-color-icon.svg")
@@ -329,6 +270,12 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
                 self.actionGasAdd.setIcon(QIcon(str(add_icon)))
             if remove_icon.is_file():
                 self.actionGasRemove.setIcon(QIcon(str(remove_icon)))
+
+        self._apply_standard_action_icons(force=False)
+
+    def _apply_standard_action_icons(self, *, force: bool) -> None:
+        style = self.style()
+        assert style is not None
 
         mapping: dict[QAction, QStyle.StandardPixmap] = {
             self.actionNew: QStyle.StandardPixmap.SP_FileIcon,
@@ -357,7 +304,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         }
 
         for action, sp in mapping.items():
-            if action.icon().isNull():
+            if force or action.icon().isNull():
                 action.setIcon(style.standardIcon(sp))
 
     def _is_campaign_mode(self) -> bool:
