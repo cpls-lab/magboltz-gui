@@ -129,6 +129,13 @@ def test_main_window_can_use_standard_icons_on_macos(qtbot, monkeypatch) -> None
     assert not window.actionStop.icon().isNull()
 
 
+def test_campaign_move_icons_use_bundled_macos_assets(monkeypatch) -> None:
+    monkeypatch.setattr(campaign_widget.platform, "system", lambda: "Darwin")
+
+    assert not campaign_widget._sweep_icon("up").isNull()
+    assert not campaign_widget._sweep_icon("down").isNull()
+
+
 def test_main_window_mode_selector_tracks_single_and_campaign_tabs(qtbot) -> None:
     window = MagboltzGUI()
     qtbot.addWidget(window)

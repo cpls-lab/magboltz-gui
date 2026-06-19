@@ -6,6 +6,7 @@ import csv
 from copy import deepcopy
 from importlib.resources import files
 import json
+import platform
 from pathlib import Path
 from typing import Callable
 
@@ -1220,6 +1221,10 @@ def _sweep_icon(kind: str) -> QIcon:
         "remove": ("linux_icons", "subtract-color-icon.svg", "list-remove"),
     }
     if kind in {"up", "down"}:
+        if platform.system() == "Darwin":
+            icon_path = files("magboltz_gui.icons").joinpath("macOS_icons", f"{kind}.png")
+            if icon_path.is_file():
+                return QIcon(str(icon_path))
         return QIcon.fromTheme(f"go-{kind}")
     directory, bundled_name, theme_name = icon_names[kind]
     icon_path = files("magboltz_gui.icons").joinpath(directory, bundled_name)
