@@ -38,7 +38,11 @@ from magboltz_gui.util.process import ProcessManager
 from magboltz_gui.util.run_result import RunResult
 from magboltz_gui.window.campaign_widget import CampaignWidget
 from magboltz_gui.window.export_window import ExportDialog
-from magboltz_gui.window.preferences_window import PreferencesDialog, load_magboltz_executable_setting
+from magboltz_gui.window.preferences_window import (
+    PreferencesDialog,
+    load_magboltz_executable_setting,
+    load_use_qt_standard_icons_setting,
+)
 from magboltz_gui.util.export_controller import export_to_file
 from magboltz_gui.util.export_types import ExportFormat, ExportType, CsvOptions, JsonOptions, XmlOptions
 
@@ -61,6 +65,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         self._currentModified: bool = False
         self._last_run_result: Optional[RunResult] = None
         self.magboltzPath: Optional[Path] = load_magboltz_executable_setting()
+        self.useQtStandardIcons: bool = load_use_qt_standard_icons_setting()
 
         # Associating button to actions
         self.btnGasAdd.setDefaultAction(self.actionGasAdd)
@@ -251,14 +256,18 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
     def _apply_icon_fallbacks(self) -> None:
         """
-        Assign Qt standard icons when needed.
+        Assign toolbar icons.
 
-        On macOS, force Qt standard icons so Cocoa supplies native-looking
-        artwork instead of the old bundled PNG overrides.
+        On macOS, bundled icons are the default because Qt's StandardPixmap set
+        still exposes some conservative/old-looking toolbar icons. Users can
+        opt back into the default Qt/Cocoa icons from Preferences.
         """
         system = platform.system()
         if system == "Darwin":
-            self._apply_standard_action_icons(force=True)
+            if self.useQtStandardIcons:
+                self._apply_standard_action_icons(force=True)
+            else:
+                self._apply_darwin_action_icons()
             return
 
         # On Linux, force bundled icons for Gas Add/Remove (clear "+" / "-" visuals)
@@ -272,6 +281,39 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
                 self.actionGasRemove.setIcon(QIcon(str(remove_icon)))
 
         self._apply_standard_action_icons(force=False)
+
+    def _apply_darwin_action_icons(self) -> None:
+        icons_dir = files("magboltz_gui.icons").joinpath("macOS_icons")
+        mapping: dict[QAction, str] = {
+            self.actionNew: "new_file.png",
+            self.actionOpen: "open.png",
+            self.actionSave: "save.png",
+            self.actionSaveAs: "save_as.png",
+            self.actionRevert: "revert.png",
+            self.actionClose: "remove.png",
+            self.actionQuit: "remove.png",
+            self.actionRun: "execute.png",
+            self.actionStop: "remove.png",
+            self.actionGasAdd: "add_fill.png",
+            self.actionGasRemove: "remove_fill.png",
+            self.actionGasMoveUp: "up.png",
+            self.actionGasMoveDown: "down.png",
+            self.actionGasNormalize: "normalize.png",
+            self.actionCmdCopyToClipboard: "copy.png",
+            self.actionResultCopy: "copy.png",
+            self.actionResultClear: "remove.png",
+            self.actionResultSave: "save.png",
+            self.actionResultOpen: "open.png",
+            self.actionPreferences: "normalize.png",
+            self.actionResultExport: "export.png",
+            self.actionShowPlots: "graph.png",
+            self.actionGraphSave: "graph.png",
+        }
+
+        for action, icon_name in mapping.items():
+            icon_path = icons_dir.joinpath(icon_name)
+            if icon_path.is_file():
+                action.setIcon(QIcon(str(icon_path)))
 
     def _apply_standard_action_icons(self, *, force: bool) -> None:
         style = self.style()
@@ -536,11 +578,13 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         window.show()
 
     def openPreferences(self) -> None:
-        dialog = PreferencesDialog(self.magboltzPath, self)
+        dialog = PreferencesDialog(self.magboltzPath, self.useQtStandardIcons, self)
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
         dialog.save()
         self.magboltzPath = dialog.magboltz_path()
+        self.useQtStandardIcons = dialog.use_qt_standard_icons()
+        self._apply_icon_fallbacks()
         self.updateCmdLine()
         self.campaignTab.refresh_executable()
 
