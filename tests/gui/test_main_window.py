@@ -359,16 +359,76 @@ def test_main_window_open_result_file_populates_parsed_result(qtbot, monkeypatch
     assert messages and messages[0][0] == "Result loaded"
 
 
-def test_main_window_run_without_saved_input_reports_error(qtbot, monkeypatch) -> None:
-    errors: list[tuple[str, str]] = []
+def test_main_window_run_without_saved_input_uses_temporary_input_card(qtbot, monkeypatch) -> None:
+    created: list[object] = []
+
+    class FakeProcessManager:
+        def __init__(self, main_window, *, input_file: Path, cleanup_input_file: bool = False) -> None:
+            self.main_window = main_window
+            self.input_file = input_file
+            self.cleanup_input_file = cleanup_input_file
+            created.append(self)
+
+        def run(self) -> None:
+            pass
+
     window = MagboltzGUI()
     qtbot.addWidget(window)
     window.show()
+    window._currentCards.gases = [InputGas(2, 100.0)]
+    errors: list[tuple[str, str]] = []
     monkeypatch.setattr(window, "show_error", lambda title, message, *args, **kwargs: errors.append((title, message)))
+    monkeypatch.setattr(main_window, "ProcessManager", FakeProcessManager)
 
     window.run()
 
-    assert errors == [("Error", "To run the magboltz process, you must to save the file")]
+    assert errors == []
+    assert len(created) == 1
+    process = created[0]
+    assert process.cleanup_input_file is True
+    assert isinstance(process.input_file, Path)
+    assert process.input_file.is_file()
+    assert process.input_file.name.startswith("magboltz-gui-")
+    assert process.input_file.suffix == ".in"
+    assert window._currentInputFile is None
+    process.input_file.unlink(missing_ok=True)
+
+
+def test_main_window_run_saves_modified_existing_input_card(qtbot, monkeypatch, tmp_path: Path) -> None:
+    created: list[object] = []
+
+    class FakeProcessManager:
+        def __init__(self, main_window, *, input_file: Path, cleanup_input_file: bool = False) -> None:
+            self.main_window = main_window
+            self.input_file = input_file
+            self.cleanup_input_file = cleanup_input_file
+            created.append(self)
+
+        def run(self) -> None:
+            pass
+
+    input_path = tmp_path / "input.txt"
+    input_path.write_text("old contents\n", encoding="utf-8")
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    window._currentInputFile = input_path
+    window._currentModified = True
+    window._currentCards.gases = [InputGas(2, 100.0)]
+    window._currentCards.electric_field = 1234.0
+    errors: list[tuple[str, str]] = []
+    monkeypatch.setattr(window, "show_error", lambda title, message, *args, **kwargs: errors.append((title, message)))
+    monkeypatch.setattr(main_window, "ProcessManager", FakeProcessManager)
+
+    window.run()
+
+    assert errors == []
+    assert len(created) == 1
+    process = created[0]
+    assert process.input_file == input_path
+    assert process.cleanup_input_file is False
+    assert window._currentModified is False
+    assert "1234.0\t0.0\t0.0" in input_path.read_text(encoding="utf-8")
 
 
 def test_main_window_amount_delegate_updates_gas_ratio_model(qtbot) -> None:

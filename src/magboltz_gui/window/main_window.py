@@ -2,6 +2,7 @@ from __future__ import annotations
 import platform
 from importlib.resources import files
 from pathlib import Path
+import tempfile
 from typing import Optional, List, Tuple, Callable
 
 from PyQt6.QtCore import Qt
@@ -594,10 +595,6 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self.show_error("To run the magboltz process, you must to open the input file")
             return
 
-        if self._currentInputFile is None:
-            self.show_error("Error", "To run the magboltz process, you must to save the file")
-            return
-
         invalid_rows = [
             idx + 1 for idx, gas in enumerate(self._currentCards.gases) if gas.gas_id <= 0
         ]
@@ -606,17 +603,32 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
             self.show_error("Missing gas", f"Select a gas for each row (missing: {rows})")
             return
 
-        if self._currentModified is False:
-            self.fileSave()
+        run_input = self._prepare_run_input_file()
+        if run_input is None:
+            return
+        input_file, cleanup_input_file = run_input
 
         self.mainTab.setCurrentWidget(self.tabExecution)
 
-        process = ProcessManager(self)
+        process = ProcessManager(self, input_file=input_file, cleanup_input_file=cleanup_input_file)
         self.processes.append(process)
         self._set_running_state(True)
         self.actionShowPlots.setEnabled(False)
         self.btnResultPlots.setEnabled(False)
         process.run()
+
+    def _prepare_run_input_file(self) -> tuple[Path, bool] | None:
+        if self._currentInputFile is not None:
+            if self._currentModified:
+                parser.save(self._currentCards, self._currentInputFile)
+                self._currentModified = False
+                self.updateCmdLine()
+            return self._currentInputFile, False
+
+        with tempfile.NamedTemporaryFile(prefix="magboltz-gui-", suffix=".in", delete=False) as temp_file:
+            temp_path = Path(temp_file.name)
+        parser.save(self._currentCards, temp_path)
+        return temp_path, True
 
     def stopRun(self) -> None:
         if not self.processes:
