@@ -60,6 +60,7 @@ magboltz_gui = [
     "icons/*.svg",
     "icons/*.png",
     "icons/linux_icons/*.svg",
+    "icons/macOS_icons/*.png",
 ]
 
 [tool.mypy]

@@ -82,7 +82,31 @@ def test_main_window_initializes_default_input_card(qtbot) -> None:
     assert "Preferences..." in edit_menu_actions
 
 
-def test_main_window_uses_standard_icons_on_macos(qtbot, monkeypatch) -> None:
+def test_main_window_uses_bundled_icons_on_macos_by_default(qtbot, monkeypatch) -> None:
+    calls = 0
+    original_apply = MagboltzGUI._apply_darwin_action_icons
+
+    def apply_darwin_icons_spy(self) -> None:
+        nonlocal calls
+        calls += 1
+        original_apply(self)
+
+    monkeypatch.setattr(main_window.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(main_window, "load_use_qt_standard_icons_setting", lambda: False)
+    monkeypatch.setattr(MagboltzGUI, "_apply_darwin_action_icons", apply_darwin_icons_spy)
+
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+
+    assert calls == 1
+    assert not window.actionNew.icon().isNull()
+    assert not window.actionOpen.icon().isNull()
+    assert not window.actionSave.icon().isNull()
+    assert not window.actionRun.icon().isNull()
+    assert not window.actionStop.icon().isNull()
+
+
+def test_main_window_can_use_standard_icons_on_macos(qtbot, monkeypatch) -> None:
     calls: list[bool] = []
     original_apply = MagboltzGUI._apply_standard_action_icons
 
@@ -91,6 +115,7 @@ def test_main_window_uses_standard_icons_on_macos(qtbot, monkeypatch) -> None:
         original_apply(self, force=force)
 
     monkeypatch.setattr(main_window.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(main_window, "load_use_qt_standard_icons_setting", lambda: True)
     monkeypatch.setattr(MagboltzGUI, "_apply_standard_action_icons", apply_standard_icons_spy)
 
     window = MagboltzGUI()
@@ -274,8 +299,9 @@ def test_preferences_updates_magboltz_executable(qtbot, monkeypatch, tmp_path: P
     executable.write_text("#!/bin/sh\n", encoding="utf-8")
 
     class FakePreferencesDialog:
-        def __init__(self, magboltz_path, parent=None) -> None:
+        def __init__(self, magboltz_path, use_qt_standard_icons, parent=None) -> None:
             self.initial_path = magboltz_path
+            self.initial_use_qt_standard_icons = use_qt_standard_icons
 
         def exec(self):
             return QDialog.DialogCode.Accepted
@@ -285,6 +311,9 @@ def test_preferences_updates_magboltz_executable(qtbot, monkeypatch, tmp_path: P
 
         def magboltz_path(self) -> Path:
             return executable
+
+        def use_qt_standard_icons(self) -> bool:
+            return True
 
     monkeypatch.setattr(main_window, "PreferencesDialog", FakePreferencesDialog)
     window = MagboltzGUI()
@@ -296,6 +325,7 @@ def test_preferences_updates_magboltz_executable(qtbot, monkeypatch, tmp_path: P
     window.openPreferences()
 
     assert window.magboltzPath == executable
+    assert window.useQtStandardIcons is True
     assert window.commandLine.text() == f"{executable} < {input_path}"
     assert window.campaignTab.executableInput.text() == str(executable)
 
