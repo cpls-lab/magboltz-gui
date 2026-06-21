@@ -916,6 +916,7 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
     campaign.parallelExecutionCheck.setChecked(True)
     campaign.maxWorkersSpin.setValue(2)
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
+    monkeypatch.setattr(QMessageBox, "information", lambda *args, **kwargs: QMessageBox.StandardButton.Ok)
     monkeypatch.setattr(campaign, "_show_info", lambda title, message: messages.append((title, message)))
     monkeypatch.setattr(campaign_widget, "SerialCampaignRunner", FakeRunner)
 
@@ -1218,6 +1219,7 @@ def test_campaign_tab_reports_missing_magboltz_executable(qtbot, monkeypatch, tm
     campaign = window.campaignTab
     campaign.sweepTable.setRowCount(0)
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
+    monkeypatch.setattr(QMessageBox, "information", lambda *args, **kwargs: QMessageBox.StandardButton.Ok)
     monkeypatch.setattr(campaign, "_show_error", lambda title, message: errors.append((title, message)))
     monkeypatch.setattr(campaign_widget, "SerialCampaignRunner", MissingMagboltzRunner)
 

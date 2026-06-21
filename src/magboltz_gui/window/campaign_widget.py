@@ -565,6 +565,15 @@ class CampaignWidget(QWidget):
         if self._campaign_thread is not None:
             self._show_error("Campaign already running", "Wait for the current campaign run to finish.")
             return
+        QMessageBox.information(
+            self,
+            "Select campaign output directory",
+            (
+                "The next dialog asks for a campaign output directory, not an existing input file.\n\n"
+                "Choose or create a folder. Magboltz-GUI will generate the input cards and store "
+                "the campaign results there automatically."
+            ),
+        )
         selection = self._select_output_directory("Select campaign output directory for generated files and results")
         if selection is None:
             return
