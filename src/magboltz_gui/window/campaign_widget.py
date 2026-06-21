@@ -221,7 +221,8 @@ class CampaignWidget(QWidget):
         self.executionTab = QWidget()
         execution_layout = QVBoxLayout(self.executionTab)
         execution_settings_group = QGroupBox("Execution settings")
-        execution_settings_layout = QHBoxLayout(execution_settings_group)
+        execution_settings_layout = QVBoxLayout(execution_settings_group)
+        execution_controls_layout = QHBoxLayout()
         self.executableLabel = QLabel("Magboltz executable")
         self.executableInput = QLineEdit()
         self.executableInput.setToolTip("Executable used by Run in Campaign mode.")
@@ -240,11 +241,19 @@ class CampaignWidget(QWidget):
         self.maxWorkersSpin.setToolTip("Maximum concurrent Magboltz processes. 0 uses the available CPU cores.")
         self.parallelExecutionCheck.toggled.connect(self.maxWorkersLabel.setEnabled)
         self.parallelExecutionCheck.toggled.connect(self.maxWorkersSpin.setEnabled)
-        execution_settings_layout.addWidget(self.executableLabel)
-        execution_settings_layout.addWidget(self.executableInput, 1)
-        execution_settings_layout.addWidget(self.parallelExecutionCheck)
-        execution_settings_layout.addWidget(self.maxWorkersLabel)
-        execution_settings_layout.addWidget(self.maxWorkersSpin)
+        execution_controls_layout.addWidget(self.executableLabel)
+        execution_controls_layout.addWidget(self.executableInput, 1)
+        execution_controls_layout.addWidget(self.parallelExecutionCheck)
+        execution_controls_layout.addWidget(self.maxWorkersLabel)
+        execution_controls_layout.addWidget(self.maxWorkersSpin)
+        self.runDirectoryHint = QLabel(
+            "Run campaign will ask for an output directory. Choose or create a folder; "
+            "the input cards and results are generated there automatically."
+        )
+        self.runDirectoryHint.setObjectName("campaignRunDirectoryHint")
+        self.runDirectoryHint.setWordWrap(True)
+        execution_settings_layout.addLayout(execution_controls_layout)
+        execution_settings_layout.addWidget(self.runDirectoryHint)
 
         results_group = QGroupBox("Campaign results")
         results_layout = QVBoxLayout(results_group)
@@ -556,7 +565,7 @@ class CampaignWidget(QWidget):
         if self._campaign_thread is not None:
             self._show_error("Campaign already running", "Wait for the current campaign run to finish.")
             return
-        selection = self._select_output_directory("Select campaign run directory")
+        selection = self._select_output_directory("Select campaign output directory for generated files and results")
         if selection is None:
             return
         plan, directory = selection
