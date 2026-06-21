@@ -1166,6 +1166,33 @@ def test_campaign_tab_opens_generic_campaign_plot_with_selected_scope(qtbot, mon
     assert [row["run_id"] for row in opened[0].selected_rows] == ["run_0002"]
 
 
+def test_campaign_plot_excludes_status_columns(qtbot) -> None:
+    from magboltz_gui.window.campaign_plot_window import CampaignPlotDataset, CampaignPlotWindow
+
+    window = CampaignPlotWindow(
+        CampaignPlotDataset(
+            all_rows=[
+                {
+                    "run_id": "run_0001",
+                    "status": "done",
+                    "returncode": "0",
+                    "executed_at": "2026-06-21T18:00:00Z",
+                    "electric_field": "100",
+                    "vz_um_ns": "29.43",
+                    "stdout": "/tmp/run_0001/stdout.txt",
+                    "stderr": "/tmp/run_0001/stderr.txt",
+                }
+            ],
+            selected_rows=[],
+        )
+    )
+    qtbot.addWidget(window)
+
+    x_columns = [window.comboX.itemText(index) for index in range(window.comboX.count())]
+
+    assert x_columns == ["electric_field", "vz_um_ns"]
+
+
 def test_campaign_tab_reports_missing_magboltz_executable(qtbot, monkeypatch, tmp_path: Path) -> None:
     errors: list[tuple[str, str]] = []
 
