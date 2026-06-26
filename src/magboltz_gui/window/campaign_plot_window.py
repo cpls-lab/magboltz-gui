@@ -140,7 +140,13 @@ class CampaignPlotWindow(QDialog):
         ax.set_ylabel(y_column)
         ax.set_title(f"{y_column} vs {x_column}")
         ax.grid(True, alpha=0.25)
-        self.statusLabel.setText(f"Plotting {len(rows)} run(s).")
+        skipped = len(self._active_rows()) - len(rows)
+        if skipped:
+            self.statusLabel.setText(
+                f"Plotting {len(rows)} run(s); skipped {skipped} incomplete/non-numeric row(s)."
+            )
+        else:
+            self.statusLabel.setText(f"Plotting {len(rows)} run(s).")
         self.canvas.draw()
 
 

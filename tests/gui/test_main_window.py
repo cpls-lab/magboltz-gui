@@ -1167,6 +1167,39 @@ def test_campaign_tab_opens_generic_campaign_plot_with_selected_scope(qtbot, mon
     assert [row["run_id"] for row in opened[0].selected_rows] == ["run_0002"]
 
 
+def test_campaign_result_actions_are_disabled_while_running(qtbot, monkeypatch, tmp_path: Path) -> None:
+    campaign_dir = tmp_path / "campaign"
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    campaign.sweepTable.setRowCount(0)
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(campaign_dir))
+    monkeypatch.setattr(campaign, "_show_info", lambda title, message: None)
+
+    campaign.add_sweep_row(
+        parameter_path="electric_field",
+        sweep_type="values",
+        values="100, 200",
+    )
+    campaign.generate_input_cards()
+    campaign._populate_results_from_directory(campaign_dir)
+
+    assert campaign.btnExportResults.isEnabled()
+    assert campaign.btnPlotCampaign.isEnabled()
+
+    campaign._set_campaign_running(True)
+
+    assert not campaign.btnExportResults.isEnabled()
+    assert not campaign.btnPlotSelectedRun.isEnabled()
+    assert not campaign.btnPlotCampaign.isEnabled()
+
+    campaign._set_campaign_running(False)
+
+    assert campaign.btnExportResults.isEnabled()
+    assert campaign.btnPlotCampaign.isEnabled()
+
+
 def test_campaign_plot_excludes_status_columns(qtbot) -> None:
     from magboltz_gui.window.campaign_plot_window import CampaignPlotDataset, CampaignPlotWindow
 

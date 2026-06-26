@@ -135,6 +135,7 @@ class CampaignWidget(QWidget):
         self._base_cards: InputCards | None = None
         self._current_campaign_dir: Path | None = None
         self._updating_sweep_table = False
+        self._campaign_running = False
         self._campaign_thread: QThread | None = None
         self._campaign_worker: CampaignRunWorker | None = None
 
@@ -725,6 +726,7 @@ class CampaignWidget(QWidget):
         self._set_campaign_running(False)
 
     def _set_campaign_running(self, running: bool) -> None:
+        self._campaign_running = running
         if running:
             self.progressBar.setMaximum(0)
             self.progressBar.setValue(0)
@@ -739,6 +741,7 @@ class CampaignWidget(QWidget):
         parallel_enabled = not running and self.parallelExecutionCheck.isChecked()
         self.maxWorkersLabel.setEnabled(parallel_enabled)
         self.maxWorkersSpin.setEnabled(parallel_enabled)
+        self._update_result_action_state()
         self.runningChanged.emit(running)
 
     def _select_output_directory(self, title: str) -> tuple[CampaignPlan, Path] | None:
@@ -1039,10 +1042,11 @@ class CampaignWidget(QWidget):
 
     def _update_result_action_state(self) -> None:
         has_results = self.resultsTable.rowCount() > 0
+        has_complete_results = has_results and not self._campaign_running
         selected_count = len(self._selected_result_rows())
-        self.btnExportResults.setEnabled(has_results)
-        self.btnPlotSelectedRun.setEnabled(has_results and selected_count == 1)
-        self.btnPlotCampaign.setEnabled(has_results)
+        self.btnExportResults.setEnabled(has_complete_results)
+        self.btnPlotSelectedRun.setEnabled(has_complete_results and selected_count == 1)
+        self.btnPlotCampaign.setEnabled(has_complete_results)
 
     def _results_table_headers(self) -> list[str]:
         headers: list[str] = []
