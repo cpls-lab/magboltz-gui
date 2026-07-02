@@ -242,7 +242,7 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
 
         # 2. Create an Axes and draw something (pie chart)
         ax = fig.add_subplot(111)
-        ax.pie([], labels=[], autopct="%1.1f%%")
+        _draw_empty_gas_chart(ax)
 
         # 3. Add the canvas to the QWidget container
         layout = QVBoxLayout(self.pieContainer)
@@ -809,13 +809,17 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
                 gas_fracs.append(gas.gas_frac * 100.0 / total)
             gas_labels.append(gas_name)
 
-        if len(gas_fracs) > 0:
-            colors = self.get_colors(self.cmbColorMap.currentText(), len(gas_fracs))
-            self._gas_ax.set_prop_cycle(cycler(color=colors))
+        if sum(gas_fracs) <= 0:
+            _draw_empty_gas_chart(self._gas_ax)
+            self._gas_canvas.draw()  # type:ignore
+            return
+
+        colors = self.get_colors(self.cmbColorMap.currentText(), len(gas_fracs))
+        self._gas_ax.set_prop_cycle(cycler(color=colors))
 
         self._gas_ax.pie(
-            gas_fracs if sum(gas_fracs) > 0 else [],
-            labels=gas_labels if sum(gas_fracs) > 0 else [],
+            gas_fracs,
+            labels=gas_labels,
             autopct="%1.1f%%",
             wedgeprops={"edgecolor": "black", "linewidth": 1},
         )
@@ -1062,3 +1066,8 @@ class MagboltzGUI(QMainWindow, Ui_MainWindow):
         idx = self.cmbColorMap.findText("Pastel1")
         if idx >= 0:
             self.cmbColorMap.setCurrentIndex(idx)
+
+
+def _draw_empty_gas_chart(ax) -> None:
+    ax.text(0.5, 0.5, "No gases", ha="center", va="center", transform=ax.transAxes)
+    ax.set_axis_off()
