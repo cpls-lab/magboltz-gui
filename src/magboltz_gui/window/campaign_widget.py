@@ -42,20 +42,21 @@ from magboltz_gui.util.output_parser import parse_magboltz_output
 
 
 PARAMETER_CHOICES: tuple[tuple[str, str], ...] = (
-    ("Electric field", "electric_field"),
-    ("Magnetic field", "magnetic_field"),
-    ("Field angle", "angle"),
-    ("Gas pressure", "gas_pressure"),
-    ("Gas temperature", "gas_temperature"),
-    ("Real collisions", "number_of_real_collisions"),
-    ("Final energy", "final_energy"),
-    ("Gas 1 fraction", "gases[0].gas_frac"),
-    ("Gas 2 fraction", "gases[1].gas_frac"),
-    ("Gas 3 fraction", "gases[2].gas_frac"),
-    ("Gas 4 fraction", "gases[3].gas_frac"),
-    ("Gas 5 fraction", "gases[4].gas_frac"),
-    ("Gas 6 fraction", "gases[5].gas_frac"),
+    ("Electric field [V/cm]", "electric_field"),
+    ("Magnetic field [kG]", "magnetic_field"),
+    ("Field angle [deg]", "angle"),
+    ("Gas pressure [Torr]", "gas_pressure"),
+    ("Gas temperature [C]", "gas_temperature"),
+    ("Real collisions [ × 10⁷]", "number_of_real_collisions"),
+    ("Final energy [eV]", "final_energy"),
+    ("Gas 1 fraction [%]", "gases[0].gas_frac"),
+    ("Gas 2 fraction [%]", "gases[1].gas_frac"),
+    ("Gas 3 fraction [%]", "gases[2].gas_frac"),
+    ("Gas 4 fraction [%]", "gases[3].gas_frac"),
+    ("Gas 5 fraction [%]", "gases[4].gas_frac"),
+    ("Gas 6 fraction [%]", "gases[5].gas_frac"),
 )
+PARAMETER_LABELS = {path: text.split(" [", maxsplit=1)[0] for text, path in PARAMETER_CHOICES}
 
 SWEEP_TYPES = ("values", "linear", "logspace")
 PREVIEW_ROW_LIMIT = 100
@@ -536,6 +537,7 @@ class CampaignWidget(QWidget):
     def _save_campaign_to(self, directory: Path) -> None:
         try:
             plan = self._build_plan()
+            _validate_base_cards_for_execution(plan.base_cards)
         except Exception as exc:
             self._show_error("Invalid campaign", str(exc))
             return
@@ -747,6 +749,7 @@ class CampaignWidget(QWidget):
     def _select_output_directory(self, title: str) -> tuple[CampaignPlan, Path] | None:
         try:
             plan = self._build_plan()
+            _validate_base_cards_for_execution(plan.base_cards)
         except Exception as exc:
             self._show_error("Invalid campaign", str(exc))
             return None
@@ -881,14 +884,15 @@ class CampaignWidget(QWidget):
             stop = self._cell_text(row, 6)
             points = self._cell_text(row, 7)
             label = self._cell_text(row, 8) or None
-            row_context = f"Row {row + 1} ({parameter_combo.currentText()})"
+            parameter_label = _parameter_label(path)
+            row_context = f"Row {row + 1} ({parameter_label})"
             if path in seen_parameters:
                 previous_row, previous_label = seen_parameters[path]
                 errors.append(
                     f"{row_context}: parameter already selected in row {previous_row} ({previous_label})"
                 )
                 continue
-            seen_parameters[path] = (row + 1, parameter_combo.currentText())
+            seen_parameters[path] = (row + 1, parameter_label)
 
             try:
                 if sweep_type == "values":
@@ -913,7 +917,7 @@ class CampaignWidget(QWidget):
 
             parameters.append(SweepParameter(path=path, sweep=sweep, label=label, mode=mode))
             if mode == SweepMode.COUPLED:
-                display_label = label or parameter_combo.currentText()
+                display_label = label or parameter_label
                 coupled_rows.append((row + 1, display_label, len(sweep.values())))
 
         if not parameters:
@@ -1111,6 +1115,20 @@ def _parse_values(text: str) -> list[float | int | bool | str]:
 
 def _value_tokens(text: str) -> list[str]:
     return [value.strip() for value in text.replace("\n", ",").split(",") if value.strip()]
+
+
+def _parameter_label(path: str) -> str:
+    """Return the human parameter label without unit suffixes."""
+    return PARAMETER_LABELS.get(path, path)
+
+
+def _validate_base_cards_for_execution(cards: InputCards) -> None:
+    if not cards.gases:
+        raise ValueError("Add at least one gas before generating or running a campaign.")
+    invalid_rows = [index + 1 for index, gas in enumerate(cards.gases) if gas.gas_id <= 0]
+    if invalid_rows:
+        rows = ", ".join(str(row) for row in invalid_rows)
+        raise ValueError(f"Select a gas for each gas row before generating or running a campaign (missing rows: {rows}).")
 
 
 def _required_float(text: str, field_name: str) -> float:

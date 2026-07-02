@@ -207,6 +207,32 @@ def test_serial_runner_executes_each_input_card(tmp_path: Path) -> None:
     assert results[0].executed_at.endswith("Z")
 
 
+def test_serial_runner_marks_empty_stdout_as_failed(tmp_path: Path) -> None:
+    fake_magboltz = tmp_path / "silent_magboltz"
+    fake_magboltz.write_text(
+        "#!/usr/bin/env python3\n"
+        "import sys\n"
+        "sys.stdin.read()\n",
+        encoding="utf-8",
+    )
+    os.chmod(fake_magboltz, 0o755)
+    plan = CampaignPlan(
+        base_cards=_base_cards(),
+        parameters=[SweepParameter("electric_field", ExplicitSweep([100.0]))],
+    )
+
+    results = SerialCampaignRunner(executable=str(fake_magboltz)).run(
+        plan,
+        tmp_path / "campaign",
+    )
+
+    assert not results[0].ok
+    assert results[0].returncode == 0
+    assert "produced no stdout" in results[0].stderr_path.read_text(encoding="utf-8")
+    status = (tmp_path / "campaign" / "run_status.csv").read_text(encoding="utf-8")
+    assert "run_0001,failed,0" in status
+
+
 def test_serial_runner_reports_prepared_and_incremental_results(tmp_path: Path) -> None:
     fake_magboltz = tmp_path / "fake_magboltz"
     fake_magboltz.write_text(

@@ -32,6 +32,10 @@ from magboltz_gui.data.input_cards import InputGas
 pytestmark = pytest.mark.gui
 
 
+def _set_valid_campaign_base(window: MagboltzGUI) -> None:
+    window._currentCards.gases = [InputGas(gas_id=2, gas_frac=100.0)]
+
+
 def test_main_window_initializes_default_input_card(qtbot) -> None:
     window = MagboltzGUI()
     qtbot.addWidget(window)
@@ -465,6 +469,21 @@ def test_campaign_tab_previews_product_sweep(qtbot) -> None:
     assert campaign.previewTable.item(0, 1).text() == "100.0"
 
 
+def test_campaign_sweep_parameter_dropdown_shows_units(qtbot) -> None:
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+
+    parameter_combo = window.campaignTab.sweepTable.cellWidget(0, 1)
+
+    assert isinstance(parameter_combo, QComboBox)
+    assert parameter_combo.itemText(0) == "Electric field [V/cm]"
+    assert parameter_combo.itemData(0) == "electric_field"
+    assert parameter_combo.itemText(parameter_combo.findData("gas_pressure")) == "Gas pressure [Torr]"
+    assert parameter_combo.itemText(parameter_combo.findData("number_of_real_collisions")) == "Real collisions [ × 10⁷]"
+    assert parameter_combo.itemText(parameter_combo.findData("gases[0].gas_frac")) == "Gas 1 fraction [%]"
+
+
 def test_campaign_tab_uses_splitter_between_sweeps_and_preview(qtbot) -> None:
     window = MagboltzGUI()
     qtbot.addWidget(window)
@@ -483,6 +502,7 @@ def test_campaign_tab_moves_selected_sweep_rows(qtbot) -> None:
     window = MagboltzGUI()
     qtbot.addWidget(window)
     window.show()
+    _set_valid_campaign_base(window)
     campaign = window.campaignTab
     campaign.sweepTable.setRowCount(0)
     campaign.add_sweep_row(parameter_path="electric_field", sweep_type="values", values="100", label="field")
@@ -515,6 +535,7 @@ def test_campaign_tab_generates_input_cards(qtbot, monkeypatch, tmp_path: Path) 
     window = MagboltzGUI()
     qtbot.addWidget(window)
     window.show()
+    _set_valid_campaign_base(window)
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
     monkeypatch.setattr(window.campaignTab, "_show_info", lambda title, message: messages.append((title, message)))
 
@@ -533,6 +554,7 @@ def test_campaign_tab_save_reuses_current_campaign_directory(qtbot, monkeypatch,
     window = MagboltzGUI()
     qtbot.addWidget(window)
     window.show()
+    _set_valid_campaign_base(window)
     campaign = window.campaignTab
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
     monkeypatch.setattr(campaign, "_show_info", lambda title, message: messages.append((title, message)))
@@ -549,6 +571,21 @@ def test_campaign_tab_save_reuses_current_campaign_directory(qtbot, monkeypatch,
     assert (tmp_path / "campaign.json").is_file()
     assert len(messages) == 2
     assert all(title == "Campaign generated" for title, _message in messages)
+
+
+def test_campaign_tab_rejects_generation_without_gases(qtbot, monkeypatch, tmp_path: Path) -> None:
+    errors: list[tuple[str, str]] = []
+    window = MagboltzGUI()
+    qtbot.addWidget(window)
+    window.show()
+    campaign = window.campaignTab
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
+    monkeypatch.setattr(campaign, "_show_error", lambda title, message: errors.append((title, message)))
+
+    campaign.generate_input_cards()
+
+    assert errors == [("Invalid campaign", "Add at least one gas before generating or running a campaign.")]
+    assert not (tmp_path / "summary.csv").exists()
 
 
 def test_campaign_tab_opens_saved_campaign_and_restores_base_input(qtbot, monkeypatch, tmp_path: Path) -> None:
@@ -647,6 +684,7 @@ def test_campaign_tab_forces_gas_fraction_sweeps_to_coupled(qtbot) -> None:
     window = MagboltzGUI()
     qtbot.addWidget(window)
     window.show()
+    _set_valid_campaign_base(window)
     campaign = window.campaignTab
     campaign.sweepTable.setRowCount(0)
 
@@ -682,6 +720,7 @@ def test_campaign_tab_updates_editable_sweep_cells_by_type(qtbot) -> None:
     window = MagboltzGUI()
     qtbot.addWidget(window)
     window.show()
+    _set_valid_campaign_base(window)
     campaign = window.campaignTab
     campaign.sweepTable.setRowCount(0)
 
@@ -827,6 +866,7 @@ def test_campaign_tab_requires_confirmation_before_generating_large_campaign(qtb
     window = MagboltzGUI()
     qtbot.addWidget(window)
     window.show()
+    _set_valid_campaign_base(window)
     campaign = window.campaignTab
     campaign.sweepTable.setRowCount(0)
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
@@ -852,6 +892,7 @@ def test_campaign_tab_generates_large_campaign_after_confirmation(qtbot, monkeyp
     window = MagboltzGUI()
     qtbot.addWidget(window)
     window.show()
+    _set_valid_campaign_base(window)
     campaign = window.campaignTab
     campaign.sweepTable.setRowCount(0)
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
@@ -910,6 +951,7 @@ def test_campaign_tab_runs_campaign_and_reports_status(qtbot, monkeypatch, tmp_p
     window = MagboltzGUI()
     qtbot.addWidget(window)
     window.show()
+    _set_valid_campaign_base(window)
     campaign = window.campaignTab
     campaign.sweepTable.setRowCount(0)
     campaign.executableInput.setText("/opt/magboltz/bin/magboltz")
@@ -954,6 +996,7 @@ def test_campaign_tab_opens_saved_campaign_results(qtbot, monkeypatch, tmp_path:
     window = MagboltzGUI()
     qtbot.addWidget(window)
     window.show()
+    _set_valid_campaign_base(window)
     campaign = window.campaignTab
     campaign.sweepTable.setRowCount(0)
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
@@ -995,6 +1038,7 @@ def test_campaign_tab_opens_partial_campaign_results(
     window = MagboltzGUI()
     qtbot.addWidget(window)
     window.show()
+    _set_valid_campaign_base(window)
     campaign = window.campaignTab
     campaign.sweepTable.setRowCount(0)
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
@@ -1034,6 +1078,7 @@ def test_campaign_tab_exports_visible_results_table(qtbot, monkeypatch, tmp_path
     window = MagboltzGUI()
     qtbot.addWidget(window)
     window.show()
+    _set_valid_campaign_base(window)
     campaign = window.campaignTab
     campaign.sweepTable.setRowCount(0)
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(campaign_dir))
@@ -1068,6 +1113,7 @@ def test_campaign_tab_plots_selected_campaign_run(
     window = MagboltzGUI()
     qtbot.addWidget(window)
     window.show()
+    _set_valid_campaign_base(window)
     campaign = window.campaignTab
     campaign.sweepTable.setRowCount(0)
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(campaign_dir))
@@ -1104,6 +1150,7 @@ def test_campaign_tab_plot_selected_run_requires_exactly_one_row(
     window = MagboltzGUI()
     qtbot.addWidget(window)
     window.show()
+    _set_valid_campaign_base(window)
     campaign = window.campaignTab
     campaign.sweepTable.setRowCount(0)
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(campaign_dir))
@@ -1143,6 +1190,7 @@ def test_campaign_tab_opens_generic_campaign_plot_with_selected_scope(qtbot, mon
     window = MagboltzGUI()
     qtbot.addWidget(window)
     window.show()
+    _set_valid_campaign_base(window)
     campaign = window.campaignTab
     campaign.sweepTable.setRowCount(0)
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(campaign_dir))
@@ -1172,6 +1220,7 @@ def test_campaign_result_actions_are_disabled_while_running(qtbot, monkeypatch, 
     window = MagboltzGUI()
     qtbot.addWidget(window)
     window.show()
+    _set_valid_campaign_base(window)
     campaign = window.campaignTab
     campaign.sweepTable.setRowCount(0)
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(campaign_dir))
@@ -1249,6 +1298,7 @@ def test_campaign_tab_reports_missing_magboltz_executable(qtbot, monkeypatch, tm
     window = MagboltzGUI()
     qtbot.addWidget(window)
     window.show()
+    _set_valid_campaign_base(window)
     campaign = window.campaignTab
     campaign.sweepTable.setRowCount(0)
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *args, **kwargs: str(tmp_path))
