@@ -18,6 +18,15 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+_PLOT_EXCLUDED_COLUMNS = {
+    "run_id",
+    "status",
+    "returncode",
+    "executed_at",
+    "stdout",
+    "stderr",
+}
+
 
 @dataclass(frozen=True)
 class CampaignPlotDataset:
@@ -131,7 +140,13 @@ class CampaignPlotWindow(QDialog):
         ax.set_ylabel(y_column)
         ax.set_title(f"{y_column} vs {x_column}")
         ax.grid(True, alpha=0.25)
-        self.statusLabel.setText(f"Plotting {len(rows)} run(s).")
+        skipped = len(self._active_rows()) - len(rows)
+        if skipped:
+            self.statusLabel.setText(
+                f"Plotting {len(rows)} run(s); skipped {skipped} incomplete/non-numeric row(s)."
+            )
+        else:
+            self.statusLabel.setText(f"Plotting {len(rows)} run(s).")
         self.canvas.draw()
 
 
@@ -140,6 +155,8 @@ def _numeric_columns(rows: list[dict[str, str]]) -> list[str]:
     if not rows:
         return columns
     for column in rows[0]:
+        if column in _PLOT_EXCLUDED_COLUMNS:
+            continue
         values = [row.get(column, "") for row in rows]
         if any(_to_float(value) is not None for value in values):
             columns.append(column)

@@ -51,3 +51,19 @@ def test_campaign_plot_window_disables_selected_scope_without_selected_rows(qtbo
 
     assert dialog.radioAllRuns.isChecked()
     assert not dialog.radioSelectedRuns.isEnabled()
+
+
+def test_campaign_plot_window_reports_skipped_incomplete_rows(qtbot) -> None:
+    dataset = CampaignPlotDataset(
+        all_rows=[
+            {"run_id": "run_0001", "electric_field": "100", "vz_um_ns": "29.43"},
+            {"run_id": "run_0002", "electric_field": "200", "vz_um_ns": ""},
+        ],
+        selected_rows=[],
+    )
+
+    dialog = CampaignPlotWindow(dataset)
+    qtbot.addWidget(dialog)
+    dialog.show()
+
+    assert dialog.statusLabel.text() == "Plotting 1 run(s); skipped 1 incomplete/non-numeric row(s)."

@@ -33,7 +33,7 @@ class CampaignExecutionResult:
     @property
     def ok(self) -> bool:
         """Return whether the external command completed successfully."""
-        return self.returncode == 0
+        return self.returncode == 0 and _has_output(self.stdout_path)
 
 
 class CampaignCancelled(Exception):
@@ -207,6 +207,8 @@ class SerialCampaignRunner:
         stdout_path = run_dir / "stdout.txt"
         stderr_path = run_dir / "stderr.txt"
         returncode = self._run_one(input_path, stdout_path, stderr_path, cancel_callback)
+        if returncode == 0 and not _has_output(stdout_path):
+            _append_empty_output_diagnostic(stderr_path)
         return CampaignExecutionResult(
             run_id=run.run_id,
             returncode=returncode,
@@ -355,6 +357,18 @@ def _ordered_results(
     run_order: dict[str, int],
 ) -> list[CampaignExecutionResult]:
     return sorted(results_by_id.values(), key=lambda result: run_order.get(result.run_id, len(run_order)))
+
+
+def _has_output(path: Path) -> bool:
+    return path.is_file() and path.stat().st_size > 0
+
+
+def _append_empty_output_diagnostic(path: Path) -> None:
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(
+            "Magboltz exited with return code 0 but produced no stdout; "
+            "treating this campaign run as failed.\n"
+        )
 
 
 def _terminate_process(process: subprocess.Popen) -> None:

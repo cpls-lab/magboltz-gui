@@ -42,20 +42,21 @@ from magboltz_gui.util.output_parser import parse_magboltz_output
 
 
 PARAMETER_CHOICES: tuple[tuple[str, str], ...] = (
-    ("Electric field", "electric_field"),
-    ("Magnetic field", "magnetic_field"),
-    ("Field angle", "angle"),
-    ("Gas pressure", "gas_pressure"),
-    ("Gas temperature", "gas_temperature"),
-    ("Real collisions", "number_of_real_collisions"),
-    ("Final energy", "final_energy"),
-    ("Gas 1 fraction", "gases[0].gas_frac"),
-    ("Gas 2 fraction", "gases[1].gas_frac"),
-    ("Gas 3 fraction", "gases[2].gas_frac"),
-    ("Gas 4 fraction", "gases[3].gas_frac"),
-    ("Gas 5 fraction", "gases[4].gas_frac"),
-    ("Gas 6 fraction", "gases[5].gas_frac"),
+    ("Electric field [V/cm]", "electric_field"),
+    ("Magnetic field [kG]", "magnetic_field"),
+    ("Field angle [deg]", "angle"),
+    ("Gas pressure [Torr]", "gas_pressure"),
+    ("Gas temperature [C]", "gas_temperature"),
+    ("Real collisions [ × 10⁷]", "number_of_real_collisions"),
+    ("Final energy [eV]", "final_energy"),
+    ("Gas 1 fraction [%]", "gases[0].gas_frac"),
+    ("Gas 2 fraction [%]", "gases[1].gas_frac"),
+    ("Gas 3 fraction [%]", "gases[2].gas_frac"),
+    ("Gas 4 fraction [%]", "gases[3].gas_frac"),
+    ("Gas 5 fraction [%]", "gases[4].gas_frac"),
+    ("Gas 6 fraction [%]", "gases[5].gas_frac"),
 )
+PARAMETER_LABELS = {path: text.split(" [", maxsplit=1)[0] for text, path in PARAMETER_CHOICES}
 
 SWEEP_TYPES = ("values", "linear", "logspace")
 PREVIEW_ROW_LIMIT = 100
@@ -135,6 +136,7 @@ class CampaignWidget(QWidget):
         self._base_cards: InputCards | None = None
         self._current_campaign_dir: Path | None = None
         self._updating_sweep_table = False
+        self._campaign_running = False
         self._campaign_thread: QThread | None = None
         self._campaign_worker: CampaignRunWorker | None = None
 
@@ -221,7 +223,8 @@ class CampaignWidget(QWidget):
         self.executionTab = QWidget()
         execution_layout = QVBoxLayout(self.executionTab)
         execution_settings_group = QGroupBox("Execution settings")
-        execution_settings_layout = QHBoxLayout(execution_settings_group)
+        execution_settings_layout = QVBoxLayout(execution_settings_group)
+        execution_controls_layout = QHBoxLayout()
         self.executableLabel = QLabel("Magboltz executable")
         self.executableInput = QLineEdit()
         self.executableInput.setToolTip("Executable used by Run in Campaign mode.")
@@ -240,11 +243,19 @@ class CampaignWidget(QWidget):
         self.maxWorkersSpin.setToolTip("Maximum concurrent Magboltz processes. 0 uses the available CPU cores.")
         self.parallelExecutionCheck.toggled.connect(self.maxWorkersLabel.setEnabled)
         self.parallelExecutionCheck.toggled.connect(self.maxWorkersSpin.setEnabled)
-        execution_settings_layout.addWidget(self.executableLabel)
-        execution_settings_layout.addWidget(self.executableInput, 1)
-        execution_settings_layout.addWidget(self.parallelExecutionCheck)
-        execution_settings_layout.addWidget(self.maxWorkersLabel)
-        execution_settings_layout.addWidget(self.maxWorkersSpin)
+        execution_controls_layout.addWidget(self.executableLabel)
+        execution_controls_layout.addWidget(self.executableInput, 1)
+        execution_controls_layout.addWidget(self.parallelExecutionCheck)
+        execution_controls_layout.addWidget(self.maxWorkersLabel)
+        execution_controls_layout.addWidget(self.maxWorkersSpin)
+        self.runDirectoryHint = QLabel(
+            "Run campaign will ask for an output directory. Choose or create a folder; "
+            "the input cards and results are generated there automatically."
+        )
+        self.runDirectoryHint.setObjectName("campaignRunDirectoryHint")
+        self.runDirectoryHint.setWordWrap(True)
+        execution_settings_layout.addLayout(execution_controls_layout)
+        execution_settings_layout.addWidget(self.runDirectoryHint)
 
         results_group = QGroupBox("Campaign results")
         results_layout = QVBoxLayout(results_group)
@@ -526,6 +537,7 @@ class CampaignWidget(QWidget):
     def _save_campaign_to(self, directory: Path) -> None:
         try:
             plan = self._build_plan()
+            _validate_base_cards_for_execution(plan.base_cards)
         except Exception as exc:
             self._show_error("Invalid campaign", str(exc))
             return
@@ -556,7 +568,16 @@ class CampaignWidget(QWidget):
         if self._campaign_thread is not None:
             self._show_error("Campaign already running", "Wait for the current campaign run to finish.")
             return
-        selection = self._select_output_directory("Select campaign run directory")
+        QMessageBox.information(
+            self,
+            "Select campaign output directory",
+            (
+                "The next dialog asks for a campaign output directory, not an existing input file.\n\n"
+                "Choose or create a folder. Magboltz-GUI will generate the input cards and store "
+                "the campaign results there automatically."
+            ),
+        )
+        selection = self._select_output_directory("Select campaign output directory for generated files and results")
         if selection is None:
             return
         plan, directory = selection
@@ -707,6 +728,7 @@ class CampaignWidget(QWidget):
         self._set_campaign_running(False)
 
     def _set_campaign_running(self, running: bool) -> None:
+        self._campaign_running = running
         if running:
             self.progressBar.setMaximum(0)
             self.progressBar.setValue(0)
@@ -721,11 +743,13 @@ class CampaignWidget(QWidget):
         parallel_enabled = not running and self.parallelExecutionCheck.isChecked()
         self.maxWorkersLabel.setEnabled(parallel_enabled)
         self.maxWorkersSpin.setEnabled(parallel_enabled)
+        self._update_result_action_state()
         self.runningChanged.emit(running)
 
     def _select_output_directory(self, title: str) -> tuple[CampaignPlan, Path] | None:
         try:
             plan = self._build_plan()
+            _validate_base_cards_for_execution(plan.base_cards)
         except Exception as exc:
             self._show_error("Invalid campaign", str(exc))
             return None
@@ -860,14 +884,15 @@ class CampaignWidget(QWidget):
             stop = self._cell_text(row, 6)
             points = self._cell_text(row, 7)
             label = self._cell_text(row, 8) or None
-            row_context = f"Row {row + 1} ({parameter_combo.currentText()})"
+            parameter_label = _parameter_label(path)
+            row_context = f"Row {row + 1} ({parameter_label})"
             if path in seen_parameters:
                 previous_row, previous_label = seen_parameters[path]
                 errors.append(
                     f"{row_context}: parameter already selected in row {previous_row} ({previous_label})"
                 )
                 continue
-            seen_parameters[path] = (row + 1, parameter_combo.currentText())
+            seen_parameters[path] = (row + 1, parameter_label)
 
             try:
                 if sweep_type == "values":
@@ -892,7 +917,7 @@ class CampaignWidget(QWidget):
 
             parameters.append(SweepParameter(path=path, sweep=sweep, label=label, mode=mode))
             if mode == SweepMode.COUPLED:
-                display_label = label or parameter_combo.currentText()
+                display_label = label or parameter_label
                 coupled_rows.append((row + 1, display_label, len(sweep.values())))
 
         if not parameters:
@@ -1021,10 +1046,11 @@ class CampaignWidget(QWidget):
 
     def _update_result_action_state(self) -> None:
         has_results = self.resultsTable.rowCount() > 0
+        has_complete_results = has_results and not self._campaign_running
         selected_count = len(self._selected_result_rows())
-        self.btnExportResults.setEnabled(has_results)
-        self.btnPlotSelectedRun.setEnabled(has_results and selected_count == 1)
-        self.btnPlotCampaign.setEnabled(has_results)
+        self.btnExportResults.setEnabled(has_complete_results)
+        self.btnPlotSelectedRun.setEnabled(has_complete_results and selected_count == 1)
+        self.btnPlotCampaign.setEnabled(has_complete_results)
 
     def _results_table_headers(self) -> list[str]:
         headers: list[str] = []
@@ -1089,6 +1115,20 @@ def _parse_values(text: str) -> list[float | int | bool | str]:
 
 def _value_tokens(text: str) -> list[str]:
     return [value.strip() for value in text.replace("\n", ",").split(",") if value.strip()]
+
+
+def _parameter_label(path: str) -> str:
+    """Return the human parameter label without unit suffixes."""
+    return PARAMETER_LABELS.get(path, path)
+
+
+def _validate_base_cards_for_execution(cards: InputCards) -> None:
+    if not cards.gases:
+        raise ValueError("Add at least one gas before generating or running a campaign.")
+    invalid_rows = [index + 1 for index, gas in enumerate(cards.gases) if gas.gas_id <= 0]
+    if invalid_rows:
+        rows = ", ".join(str(row) for row in invalid_rows)
+        raise ValueError(f"Select a gas for each gas row before generating or running a campaign (missing rows: {rows}).")
 
 
 def _required_float(text: str, field_name: str) -> float:
